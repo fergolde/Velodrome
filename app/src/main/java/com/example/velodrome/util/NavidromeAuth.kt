@@ -86,7 +86,17 @@ object XmlParser {
                 result["subsonic-response"] = mapOf("albumList2" to albumList)
             }
             
-            Log.d("XmlParser", "Parsed albums: ${result["subsonic-response"]}")
+            // Parse artists (getArtists.view)
+            // Note: <artists> tag may have attributes like <artists lastModified="...">
+            if (xmlString.contains("<artists")) {
+                Log.d("XmlParser", "Found <artists> tag in XML, parsing...")
+                val artistsList = parseArtists(xmlString)
+                result["subsonic-response"] = (result["subsonic-response"] as? Map<String, Any> ?: emptyMap()) + mapOf("artists" to artistsList)
+            } else {
+                Log.d("XmlParser", "No <artists> tag found in XML. XML sample: ${xmlString.take(500)}")
+            }
+            
+            Log.d("XmlParser", "Parsed response with albums and/or artists")
             
         } catch (e: Exception) {
             Log.e("XmlParser", "Error parsing XML", e)
@@ -147,6 +157,49 @@ object XmlParser {
         Log.d("XmlParser", "Total albums found: ${albumList.size}")
         
         return mapOf("album" to albumList)
+    }
+    
+    /**
+     * Parse artist elements from XML
+     * 
+     * Navidrome API returns artists with attributes in the opening tag:
+     * <artist id="123" name="Artist Name" albumCount="5" coverArt="ar-123"/>
+     */
+    private fun parseArtists(xmlString: String): Map<String, Any> {
+        val artistList = mutableListOf<Map<String, Any>>()
+        
+        // Match artist OPENING tags - attributes contain all data we need
+        val artistRegex = """<artist\s+([^>]*)>""".toRegex()
+        val matches = artistRegex.findAll(xmlString)
+        val matchCount = matches.count()
+        Log.d("XmlParser", "Found $matchCount artist opening tags in XML")
+        
+        for (match in matches) {
+            val attrs = match.groupValues[1]
+            
+            val artist = mutableMapOf<String, Any>()
+            
+            // Extract id
+            putAttr(artist, attrs, "id", """\bid="([^"]+)""")
+            // Extract name
+            putAttr(artist, attrs, "name", """\bname="([^"]+)""")
+            // Extract albumCount
+            val albumCountVal = Regex("""\balbumCount="(\d+)"""").find(attrs)?.groupValues?.get(1)
+            if (albumCountVal != null) {
+                artist["albumCount"] = albumCountVal.toIntOrNull() ?: 0
+            }
+            // Extract coverArt
+            putAttr(artist, attrs, "coverArt", """\bcoverArt="([^"]+)""")
+            
+            if (artist.isNotEmpty()) {
+                artistList.add(artist)
+                Log.d("XmlParserArtist", "Parsed artist: ${artist["name"]}, albumCount=${artist["albumCount"]}")
+            }
+        }
+        
+        Log.d("XmlParser", "Total artists found: ${artistList.size}")
+        
+        return mapOf("artist" to artistList)
     }
     
     /**

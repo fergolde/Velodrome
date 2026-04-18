@@ -89,22 +89,30 @@ class NavidromeRepositoryImpl @Inject constructor(
     @Suppress("UNCHECKED_CAST")
     override suspend fun getArtists(offset: Int, size: Int): Result<List<Artist>> {
         return runCatching {
+            Log.d("Repo", "=== getArtists called ===")
             // Auth params added automatically by AuthInterceptor
             val responseBody = api.getArtists(size, offset)
             val response = parseXmlResponse(responseBody)
             
+            Log.d("Repo", "Response keys: ${response.keys}")
+            Log.d("Repo", "Subsonic response: ${response["subsonic-response"]}")
+            
             val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
             val artistsData = subsonicResponse?.get("artists") as? Map<String, Any>
+            Log.d("Repo", "Artists data: $artistsData")
             val artistsList = artistsData?.get("artist") as? List<Any> ?: emptyList()
+            Log.d("Repo", "Found ${artistsList.size} artists")
 
             artistsList.mapNotNull { artistMap ->
                 (artistMap as? Map<String, Any>)?.let { am ->
-                    Artist(
+                    val artist = Artist(
                         id = am["id"] as? String ?: "",
                         name = am["name"] as? String ?: "",
                         albumCount = (am["albumCount"] as? Number)?.toInt() ?: 0,
                         coverUrl = am["coverArt"] as? String
                     )
+                    Log.d("Repo", "Created Artist: ${artist.name}, albumCount: ${artist.albumCount}")
+                    artist
                 }
             }
         }
