@@ -46,13 +46,14 @@ val AccentPurple = Color(0xFFB6A0FF)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavidromeExploreScreen(
-    viewModel: ExploreViewModel = hiltViewModel()
+    viewModel: ExploreViewModel = hiltViewModel(),
+    onHomeClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
     Scaffold(
         topBar = { ExploreTopAppBar() },
-        bottomBar = { ExploreBottomNavigationBar() },
+        bottomBar = { ExploreBottomNavigationBar(onHomeClick = onHomeClick) },
         containerColor = BackgroundDark
     ) { paddingValues ->
         LazyColumn(
@@ -477,7 +478,7 @@ fun ExploreMiniPlayer(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ExploreBottomNavigationBar() {
+fun ExploreBottomNavigationBar(onHomeClick: () -> Unit = {}) {
     NavigationBar(
         containerColor = SurfaceDark.copy(alpha = 0.9f),
         tonalElevation = 0.dp
@@ -486,7 +487,7 @@ fun ExploreBottomNavigationBar() {
             icon = { Icon(Icons.Default.Home, contentDescription = null) },
             label = { Text("HOME") },
             selected = false,
-            onClick = { },
+            onClick = onHomeClick,
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
         )
         NavigationBarItem(

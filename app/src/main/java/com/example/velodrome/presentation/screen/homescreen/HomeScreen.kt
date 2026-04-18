@@ -41,13 +41,14 @@ val AccentPurple = Color(0xFFB6A0FF)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onAlbumClick: (String) -> Unit = {}
+    onAlbumClick: (String) -> Unit = {},
+    onExploreClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = { TopAppBar() },
-        bottomBar = { BottomNavigationBar() },
+        bottomBar = { BottomNavigationBar(onExploreClick = onExploreClick) },
         containerColor = BackgroundDark
     ) { paddingValues ->
         LazyColumn(
@@ -352,7 +353,7 @@ fun MiniPlayer(
 }
 
 @Composable
-fun BottomNavigationBar() {
+fun BottomNavigationBar(onExploreClick: () -> Unit = {}) {
     NavigationBar(
         containerColor = SurfaceDark.copy(alpha = 0.9f),
         tonalElevation = 0.dp
@@ -368,7 +369,7 @@ fun BottomNavigationBar() {
             icon = { Icon(Icons.Default.Explore, contentDescription = null) },
             label = { Text("EXPLORE") },
             selected = false,
-            onClick = { },
+            onClick = onExploreClick,
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
         )
         NavigationBarItem(

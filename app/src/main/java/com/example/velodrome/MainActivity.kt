@@ -18,6 +18,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.velodrome.presentation.screen.homescreen.HomeScreen
 import com.example.velodrome.presentation.screen.login.LoginScreen
+import com.example.velodrome.presentation.screen.explore.NavidromeExploreScreen
+import com.example.velodrome.presentation.screen.explore.NavidromeExploreScreen
 import com.example.velodrome.ui.theme.VelodromeTheme
 import com.example.velodrome.util.CredentialsManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -69,7 +71,18 @@ fun MainApp() {
             HomeScreen(
                 onAlbumClick = { albumId ->
                     // TODO: navigate to album detail
-                    // navController.navigate("album/$albumId")
+                },
+                onExploreClick = {
+                    navController.navigate("explore")
+                }
+            )
+        }
+        composable("explore") {
+            NavidromeExploreScreen(
+                onHomeClick = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
                 }
             )
         }
