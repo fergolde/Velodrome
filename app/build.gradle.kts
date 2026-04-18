@@ -75,7 +75,12 @@ dependencies {
     // DataStore
     implementation(libs.datastore)
     implementation(libs.datastore.preferences)
-    implementation(libs.security.crypto)
+
+    // Security - encrypted-shared-preferences fork (post-deprecation)
+    implementation("dev.spght:encryptedprefs-core:1.1.1")
+
+    // Tink for encryption (replacing deprecated EncryptedSharedPreferences)
+    implementation(libs.tink.android)
 
     // Media3
     implementation(libs.media3.exoplayer)

@@ -6,8 +6,8 @@ import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import dev.spght.encryptedprefs.EncryptedSharedPreferences
+import dev.spght.encryptedprefs.MasterKey
 import com.example.velodrome.data.remote.NavidromeApi
 import com.example.velodrome.util.AuthInterceptor
 import com.example.velodrome.util.CredentialsManager

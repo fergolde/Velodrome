@@ -3,13 +3,13 @@ package com.example.velodrome.util
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import dev.spght.encryptedprefs.EncryptedSharedPreferences
+import dev.spght.encryptedprefs.MasterKey
 import com.example.velodrome.util.NavidromeAuth.calculateToken
 import com.example.velodrome.util.NavidromeAuth.generateSalt
 
 /**
- * Secure credential storage using EncryptedSharedPreferences
+ * Secure credential storage using EncryptedSharedPreferences (fork post-deprecation)
  * Stores username and password securely. NO token storage (per requirements).
  */
 object CredentialsManager {
@@ -38,7 +38,7 @@ object CredentialsManager {
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
-            Log.d("CredentialsManager", "EncryptedSharedPreferences initialized")
+            Log.d("CredentialsManager", "EncryptedSharedPreferences initialized (fork)")
         }
     }
 
