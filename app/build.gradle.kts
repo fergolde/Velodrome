@@ -57,7 +57,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation(libs.androidx.navigation.compose)
 
     // Hilt
     implementation(libs.hilt.android)
@@ -77,7 +77,7 @@ dependencies {
     implementation(libs.datastore.preferences)
 
     // Security - encrypted-shared-preferences fork (post-deprecation)
-    implementation("dev.spght:encryptedprefs-core:1.1.1")
+    implementation(libs.encryptedprefs.core)
 
     // Tink for encryption (replacing deprecated EncryptedSharedPreferences)
     implementation(libs.tink.android)
