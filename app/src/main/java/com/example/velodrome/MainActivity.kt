@@ -18,8 +18,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.velodrome.presentation.screen.homescreen.HomeScreen
 import com.example.velodrome.presentation.screen.login.LoginScreen
-import com.example.velodrome.presentation.screen.explore.NavidromeExploreScreen
-import com.example.velodrome.presentation.screen.explore.NavidromeExploreScreen
+import com.example.velodrome.presentation.screen.explore.ExploreScreen
+import com.example.velodrome.presentation.screen.artists.ArtistsScreen
 import com.example.velodrome.ui.theme.VelodromeTheme
 import com.example.velodrome.util.CredentialsManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -78,11 +78,26 @@ fun MainApp() {
             )
         }
         composable("explore") {
-            NavidromeExploreScreen(
+            ExploreScreen(
                 onHomeClick = {
                     navController.navigate("home") {
                         popUpTo("home") { inclusive = true }
                     }
+                },
+                onArtistsViewAllClick = {
+                    navController.navigate("artists")
+                }
+            )
+        }
+        composable("artists") {
+            ArtistsScreen(
+                onHomeClick = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                },
+                onExploreClick = {
+                    navController.navigate("explore")
                 }
             )
         }

@@ -12,6 +12,5 @@ data class ExploreUiState(
     val randomArtists: List<Artist> = emptyList(),
     val randomAlbums: List<Album> = emptyList(),
     val curatedAlbums: List<Album> = emptyList(),
-    val searchQuery: String = "",
-    val selectedFilter: String = "Explore"
+    val searchQuery: String = ""
 )

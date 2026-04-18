@@ -1,6 +1,5 @@
 package com.example.velodrome.presentation.screen.explore
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -28,9 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
-import com.example.velodrome.presentation.screen.homescreen.AlbumCover
 import com.example.velodrome.presentation.screen.homescreen.RecentAlbumsRow
-import com.example.velodrome.presentation.screen.homescreen.MiniPlayer
 import com.example.velodrome.presentation.screen.homescreen.SectionHeader
 import com.example.velodrome.util.CredentialsManager
 
@@ -45,14 +42,15 @@ val AccentPurple = Color(0xFFB6A0FF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NavidromeExploreScreen(
+fun ExploreScreen(
     viewModel: ExploreViewModel = hiltViewModel(),
-    onHomeClick: () -> Unit = {}
+    onHomeClick: () -> Unit = {},
+    onArtistsViewAllClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
     Scaffold(
-        topBar = { ExploreTopAppBar() },
+        topBar = { ExploreTopAppBar(onArtistsClick = onArtistsViewAllClick) },
         bottomBar = { ExploreBottomNavigationBar(onHomeClick = onHomeClick) },
         containerColor = BackgroundDark
     ) { paddingValues ->
@@ -67,17 +65,16 @@ fun NavidromeExploreScreen(
                     query = uiState.searchQuery,
                     onQueryChange = viewModel::onSearchQueryChange
                 )
-                Spacer(modifier = Modifier.height(24.dp))
-                FilterChips(
-                    selected = uiState.selectedFilter,
-                    onFilterSelected = viewModel::onFilterSelected
-                )
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
             // Random Artists Carousel
             item {
-                SectionHeader(title = "Artists", subtitle = "DISCOVER")
+                SectionHeader(
+                    title = "Artists",
+                    subtitle = "DISCOVER",
+                    onViewAllClick = onArtistsViewAllClick
+                )
                 Spacer(modifier = Modifier.height(16.dp))
                 RandomArtistsRow(
                     artists = uiState.randomArtists,
@@ -130,7 +127,7 @@ fun NavidromeExploreScreen(
 }
 
 @Composable
-fun ExploreTopAppBar() {
+fun ExploreTopAppBar(onArtistsClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -138,7 +135,10 @@ fun ExploreTopAppBar() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Default.Menu, contentDescription = "Menu", tint = TextPrimary)
+        // Artists button in top bar
+        TextButton(onClick = onArtistsClick) {
+            Text("Artists", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        }
         Text("Sonic Gallery", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Box(
             modifier = Modifier
@@ -170,33 +170,6 @@ fun SearchBar(
         singleLine = true,
         shape = RoundedCornerShape(28.dp)
     )
-}
-
-@Composable
-fun FilterChips(
-    selected: String,
-    onFilterSelected: (String) -> Unit
-) {
-    val filters = listOf("Explore", "Artists", "Albums", "Genres")
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        filters.forEach { text ->
-            val isSelected = text == selected
-            Surface(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { onFilterSelected(text) },
-                color = if (isSelected) AccentPurple else SurfaceDark
-            ) {
-                Text(
-                    text = text,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    color = if (isSelected) BackgroundDark else TextPrimary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -496,13 +469,6 @@ fun ExploreBottomNavigationBar(onHomeClick: () -> Unit = {}) {
             selected = true,
             onClick = { },
             colors = NavigationBarItemDefaults.colors(selectedIconColor = AccentPurple, selectedTextColor = AccentPurple, unselectedIconColor = TextSecondary)
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.PlayCircle, contentDescription = null) },
-            label = { Text("PLAYER") },
-            selected = false,
-            onClick = { },
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },

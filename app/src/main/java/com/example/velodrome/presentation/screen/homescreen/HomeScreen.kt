@@ -192,12 +192,25 @@ fun ShuffleButton(
 }
 
 @Composable
-fun SectionHeader(title: String, subtitle: String) {
+fun SectionHeader(
+    title: String,
+    subtitle: String,
+    onViewAllClick: (() -> Unit)? = null
+) {
     Column {
         Text(subtitle, color = AccentPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(title, color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-            Text("View All", color = AccentPurple, fontSize = 14.sp)
+            if (onViewAllClick != null) {
+                Text(
+                    text = "View All",
+                    color = AccentPurple,
+                    fontSize = 14.sp,
+                    modifier = Modifier.clickable(onClick = onViewAllClick)
+                )
+            } else {
+                Text("View All", color = AccentPurple, fontSize = 14.sp)
+            }
         }
     }
 }
@@ -370,13 +383,6 @@ fun BottomNavigationBar(onExploreClick: () -> Unit = {}) {
             label = { Text("EXPLORE") },
             selected = false,
             onClick = onExploreClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.PlayCircle, contentDescription = null) },
-            label = { Text("PLAYER") },
-            selected = false,
-            onClick = { },
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
         )
         NavigationBarItem(

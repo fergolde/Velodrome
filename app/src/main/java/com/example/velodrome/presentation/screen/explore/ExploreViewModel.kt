@@ -79,10 +79,6 @@ class ExploreViewModel @Inject constructor(
         _uiState.update { it.copy(searchQuery = query) }
     }
 
-    fun onFilterSelected(filter: String) {
-        _uiState.update { it.copy(selectedFilter = filter) }
-    }
-
     fun onArtistClick(artist: com.example.velodrome.domain.model.Artist) {
         // TODO: Navigate to artist detail
     }
