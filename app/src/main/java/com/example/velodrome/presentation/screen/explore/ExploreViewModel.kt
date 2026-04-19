@@ -175,11 +175,12 @@ class ExploreViewModel @Inject constructor(
                 
                 // Shuffle the full playlist
                 playlist.shuffle()
-                Log.d(TAG, "Total playlist size: ${playlist.size}")
+                Log.d(TAG, "Total playlist after shuffle: ${playlist.size}")
                 
                 // Emit first 10 tracks
                 val initialTracks = playlist.take(10)
                 currentPlaylistPosition = 10
+                Log.d(TAG, "First 10 tracks: ${initialTracks.map { it.title }}")
                 
                 _uiState.update { it.copy(
                     isLoading = false,

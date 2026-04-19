@@ -1,5 +1,6 @@
 package com.example.velodrome.presentation.player
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -52,6 +53,15 @@ fun PlayerScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
+    // Logging for debugging
+    androidx.compose.runtime.LaunchedEffect(uiState.playlist, uiState.currentTrack, uiState.isPlaying) {
+        Log.d("PlayerScreen", "=== PlayerScreen State ===")
+        Log.d("PlayerScreen", "playlist.size: ${uiState.playlist.size}")
+        Log.d("PlayerScreen", "currentTrack: ${uiState.currentTrack?.title}")
+        Log.d("PlayerScreen", "isPlaying: ${uiState.isPlaying}")
+        Log.d("PlayerScreen", "currentPosition: ${uiState.currentPosition}")
+    }
+    
     Scaffold(
         topBar = { PlayerTopAppBar(onMinimizeClick = onMinimizeClick) },
         bottomBar = { PlayerBottomNavigationBar(onHomeClick = onHomeClick, onExploreClick = onExploreClick, onSettingsClick = onSettingsClick) },
@@ -97,10 +107,9 @@ fun PlayerScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Queue Button
-            if (uiState.playlist.isNotEmpty()) {
-                NextUpButton(onClick = onQueueClick)
-            }
+            // Queue Button - always visible for debugging
+            Log.d("PlayerScreen", "Showing NextUpButton? playlist.size=${uiState.playlist.size}")
+            NextUpButton(onClick = onQueueClick)
         }
     }
 }
