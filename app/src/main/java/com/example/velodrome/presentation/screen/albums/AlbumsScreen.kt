@@ -1,4 +1,4 @@
-package com.example.velodrome.presentation.screen.artists
+package com.example.velodrome.presentation.screen.albums
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.res.stringResource
-import com.example.velodrome.R
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -27,7 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.example.velodrome.domain.model.Artist
+import com.example.velodrome.domain.model.Album
+import androidx.compose.ui.res.stringResource
+import com.example.velodrome.R
 import com.example.velodrome.util.CredentialsManager
 
 // --- Theme Tokens (Velvet Echo) ---
@@ -41,17 +41,17 @@ val AccentPurple = Color(0xFFB6A0FF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ArtistsScreen(
-    viewModel: ArtistsViewModel = hiltViewModel(),
+fun AlbumsScreen(
+    viewModel: AlbumsViewModel = hiltViewModel(),
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        topBar = { ArtistsTopAppBar(onSearchQueryChange = viewModel::onSearchQueryChange) },
+        topBar = { AlbumsTopAppBar(onSearchQueryChange = viewModel::onSearchQueryChange) },
         bottomBar = {
-            ArtistsBottomNavigationBar(
+            AlbumsBottomNavigationBar(
                 onHomeClick = onHomeClick,
                 onExploreClick = onExploreClick
             )
@@ -85,20 +85,20 @@ fun ArtistsScreen(
                             color = TextSecondary
                         )
                     }
-} else {
+                } else {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 16.dp)
                     ) {
-                        ArtistsSearchBar(
+                        AlbumsSearchBar(
                             query = uiState.searchQuery,
                             onQueryChange = viewModel::onSearchQueryChange
                         )
                         Spacer(modifier = Modifier.height(24.dp))
-                        ArtistsList(
-                            artists = uiState.artists,
-                            onArtistClick = viewModel::onArtistClick
+                        AlbumsList(
+                            albums = uiState.albums,
+                            onAlbumClick = viewModel::onAlbumClick
                         )
                     }
                 }
@@ -118,7 +118,7 @@ fun ArtistsScreen(
 }
 
 @Composable
-fun ArtistsTopAppBar(onSearchQueryChange: (String) -> Unit) {
+fun AlbumsTopAppBar(onSearchQueryChange: (String) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -127,7 +127,7 @@ fun ArtistsTopAppBar(onSearchQueryChange: (String) -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(Icons.Default.Search, contentDescription = "Search", tint = TextPrimary)
-        Text(stringResource(R.string.artists_title), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+        Text(stringResource(R.string.albums_title), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
         Box(
             modifier = Modifier
                 .size(36.dp)
@@ -140,7 +140,7 @@ fun ArtistsTopAppBar(onSearchQueryChange: (String) -> Unit) {
 }
 
 @Composable
-fun ArtistsSearchBar(
+fun AlbumsSearchBar(
     query: String = "",
     onQueryChange: (String) -> Unit = {}
 ) {
@@ -151,33 +151,33 @@ fun ArtistsSearchBar(
             .fillMaxWidth()
             .height(56.dp)
             .clip(RoundedCornerShape(12.dp)),
-        placeholder = { Text(stringResource(R.string.artists_search_hint), color = TextSecondary) },
+        placeholder = { Text(stringResource(R.string.albums_search_hint), color = TextSecondary) },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
         shape = RoundedCornerShape(12.dp)
     )
 }
 
 @Composable
-fun ArtistsList(
-    artists: List<Artist>,
-    onArtistClick: (Artist) -> Unit = {}
+fun AlbumsList(
+    albums: List<Album>,
+    onAlbumClick: (Album) -> Unit = {}
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(artists) { artist ->
-            ArtistCard(
-                artist = artist,
-                onClick = { onArtistClick(artist) }
+        items(albums) { album ->
+            AlbumCard(
+                album = album,
+                onClick = { onAlbumClick(album) }
             )
         }
     }
 }
 
 @Composable
-fun ArtistCard(artist: Artist, onClick: () -> Unit = {}) {
+fun AlbumCard(album: Album, onClick: () -> Unit = {}) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -194,13 +194,13 @@ fun ArtistCard(artist: Artist, onClick: () -> Unit = {}) {
             Box(
                 modifier = Modifier
                     .size(64.dp)
-                    .clip(CircleShape)
+                    .clip(RoundedCornerShape(8.dp))
                     .background(SurfaceContainer)
             ) {
-                if (!artist.coverUrl.isNullOrBlank()) {
+                if (!album.coverUrl.isNullOrBlank()) {
                     AsyncImage(
-                        model = CredentialsManager.getCoverArtUrl(artist.coverUrl, 128),
-                        contentDescription = artist.name,
+                        model = CredentialsManager.getCoverArtUrl(album.coverUrl, 128),
+                        contentDescription = album.title,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -209,13 +209,13 @@ fun ArtistCard(artist: Artist, onClick: () -> Unit = {}) {
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = artist.name ?: "Unknown Artist",
+                    text = album.title ?: "Unknown Album",
                     color = TextPrimary,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
+                    fontSize = 16.sp
                 )
                 Text(
-                    text = "${artist.albumCount} ALBUMS",
+                    text = album.artistName ?: "Unknown Artist",
                     color = TextSecondary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
@@ -231,29 +231,7 @@ fun ArtistCard(artist: Artist, onClick: () -> Unit = {}) {
 }
 
 @Composable
-fun AlphabetIndex(modifier: Modifier = Modifier) {
-    val letters = ('A'..'Z').toList()
-    Column(
-        modifier = modifier
-            .padding(end = 4.dp)
-            .background(BackgroundDark.copy(alpha = 0.5f), CircleShape)
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        letters.forEach { char ->
-            Text(
-                text = char.toString(),
-                color = if (char == 'B') AccentPurple else TextSecondary,
-                fontSize = 10.sp,
-                fontWeight = if (char == 'B') FontWeight.Bold else FontWeight.Normal,
-                modifier = Modifier.padding(vertical = 1.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun ArtistsBottomNavigationBar(
+fun AlbumsBottomNavigationBar(
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {}
 ) {

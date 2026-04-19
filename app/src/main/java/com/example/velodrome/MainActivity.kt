@@ -20,6 +20,7 @@ import com.example.velodrome.presentation.screen.homescreen.HomeScreen
 import com.example.velodrome.presentation.screen.login.LoginScreen
 import com.example.velodrome.presentation.screen.explore.ExploreScreen
 import com.example.velodrome.presentation.screen.artists.ArtistsScreen
+import com.example.velodrome.presentation.screen.albums.AlbumsScreen
 import com.example.velodrome.ui.theme.VelodromeTheme
 import com.example.velodrome.util.CredentialsManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -28,6 +29,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         setContent {
             VelodromeTheme {
@@ -86,11 +88,26 @@ fun MainApp() {
                 },
                 onArtistsViewAllClick = {
                     navController.navigate("artists")
+                },
+                onAlbumsViewAllClick = {
+                    navController.navigate("albums")
                 }
             )
         }
         composable("artists") {
             ArtistsScreen(
+                onHomeClick = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                },
+                onExploreClick = {
+                    navController.navigate("explore")
+                }
+            )
+        }
+        composable("albums") {
+            AlbumsScreen(
                 onHomeClick = {
                     navController.navigate("home") {
                         popUpTo("home") { inclusive = true }

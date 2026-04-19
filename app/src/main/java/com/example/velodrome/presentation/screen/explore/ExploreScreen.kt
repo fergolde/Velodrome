@@ -27,6 +27,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
+import androidx.compose.ui.res.stringResource
+import com.example.velodrome.R
+import com.example.velodrome.presentation.UiConstants
+import com.example.velodrome.presentation.screen.homescreen.MiniPlayer
 import com.example.velodrome.presentation.screen.homescreen.RecentAlbumsRow
 import com.example.velodrome.presentation.screen.homescreen.SectionHeader
 import com.example.velodrome.util.CredentialsManager
@@ -45,7 +49,8 @@ val AccentPurple = Color(0xFFB6A0FF)
 fun ExploreScreen(
     viewModel: ExploreViewModel = hiltViewModel(),
     onHomeClick: () -> Unit = {},
-    onArtistsViewAllClick: () -> Unit = {}
+    onArtistsViewAllClick: () -> Unit = {},
+    onAlbumsViewAllClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
@@ -84,7 +89,7 @@ fun ExploreScreen(
             }
 
             item {
-                SectionHeader(title = "Curated Albums", subtitle = "BASED ON YOUR NOCTURNAL ACTIVITY")
+                SectionHeader(title = stringResource(R.string.explore_curated_albums), subtitle = stringResource(R.string.explore_based_on_activity))
                 Spacer(modifier = Modifier.height(16.dp))
                 CuratedAlbumsRow(
                     albums = uiState.curatedAlbums,
@@ -95,7 +100,11 @@ fun ExploreScreen(
 
             // Random Albums Carousel
             item {
-                SectionHeader(title = "Random Albums", subtitle = "EXPLORE")
+                SectionHeader(
+                    title = stringResource(R.string.explore_random_albums),
+                    subtitle = stringResource(R.string.nav_explore),
+                    onViewAllClick = onAlbumsViewAllClick
+                )
                 Spacer(modifier = Modifier.height(16.dp))
                 RecentAlbumsRow(
                     albums = uiState.randomAlbums,
@@ -105,7 +114,7 @@ fun ExploreScreen(
             }
 
             item {
-                SectionHeader(title = "Rising Artists", subtitle = "TRENDING IN YOUR LIBRARY")
+                SectionHeader(title = stringResource(R.string.explore_rising_artists), subtitle = stringResource(R.string.explore_trending))
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -121,7 +130,12 @@ fun ExploreScreen(
 
         // Mini Player
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-            ExploreMiniPlayer(modifier = Modifier.padding(bottom = 88.dp))
+            MiniPlayer(
+                modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMarginInScaffold),
+                currentTrackId = null,
+                isPlaying = false,
+                onPlayPauseClick = { }
+            )
         }
     }
 }
@@ -137,9 +151,9 @@ fun ExploreTopAppBar(onArtistsClick: () -> Unit = {}) {
     ) {
         // Artists button in top bar
         TextButton(onClick = onArtistsClick) {
-            Text("Artists", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text(stringResource(R.string.artists_title), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         }
-        Text("Sonic Gallery", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        Text(stringResource(R.string.explore_title), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Box(
             modifier = Modifier
                 .size(36.dp)
@@ -164,7 +178,7 @@ fun SearchBar(
             .height(56.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(SurfaceDark),
-        placeholder = { Text("Artists, albums, or tracks", color = TextSecondary) },
+        placeholder = { Text(stringResource(R.string.explore_search_hint), color = TextSecondary) },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
         trailingIcon = { Icon(Icons.Default.Mic, contentDescription = null, tint = TextSecondary) },
         singleLine = true,
@@ -423,34 +437,6 @@ fun ArtistListRow(
 }
 
 @Composable
-fun ExploreMiniPlayer(modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-            .height(72.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(SurfaceDark.copy(alpha = 0.95f))
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(Color.Gray))
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text("Neon Cathedral", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text("VAPORWAVE COLLEC...", color = TextSecondary, fontSize = 11.sp)
-        }
-        Icon(Icons.Default.SkipPrevious, contentDescription = null, tint = TextPrimary)
-        Spacer(modifier = Modifier.width(16.dp))
-        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(AccentPurple)) {
-            Icon(Icons.Default.Pause, contentDescription = null, tint = BackgroundDark, modifier = Modifier.align(Alignment.Center))
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Icon(Icons.Default.SkipNext, contentDescription = null, tint = TextPrimary)
-    }
-}
-
-@Composable
 fun ExploreBottomNavigationBar(onHomeClick: () -> Unit = {}) {
     NavigationBar(
         containerColor = SurfaceDark.copy(alpha = 0.9f),
@@ -458,21 +444,21 @@ fun ExploreBottomNavigationBar(onHomeClick: () -> Unit = {}) {
     ) {
         NavigationBarItem(
             icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text("HOME") },
+            label = { Text(stringResource(R.string.nav_home)) },
             selected = false,
             onClick = onHomeClick,
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Explore, contentDescription = null) },
-            label = { Text("EXPLORE") },
+            label = { Text(stringResource(R.string.nav_explore)) },
             selected = true,
             onClick = { },
             colors = NavigationBarItemDefaults.colors(selectedIconColor = AccentPurple, selectedTextColor = AccentPurple, unselectedIconColor = TextSecondary)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-            label = { Text("SETTINGS") },
+            label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
             onClick = { },
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)

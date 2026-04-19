@@ -54,14 +54,21 @@ object AppModule {
         // URL rewriting interceptor - uses stored server URL from CredentialsManager
         val urlRewriterInterceptor = okhttp3.Interceptor { chain ->
             val originalRequest = chain.request()
-            val serverUrl = CredentialsManager.getServerUrl() ?: DEFAULT_URL
+            var serverUrl = CredentialsManager.getServerUrl() ?: DEFAULT_URL
             
             val originalUrl = originalRequest.url.toString()
             
-            // Rewrite if using placeholder or relative URL
+            // Ensure serverUrl ends with /
+            if (!serverUrl.endsWith("/")) {
+                serverUrl = "$serverUrl/"
+            }
+            
+            // Rewrite if using placeholder - need to handle path properly
             val newUrl = if (originalUrl.contains("your-navidrome-server.com")) {
-                originalUrl.replace("https://your-navidrome-server.com/", serverUrl)
-                    .replace("http://your-navidrome-server.com/", serverUrl)
+                // Replace the base URL + path prefix
+                originalUrl
+                    .replace("https://your-navidrome-server.com/rest/", serverUrl + "rest/")
+                    .replace("http://your-navidrome-server.com/rest/", serverUrl + "rest/")
             } else {
                 originalUrl
             }

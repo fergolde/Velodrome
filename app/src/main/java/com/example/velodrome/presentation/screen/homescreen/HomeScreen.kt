@@ -21,6 +21,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import com.example.velodrome.R
+import com.example.velodrome.presentation.UiConstants
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -64,7 +67,7 @@ fun HomeScreen(
             }
 
             item {
-                SectionHeader(title = "Recently Added", subtitle = "NEW ARRIVALS")
+                SectionHeader(title = stringResource(R.string.home_recently_added), subtitle = stringResource(R.string.home_new_arrivals))
                 Spacer(modifier = Modifier.height(16.dp))
                 RecentAlbumsRow(
                     albums = state.latestAlbums,
@@ -74,7 +77,7 @@ fun HomeScreen(
             }
 
             item {
-                SectionHeader(title = "Most Played", subtitle = "YOUR FAVORITES")
+                SectionHeader(title = stringResource(R.string.home_most_played), subtitle = stringResource(R.string.home_your_favorites))
                 Spacer(modifier = Modifier.height(16.dp))
                 RecentAlbumsRow(
                     albums = state.topAlbums,
@@ -84,7 +87,7 @@ fun HomeScreen(
             }
 
             item {
-                SectionHeader(title = "Recently Played", subtitle = "JUST FOR YOU")
+                SectionHeader(title = stringResource(R.string.home_recently_played), subtitle = stringResource(R.string.home_just_for_you))
                 Spacer(modifier = Modifier.height(16.dp))
                 RecentAlbumsRow(
                     albums = state.recentlyPlayedAlbums,
@@ -94,7 +97,7 @@ fun HomeScreen(
             }
 
             item {
-                SectionHeader(title = "Random", subtitle = "DISCOVER")
+                SectionHeader(title = stringResource(R.string.home_random), subtitle = stringResource(R.string.home_discover))
                 Spacer(modifier = Modifier.height(16.dp))
                 RecentAlbumsRow(
                     albums = state.randomAlbums,
@@ -107,7 +110,7 @@ fun HomeScreen(
         // Mini Player Positioned at the bottom
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
             MiniPlayer(
-                modifier = Modifier.padding(bottom = 88.dp),
+                modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMarginInScaffold),
                 currentTrackId = state.currentTrackId,
                 isPlaying = state.isPlaying,
                 onPlayPauseClick = { viewModel.togglePlayPause() }
@@ -142,7 +145,7 @@ fun HomeScreen(
                     onClick = { viewModel.retry() },
                     colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
                 ) {
-                    Text("Retry", color = BackgroundDark)
+                    Text(stringResource(R.string.home_retry), color = BackgroundDark)
                 }
             }
         }
@@ -187,7 +190,7 @@ fun ShuffleButton(
     ) {
         Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(20.dp))
         Spacer(modifier = Modifier.width(8.dp))
-        Text("Aleatorio", color = BackgroundDark, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.home_shuffle), color = BackgroundDark, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -203,13 +206,13 @@ fun SectionHeader(
             Text(title, color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
             if (onViewAllClick != null) {
                 Text(
-                    text = "View All",
+                    text = stringResource(R.string.view_all),
                     color = AccentPurple,
                     fontSize = 14.sp,
                     modifier = Modifier.clickable(onClick = onViewAllClick)
                 )
             } else {
-                Text("View All", color = AccentPurple, fontSize = 14.sp)
+                Text(stringResource(R.string.view_all), color = AccentPurple, fontSize = 14.sp)
             }
         }
     }
@@ -341,7 +344,7 @@ fun MiniPlayer(
         Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(Color.Gray))
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text("Now Playing", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(stringResource(R.string.player_now_playing), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Text(currentTrackId ?: "", color = TextSecondary, fontSize = 11.sp)
         }
         Icon(Icons.Default.SkipPrevious, contentDescription = null, tint = TextPrimary)
@@ -373,21 +376,21 @@ fun BottomNavigationBar(onExploreClick: () -> Unit = {}) {
     ) {
         NavigationBarItem(
             icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text("HOME") },
+            label = { Text(stringResource(R.string.nav_home)) },
             selected = true,
             onClick = { },
             colors = NavigationBarItemDefaults.colors(selectedIconColor = AccentPurple, selectedTextColor = AccentPurple, unselectedIconColor = TextSecondary)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Explore, contentDescription = null) },
-            label = { Text("EXPLORE") },
+            label = { Text(stringResource(R.string.nav_explore)) },
             selected = false,
             onClick = onExploreClick,
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-            label = { Text("SETTINGS") },
+            label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
             onClick = { },
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
