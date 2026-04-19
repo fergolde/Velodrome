@@ -47,7 +47,8 @@ fun ArtistsScreen(
     viewModel: ArtistsViewModel = hiltViewModel(),
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
-    onPlayerClick: () -> Unit = {}
+    onPlayerClick: () -> Unit = {},
+    onArtistClick: (Artist) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -101,7 +102,7 @@ fun ArtistsScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                         ArtistsList(
                             artists = uiState.artists,
-                            onArtistClick = viewModel::onArtistClick
+                            onArtistClick = onArtistClick
                         )
                     }
                 }

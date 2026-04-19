@@ -21,6 +21,7 @@ object PlayerManager {
     val isPlaying: StateFlow<Boolean> = AudioPlayerManager.isPlaying
     val currentPosition: StateFlow<Long> = AudioPlayerManager.currentPosition
     val currentTrack: StateFlow<Track?> = AudioPlayerManager.currentTrack
+    val currentTrackId: StateFlow<String?> = AudioPlayerManager.currentTrackId
     val isBuffering: StateFlow<Boolean> = AudioPlayerManager.isBuffering
 
     // Keep local state for duration (not exposed by AudioPlayerManager in same way)
@@ -33,6 +34,19 @@ object PlayerManager {
     fun setPlaylist(tracks: List<Track>, startPlaying: Boolean = true) {
         Log.d(TAG, "setPlaylist: ${tracks.size} tracks, startPlaying: $startPlaying")
         if (tracks.isNotEmpty()) {
+            val startIndex = if (startPlaying) 0 else -1
+            AudioPlayerManager.playTrack(tracks[0], tracks, startIndex)
+        }
+    }
+
+    /**
+     * Set a new playlist with start index
+     */
+    fun setPlaylist(tracks: List<Track>, startIndex: Int, startPlaying: Boolean = true) {
+        Log.d(TAG, "setPlaylist: ${tracks.size} tracks, startIndex: $startIndex, startPlaying: $startPlaying")
+        if (tracks.isNotEmpty() && startIndex in tracks.indices) {
+            AudioPlayerManager.playTrack(tracks[startIndex], tracks, startIndex)
+        } else if (tracks.isNotEmpty()) {
             AudioPlayerManager.playTrack(tracks[0], tracks, 0)
         }
     }
@@ -139,6 +153,30 @@ object PlayerManager {
      */
     fun clearPlaylist() {
         AudioPlayerManager.clearPlaylist()
+    }
+
+    /**
+     * Add track to play next (after current track finishes)
+     */
+    fun playNext(track: Track) {
+        Log.d(TAG, "playNext: ${track.title}")
+        val currentList = AudioPlayerManager.playlist.value.toMutableList()
+        val currentIdx = AudioPlayerManager.currentIndex.value
+        
+        // Insert right after current track
+        val insertIndex = (currentIdx + 1).coerceAtMost(currentList.size)
+        currentList.add(insertIndex, track)
+        AudioPlayerManager.setPlaylist(currentList)
+    }
+
+    /**
+     * Add track to end of queue
+     */
+    fun addToQueue(track: Track) {
+        Log.d(TAG, "addToQueue: ${track.title}")
+        val currentList = AudioPlayerManager.playlist.value.toMutableList()
+        currentList.add(track)
+        AudioPlayerManager.setPlaylist(currentList)
     }
 
     /**

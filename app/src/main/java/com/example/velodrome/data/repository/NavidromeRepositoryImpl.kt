@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import com.example.velodrome.data.remote.NavidromeApi
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
+import com.example.velodrome.domain.model.ArtistWithAlbums
 import com.example.velodrome.domain.model.AuthResult
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.domain.repository.NavidromeRepository
@@ -121,21 +122,46 @@ class NavidromeRepositoryImpl @Inject constructor(
     @Suppress("UNCHECKED_CAST")
     override suspend fun getAlbum(albumId: String): Result<Album> {
         return runCatching {
+            Log.d("Repo", "=== getAlbum called: $albumId ===")
             val responseBody = api.getAlbum(albumId)
-            val response = parseXmlResponse(responseBody)
+            val xmlString = responseBody.string()
+            Log.d("Repo", "getAlbum XML (first 800): ${xmlString.take(800)}")
             
-            val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
-            val albumData = subsonicResponse?.get("album") as? Map<String, Any>
-            val albumMap = albumData?.get("album") as? Map<String, Any>
-
+            // Use regex to extract album info from XML
+            // <album id="xxx" name="xxx" artist="xxx" artistId="xxx" coverArt="xxx" year="xxx" ...>
+            val albumIdRegex = """<album\s+id="([^"]+)"\s+name="([^"]+)"\s+artist="([^"]+)"\s+artistId="([^"]+)"""".toRegex()
+            val albumMatch = albumIdRegex.find(xmlString)
+            
+            val extractedAlbumId = albumMatch?.groupValues?.get(1) ?: albumId
+            val title = albumMatch?.groupValues?.get(2) ?: ""
+            val artist = albumMatch?.groupValues?.get(3) ?: ""
+            val artistId = albumMatch?.groupValues?.get(4) ?: ""
+            
+            // Extract coverArt
+            val coverArtRegex = """coverArt="([^"]+)"""".toRegex()
+            val coverArtMatch = coverArtRegex.find(xmlString)
+            val coverArt = coverArtMatch?.groupValues?.get(1)
+            
+            // Extract year
+            val yearRegex = """year="(\d+)"""".toRegex()
+            val yearMatch = yearRegex.find(xmlString)
+            val year = yearMatch?.groupValues?.get(1)?.toIntOrNull()
+            
+            // Extract genre
+            val genreRegex = """genre="([^"]+)"""".toRegex()
+            val genreMatch = genreRegex.find(xmlString)
+            val genre = genreMatch?.groupValues?.get(1)
+            
+            Log.d("Repo", "Parsed album: id=$extractedAlbumId, title=$title, artist=$artist, coverArt=$coverArt, year=$year")
+            
             Album(
-                id = albumMap?.get("id") as? String ?: "",
-                artistId = albumMap?.get("artistId") as? String ?: "",
-                artistName = albumMap?.get("artist") as? String ?: "",
-                title = albumMap?.get("name") as? String ?: "",
-                year = (albumMap?.get("year") as? Number)?.toInt(),
-                genre = albumMap?.get("genre") as? String,
-                coverUrl = albumMap?.get("coverArt") as? String
+                id = extractedAlbumId,
+                artistId = artistId,
+                artistName = artist,
+                title = title,
+                year = year,
+                genre = genre,
+                coverUrl = coverArt
             )
         }
     }
@@ -459,6 +485,76 @@ class NavidromeRepositoryImpl @Inject constructor(
             
             Log.d("Velodrome", "Parsed genres: $genres")
             genres
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun getArtist(artistId: String): Result<ArtistWithAlbums> {
+        return runCatching {
+            Log.d("Repo", "=== getArtist called: $artistId ===")
+            val responseBody = api.getArtist(artistId)
+            val xmlString = responseBody.string()
+            Log.d("Repo", "Raw XML for artist: ${xmlString.take(500)}")
+            
+            // Parse the XML manually - the nested albums are inside <artist><album>...</album></artist>
+            // But XmlParser flattens them, so we need to extract artist info from <artist> and albums from <album> within it
+            
+            // Extract artist ID and name from <artist> tag
+            val artistIdRegex = """<artist\s+id="([^"]+)"\s+name="([^"]+)"""".toRegex()
+            val artistMatch = artistIdRegex.find(xmlString)
+            val artistName = artistMatch?.groupValues?.get(2) ?: ""
+            val extractedArtistId = artistMatch?.groupValues?.get(1) ?: artistId
+            
+            // Extract coverArt and albumCount
+            val coverArtRegex = """coverArt="([^"]+)"""".toRegex()
+            val coverArtMatch = coverArtRegex.find(xmlString)
+            val coverArt = coverArtMatch?.groupValues?.get(1)
+            
+            val albumCountRegex = """albumCount="(\d+)"""".toRegex()
+            val albumCountMatch = albumCountRegex.find(xmlString)
+            val albumCount = albumCountMatch?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            
+            Log.d("Repo", "Extracted artist: $artistName, albumCount: $albumCount, coverArt: $coverArt")
+            
+            // Now extract all <album> tags from within the response
+            val albumRegex = """<album\s+id="([^"]+)"\s+name="([^"]+)"\s+artist="([^"]+)"\s+artistId="([^"]+)"\s+coverArt="([^"]+)"""".toRegex()
+            val albumMatches = albumRegex.findAll(xmlString)
+            
+            val albums = albumMatches.map { match ->
+                val albumId = match.groupValues[1]
+                val title = match.groupValues[2]
+                val artist = match.groupValues[3]
+                val artistId = match.groupValues[4]
+                val coverArt = match.groupValues[5]
+                
+                // Extract year if present
+                val yearRegex = """year="(\d+)"""".toRegex()
+                val yearMatch = yearRegex.find(xmlString.substring(match.range.first))
+                val year = yearMatch?.groupValues?.get(1)?.toIntOrNull()
+                
+                Log.d("Repo", "Album: id=$albumId, title=$title, year=$year")
+                
+                Album(
+                    id = albumId,
+                    artistId = artistId,
+                    artistName = artist,
+                    title = title,
+                    year = year,
+                    genre = null,
+                    coverUrl = coverArt
+                )
+            }.toList()
+            
+            Log.d("Repo", "Total albums found: ${albums.size}")
+            
+            val artist = Artist(
+                id = extractedArtistId,
+                name = artistName,
+                albumCount = albumCount,
+                coverUrl = coverArt
+            )
+
+            ArtistWithAlbums(artist = artist, albums = albums)
         }
     }
 }

@@ -47,7 +47,8 @@ fun AlbumsScreen(
     viewModel: AlbumsViewModel = hiltViewModel(),
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
-    onPlayerClick: () -> Unit = {}
+    onPlayerClick: () -> Unit = {},
+    onAlbumClick: (Album) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -101,7 +102,7 @@ fun AlbumsScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                         AlbumsList(
                             albums = uiState.albums,
-                            onAlbumClick = viewModel::onAlbumClick
+                            onAlbumClick = onAlbumClick
                         )
                     }
                 }

@@ -59,4 +59,9 @@ interface NavidromeApi {
 
     @GET("rest/getGenres.view")
     suspend fun getGenres(): ResponseBody
+
+    @GET("rest/getArtist.view")
+    suspend fun getArtist(
+        @Query("id") artistId: String
+    ): ResponseBody
 }

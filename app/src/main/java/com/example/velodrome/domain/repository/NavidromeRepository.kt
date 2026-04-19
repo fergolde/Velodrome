@@ -2,6 +2,7 @@ package com.example.velodrome.domain.repository
 
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
+import com.example.velodrome.domain.model.ArtistWithAlbums
 import com.example.velodrome.domain.model.AuthResult
 import com.example.velodrome.domain.model.Track
 
@@ -28,6 +29,7 @@ interface NavidromeRepository {
     suspend fun getAlbumsByYear(year: Int, size: Int = 20): Result<List<Album>>
     suspend fun getAlbumsByGenre(genre: String, size: Int = 20): Result<List<Album>>
     suspend fun getGenres(): Result<List<String>>
+    suspend fun getArtist(artistId: String): Result<ArtistWithAlbums>
     
     // Cache methods
     suspend fun getCacheSize(): Long

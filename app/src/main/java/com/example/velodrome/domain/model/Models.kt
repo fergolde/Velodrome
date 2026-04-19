@@ -42,3 +42,8 @@ data class AuthResult(
     val token: String? = null,
     val error: String? = null
 )
+
+data class ArtistWithAlbums(
+    val artist: Artist,
+    val albums: List<Album>
+)

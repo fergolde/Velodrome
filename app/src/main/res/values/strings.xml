@@ -60,7 +60,7 @@
     <string name="explore_artist_of_month">ARTISTA DEL MES</string>
     <string name="explore_monthly_listeners">oyentes mensuales</string>
 
-    <!-- Artists -->
+<!-- Artists -->
     <string name="artists_title">Artistas</string>
     <string name="artists_search_hint">Buscar en tu biblioteca…</string>
     <string name="artists_albums_count">ÁLBUMES</string>
@@ -72,9 +72,28 @@
     <string name="albums_unknown_title">Álbum Desconocido</string>
     <string name="albums_unknown_artist">Artista Desconocido</string>
 
+    <!-- Artist Detail -->
+    <string name="artist_detail_title">Artista</string>
+    <string name="artist_detail_albums">Álbumes</string>
+    <string name="artist_detail_albums_count">%d álbumes</string>
+    <string name="artist_detail_tracks">Temas</string>
+
+    <!-- Album Detail -->
+    <string name="album_detail_title">Álbum</string>
+    <string name="album_detail_tracks">Temas</string>
+    <string name="album_detail_play_all">Reproducir Todo</string>
+    <string name="album_detail_shuffle">Aleatorio</string>
+
+    <!-- Track Options -->
+    <string name="track_options_play_next">Reproducir Siguiente</string>
+    <string name="track_options_add_to_queue">Añadir a la Cola</string>
+    <string name="track_options_add_to_favorites">Añadir a Favoritos</string>
+
     <!-- Common -->
+    <string name="nav_back">Atrás</string>
     <string name="view_all">Ver Todo</string>
     <string name="play">Reproducir</string>
     <string name="search">Buscar</string>
     <string name="error_occurred">Ha ocurrido un error</string>
+    <string name="error_loading">Error al cargar</string>
 </resources>

@@ -253,10 +253,10 @@ class ExploreViewModel @Inject constructor(
     }
 
     fun onArtistClick(artist: com.example.velodrome.domain.model.Artist) {
-        // TODO: Navigate to artist detail
+        // This will be handled by the UI with navigation
     }
 
     fun onAlbumClick(album: com.example.velodrome.domain.model.Album) {
-        // TODO: Navigate to album detail
+        // This will be handled by the UI with navigation
     }
 }

@@ -16,6 +16,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 
 /**
  * Singleton manager for audio playback.
@@ -41,6 +42,8 @@ object AudioPlayerManager {
 
     private val _currentTrack = MutableStateFlow<Track?>(null)
     val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
+    private val _currentTrackId = MutableStateFlow<String?>(null)
+    val currentTrackId: StateFlow<String?> = _currentTrackId.asStateFlow()
 
     private val _isBuffering = MutableStateFlow(false)
     val isBuffering: StateFlow<Boolean> = _isBuffering.asStateFlow()
@@ -165,6 +168,7 @@ object AudioPlayerManager {
         _playlist.value = playlist
         _currentIndex.value = startIndex
         _currentTrack.value = track
+        _currentTrackId.value = track.id
 
         // Build media items with proper IDs for tracking
         val mediaItems = playlist.mapIndexed { index, t ->
@@ -289,6 +293,7 @@ object AudioPlayerManager {
     fun clearPlaylist() {
         _playlist.value = emptyList()
         _currentTrack.value = null
+        _currentTrackId.value = null
         _currentIndex.value = 0
         mediaController?.clearMediaItems()
     }

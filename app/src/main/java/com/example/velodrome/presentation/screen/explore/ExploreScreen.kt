@@ -78,7 +78,9 @@ fun ExploreScreen(
     onHomeClick: () -> Unit = {},
     onArtistsViewAllClick: () -> Unit = {},
     onAlbumsViewAllClick: () -> Unit = {},
-    onPlayerClick: () -> Unit = {}
+    onPlayerClick: () -> Unit = {},
+    onArtistClick: (String) -> Unit = {},
+    onAlbumClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
@@ -110,7 +112,7 @@ fun ExploreScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 RandomArtistsRow(
                     artists = uiState.randomArtists,
-                    onArtistClick = viewModel::onArtistClick
+                    onArtistClick = { artist -> onArtistClick(artist.id) }
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }
@@ -125,7 +127,7 @@ fun ExploreScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 RecentAlbumsRow(
                     albums = uiState.randomAlbums,
-                    onAlbumClick = { albumId -> uiState.randomAlbums.find { it.id == albumId }?.let { viewModel.onAlbumClick(it) } }
+                    onAlbumClick = { albumId -> onAlbumClick(albumId) }
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }

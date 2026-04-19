@@ -21,6 +21,8 @@ import com.example.velodrome.presentation.screen.login.LoginScreen
 import com.example.velodrome.presentation.screen.explore.ExploreScreen
 import com.example.velodrome.presentation.screen.artists.ArtistsScreen
 import com.example.velodrome.presentation.screen.albums.AlbumsScreen
+import com.example.velodrome.presentation.screen.artistdetail.ArtistDetailScreen
+import com.example.velodrome.presentation.screen.albumdetail.AlbumDetailScreen
 import com.example.velodrome.presentation.player.PlayerScreen
 import com.example.velodrome.ui.theme.VelodromeTheme
 import com.example.velodrome.util.CredentialsManager
@@ -73,7 +75,7 @@ fun MainApp() {
         composable("home") {
             HomeScreen(
                 onAlbumClick = { albumId ->
-                    // TODO: navigate to album detail
+                    navController.navigate("album/$albumId")
                 },
                 onExploreClick = {
                     navController.navigate("explore")
@@ -98,6 +100,12 @@ fun MainApp() {
                 },
                 onPlayerClick = {
                     navController.navigate("player")
+                },
+                onArtistClick = { artistId ->
+                    navController.navigate("artist/$artistId")
+                },
+                onAlbumClick = { albumId ->
+                    navController.navigate("album/$albumId")
                 }
             )
         }
@@ -113,6 +121,9 @@ fun MainApp() {
                 },
                 onPlayerClick = {
                     navController.navigate("player")
+                },
+                onArtistClick = { artist ->
+                    navController.navigate("artist/${artist.id}")
                 }
             )
         }
@@ -128,6 +139,9 @@ fun MainApp() {
                 },
                 onPlayerClick = {
                     navController.navigate("player")
+                },
+                onAlbumClick = { album ->
+                    navController.navigate("album/${album.id}")
                 }
             )
         }
@@ -149,6 +163,29 @@ fun MainApp() {
                 },
                 onQueueClick = {
                     // TODO: Navigate to queue screen
+                }
+            )
+        }
+        composable("artist/{artistId}") { backStackEntry ->
+            val artistId = backStackEntry.arguments?.getString("artistId") ?: return@composable
+            ArtistDetailScreen(
+                artistId = artistId,
+                onBackClick = { navController.popBackStack() },
+                onAlbumClick = { albumId ->
+                    navController.navigate("album/$albumId")
+                },
+                onPlayerClick = {
+                    navController.navigate("player")
+                }
+            )
+        }
+        composable("album/{albumId}") { backStackEntry ->
+            val albumId = backStackEntry.arguments?.getString("albumId") ?: return@composable
+            AlbumDetailScreen(
+                albumId = albumId,
+                onBackClick = { navController.popBackStack() },
+                onPlayerClick = {
+                    navController.navigate("player")
                 }
             )
         }
