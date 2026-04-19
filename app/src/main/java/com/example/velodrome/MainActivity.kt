@@ -146,6 +146,9 @@ fun MainApp() {
                 },
                 onSettingsClick = {
                     navController.navigate("settings")
+                },
+                onQueueClick = {
+                    // TODO: Navigate to queue screen
                 }
             )
         }

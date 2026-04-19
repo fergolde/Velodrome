@@ -10,6 +10,7 @@ import com.example.velodrome.domain.usecase.GetArtistsUseCase
 import com.example.velodrome.domain.usecase.GetGenresUseCase
 import com.example.velodrome.domain.usecase.GetRandomAlbumsUseCase
 import com.example.velodrome.domain.usecase.GetTracksUseCase
+import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -184,6 +185,12 @@ class ExploreViewModel @Inject constructor(
                     isLoading = false,
                     dynamicPlaylist = initialTracks
                 ) }
+                
+                // Set playlist in PlayerManager to start playback
+                if (initialTracks.isNotEmpty()) {
+                    PlayerManager.setPlaylist(initialTracks, startPlaying = true)
+                    Log.d(TAG, "Started playback with PlayerManager")
+                }
                 
                 Log.d(TAG, "Starting playback with ${initialTracks.size} tracks")
                 

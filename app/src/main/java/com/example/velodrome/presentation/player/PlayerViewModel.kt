@@ -28,6 +28,38 @@ class PlayerViewModel @Inject constructor(
 
     private var progressJob: Job? = null
 
+    init {
+        // Sync with PlayerManager
+        viewModelScope.launch {
+            PlayerManager.playlist.collect { playlist ->
+                _uiState.update { it.copy(playlist = playlist) }
+            }
+        }
+        viewModelScope.launch {
+            PlayerManager.isPlaying.collect { isPlaying ->
+                _uiState.update { it.copy(isPlaying = isPlaying) }
+                if (isPlaying && progressJob == null) {
+                    startProgressSimulation()
+                } else if (!isPlaying) {
+                    progressJob?.cancel()
+                }
+            }
+        }
+        viewModelScope.launch {
+            PlayerManager.currentPosition.collect { pos ->
+                _uiState.update { it.copy(currentPosition = pos) }
+            }
+        }
+        viewModelScope.launch {
+            PlayerManager.currentIndex.collect { idx ->
+                _uiState.update { state ->
+                    val currentTrack = state.playlist.getOrNull(idx)
+                    state.copy(currentIndex = idx, currentTrack = currentTrack)
+                }
+            }
+        }
+    }
+
     /**
      * Start playing a track
      */

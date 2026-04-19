@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Shuffle
@@ -25,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
+import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.screen.homescreen.BottomNavigationBar
 import com.example.velodrome.presentation.screen.homescreen.MiniPlayer
 import com.example.velodrome.util.CredentialsManager
@@ -45,7 +47,8 @@ fun PlayerScreen(
     onMinimizeClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    onQueueClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
@@ -95,7 +98,9 @@ fun PlayerScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             // Queue Button
-            NextUpButton()
+            if (uiState.playlist.isNotEmpty()) {
+                NextUpButton(onClick = onQueueClick)
+            }
         }
     }
 }
@@ -282,14 +287,14 @@ fun PlaybackControlsPanel(
 }
 
 @Composable
-fun NextUpButton() {
+fun NextUpButton(onClick: () -> Unit = {}) {
     Button(
-        onClick = { },
+        onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark),
         shape = RoundedCornerShape(20.dp),
         modifier = Modifier.height(48.dp).padding(horizontal = 16.dp)
     ) {
-        Icon(Icons.Default.QueueMusic, contentDescription = null, tint = TextSecondary)
+        Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = stringResource(R.string.player_next_up), tint = TextSecondary)
         Spacer(modifier = Modifier.width(12.dp))
         Text(stringResource(R.string.player_next_up), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp)
     }
