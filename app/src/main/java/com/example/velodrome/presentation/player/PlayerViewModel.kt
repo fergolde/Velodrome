@@ -39,7 +39,7 @@ class PlayerViewModel @Inject constructor(
             currentIndex = if (index >= 0) index else 0,
             isPlaying = true
         ) }
-        startProgress simulation()
+        startProgressSimulation()
     }
 
     /**
@@ -50,7 +50,7 @@ class PlayerViewModel @Inject constructor(
         _uiState.update { it.copy(isPlaying = isPlaying) }
         
         if (isPlaying) {
-            startProgress simulation()
+            startProgressSimulation()
         } else {
             progressJob?.cancel()
         }
@@ -129,7 +129,7 @@ class PlayerViewModel @Inject constructor(
     /**
      * Simulate progress (in real app would use MediaPlayer)
      */
-    private fun startProgress simulation() {
+    private fun startProgressSimulation() {
         progressJob?.cancel()
         progressJob = viewModelScope.launch {
             while (isActive && _uiState.value.isPlaying) {
