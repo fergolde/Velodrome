@@ -414,17 +414,15 @@ class NavidromeRepositoryImpl @Inject constructor(
     override suspend fun getGenres(): Result<List<String>> {
         return runCatching {
             val responseBody = api.getGenres()
-            val response = parseXmlResponse(responseBody)
+            val xmlString = responseBody.string()
+            Log.d("Velodrome", "Genres XML: $xmlString")
             
-            val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
-            val genresData = subsonicResponse?.get("genres") as? Map<String, Any>
-            val genresList = genresData?.get("genre") as? List<Any> ?: emptyList()
-
-            genresList.mapNotNull { genreMap ->
-                (genreMap as? Map<String, Any>)?.let { gm ->
-                    gm["value"] as? String
-                }
-            }
+            // Parse genre names from text content: <genre songCount="X" albumCount="Y">GenreName</genre>
+            val genreRegex = """<genre[^>]*>([^<]+)</genre>""".toRegex()
+            val genres = genreRegex.findAll(xmlString).map { it.groupValues[1] }.toList()
+            
+            Log.d("Velodrome", "Parsed genres: $genres")
+            genres
         }
     }
 }
