@@ -37,13 +37,19 @@
     <!-- Explore -->
     <string name="explore_title">Sonic Gallery</string>
     <string name="explore_artists">Artistas</string>
+    <string name="explore_artists_discover">DESCUBRIR</string>
     <string name="explore_curated_albums">Álbumes Seleccionados</string>
     <string name="explore_based_on_activity">BASADOS EN TU ACTIVIDAD NOCTURNA</string>
     <string name="explore_random_albums">Álbumes Aleatorios</string>
     <string name="explore_rising_artists">Artistas Emergentes</string>
     <string name="explore_trending">TENDIENDO EN TU BIBLIOTECA</string>
+    <string name="explore_genres">Géneros</string>
+    <string name="explore_all_genres">TODOS LOS GÉNEROS</string>
     <string name="explore_discover">DESCUBRIR</string>
     <string name="explore_search_hint">Artistas, álbumes o temas</string>
+    <string name="explore_loading">Cargando…</string>
+    <string name="explore_artist_of_month">ARTISTA DEL MES</string>
+    <string name="explore_monthly_listeners">oyentes mensuales</string>
 
     <!-- Artists -->
     <string name="artists_title">Artistas</string>

@@ -76,8 +76,8 @@ fun ExploreScreen(
             // Random Artists Carousel
             item {
                 SectionHeader(
-                    title = "Artists",
-                    subtitle = "DISCOVER",
+                    title = stringResource(R.string.explore_artists),
+                    subtitle = stringResource(R.string.explore_artists_discover),
                     onViewAllClick = onArtistsViewAllClick
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -113,14 +113,19 @@ fun ExploreScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
+            // Genres Section
             item {
-                SectionHeader(title = stringResource(R.string.explore_rising_artists), subtitle = stringResource(R.string.explore_trending))
+                SectionHeader(
+                    title = stringResource(R.string.explore_genres),
+                    subtitle = stringResource(R.string.explore_all_genres),
+                    onViewAllClick = null
+                )
                 Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            items(uiState.randomArtists.take(5)) { artist ->
-                ArtistListRow(artist = artist, onArtistClick = viewModel::onArtistClick)
-                Spacer(modifier = Modifier.height(16.dp))
+                GenresRow(
+                    genres = uiState.genres,
+                    onGenreClick = { /* TODO: Navigate to genre */ }
+                )
+                Spacer(modifier = Modifier.height(32.dp))
             }
 
             item {
@@ -433,6 +438,63 @@ fun ArtistListRow(
         ) {
             Icon(Icons.Default.Add, contentDescription = null, tint = TextPrimary)
         }
+    }
+}
+
+@Composable
+fun GenresRow(
+    genres: List<String>,
+    onGenreClick: (String) -> Unit
+) {
+    if (genres.isEmpty()) {
+        // Show placeholder when loading
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            repeat(6) { index ->
+                GenreChipPlaceholder()
+            }
+        }
+        return
+    }
+    
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        items(genres) { genre ->
+            GenreChip(
+                genre = genre,
+                onClick = { onGenreClick(genre) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun GenreChipPlaceholder() {
+    Box(
+        modifier = Modifier
+            .height(40.dp)
+            .width(100.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(SurfaceContainer)
+    )
+}
+
+@Composable
+fun GenreChip(
+    genre: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        color = SurfaceContainer
+    ) {
+        Text(
+            text = genre,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            color = TextPrimary,
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp
+        )
     }
 }
 

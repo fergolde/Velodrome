@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.domain.usecase.GetArtistsUseCase
+import com.example.velodrome.domain.usecase.GetGenresUseCase
 import com.example.velodrome.domain.usecase.GetRandomAlbumsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,8 @@ private const val TAG = "ExploreViewModel"
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
     private val getArtistsUseCase: GetArtistsUseCase,
-    private val getRandomAlbumsUseCase: GetRandomAlbumsUseCase
+    private val getRandomAlbumsUseCase: GetRandomAlbumsUseCase,
+    private val getGenresUseCase: GetGenresUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExploreUiState())
@@ -34,11 +36,12 @@ class ExploreViewModel @Inject constructor(
         
         viewModelScope.launch {
             Log.d(TAG, "Loading artists...")
-            // Load random artists
+            // Load artists and shuffle for random order
             getArtistsUseCase(offset = 0, size = 20)
                 .onSuccess { artists ->
-                    Log.d(TAG, "Loaded ${artists.size} artists")
-                    _uiState.update { it.copy(randomArtists = artists) }
+                    Log.d(TAG, "Loaded ${artists.size} artists, shuffling...")
+                    val shuffledArtists = artists.shuffled()
+                    _uiState.update { it.copy(randomArtists = shuffledArtists) }
                 }
                 .onFailure { e ->
                     Log.e(TAG, "Error loading artists: ${e.message}")
@@ -66,10 +69,24 @@ class ExploreViewModel @Inject constructor(
             getRandomAlbumsUseCase(size = 10)
                 .onSuccess { albums ->
                     Log.d(TAG, "Loaded ${albums.size} curated albums")
-                    _uiState.update { it.copy(curatedAlbums = albums, isLoading = false) }
+                    _uiState.update { it.copy(curatedAlbums = albums) }
                 }
                 .onFailure { e ->
                     Log.e(TAG, "Error loading curated albums: ${e.message}")
+                    _uiState.update { it.copy(error = e.message) }
+                }
+        }
+        
+        viewModelScope.launch {
+            Log.d(TAG, "Loading genres...")
+            // Load all genres
+            getGenresUseCase()
+                .onSuccess { genres ->
+                    Log.d(TAG, "Loaded ${genres.size} genres")
+                    _uiState.update { it.copy(genres = genres, isLoading = false) }
+                }
+                .onFailure { e ->
+                    Log.e(TAG, "Error loading genres: ${e.message}")
                     _uiState.update { it.copy(error = e.message, isLoading = false) }
                 }
         }
