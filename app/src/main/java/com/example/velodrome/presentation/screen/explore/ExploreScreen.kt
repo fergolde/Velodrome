@@ -113,7 +113,9 @@ fun ExploreScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 GenresRow(
                     genres = uiState.genres,
-                    onGenreClick = { /* TODO: Navigate to genre */ }
+                    selectedGenres = uiState.selectedGenres,
+                    onGenreToggle = viewModel::onGenreToggle,
+                    onPlayClick = viewModel::onPlayGenres
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }
@@ -434,7 +436,9 @@ fun ArtistListRow(
 @Composable
 fun GenresRow(
     genres: List<String>,
-    onGenreClick: (String) -> Unit
+    selectedGenres: Set<String> = emptySet(),
+    onGenreToggle: (String) -> Unit = {},
+    onPlayClick: () -> Unit = {}
 ) {
     if (genres.isEmpty()) {
         // Show placeholder grid when loading
@@ -450,24 +454,41 @@ fun GenresRow(
         return
     }
     
-    // Show genres in 3-column grid
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        genres.chunked(3).forEach { rowGenres ->
-            Row(
+    Column {
+        // Show genres in 3-column grid
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            genres.chunked(3).forEach { rowGenres ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowGenres.forEach { genre ->
+                        GenreChip(
+                            genre = genre,
+                            isSelected = selectedGenres.contains(genre),
+                            onClick = { onGenreToggle(genre) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Fill remaining columns if row has less than 3 items
+                    repeat(3 - rowGenres.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+        
+        // Show Play button if any genre is selected
+        if (selectedGenres.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onPlayClick,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
             ) {
-                rowGenres.forEach { genre ->
-                    GenreChip(
-                        genre = genre,
-                        onClick = { onGenreClick(genre) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                // Fill remaining columns if row has less than 3 items
-                repeat(3 - rowGenres.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.play), fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -486,7 +507,8 @@ private fun GenreChipPlaceholder() {
 @Composable
 fun GenreChip(
     genre: String,
-    onClick: () -> Unit,
+    isSelected: Boolean = false,
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -494,7 +516,7 @@ fun GenreChip(
             .height(40.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        color = SurfaceContainer
+        color = if (isSelected) PrimaryColor else SurfaceContainer
     ) {
         Text(
             text = genre,
@@ -502,7 +524,7 @@ fun GenreChip(
                 .fillMaxWidth()
                 .wrapContentSize(Alignment.Center)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
-            color = TextPrimary,
+            color = if (isSelected) Color.White else TextPrimary,
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             maxLines = 1

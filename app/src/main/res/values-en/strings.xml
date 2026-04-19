@@ -65,6 +65,7 @@
 
     <!-- Common -->
     <string name="view_all">View All</string>
+    <string name="play">Play</string>
     <string name="search">Search</string>
     <string name="error_occurred">An error occurred</string>
 </resources>

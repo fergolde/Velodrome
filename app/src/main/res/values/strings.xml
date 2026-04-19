@@ -65,6 +65,7 @@
 
     <!-- Common -->
     <string name="view_all">Ver Todo</string>
+    <string name="play">Reproducir</string>
     <string name="search">Buscar</string>
     <string name="error_occurred">Ha ocurrido un error</string>
 </resources>
