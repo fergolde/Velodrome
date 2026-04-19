@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,12 +21,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.player.PlayerManager
@@ -52,16 +56,11 @@ fun PlayerScreen(
     onQueueClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
-    // Logging for debugging
-    androidx.compose.runtime.LaunchedEffect(uiState.playlist, uiState.currentTrack, uiState.isPlaying) {
-        Log.d("PlayerScreen", "=== PlayerScreen State ===")
-        Log.d("PlayerScreen", "playlist.size: ${uiState.playlist.size}")
-        Log.d("PlayerScreen", "currentTrack: ${uiState.currentTrack?.title}")
-        Log.d("PlayerScreen", "isPlaying: ${uiState.isPlaying}")
-        Log.d("PlayerScreen", "currentPosition: ${uiState.currentPosition}")
-    }
-    
+    val sheetState = rememberModalBottomSheetState()
+
+    // Queue bottom sheet state - controlled by button click
+    var showQueue by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = { PlayerTopAppBar(onMinimizeClick = onMinimizeClick) },
         bottomBar = { PlayerBottomNavigationBar(onHomeClick = onHomeClick, onExploreClick = onExploreClick, onSettingsClick = onSettingsClick) },
@@ -76,11 +75,9 @@ fun PlayerScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Album Art
+            // Album Art - use coverArtId to build URL
             AlbumArtCard(
-                coverUrl = uiState.currentTrack?.let { 
-                    CredentialsManager.getCoverArtUrl(it.id, 600)
-                }
+                coverArtId = uiState.currentTrack?.coverArtId
             )
 
             Spacer(modifier = Modifier.height(48.dp))
@@ -107,9 +104,26 @@ fun PlayerScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Queue Button - always visible for debugging
-            Log.d("PlayerScreen", "Showing NextUpButton? playlist.size=${uiState.playlist.size}")
-            NextUpButton(onClick = onQueueClick)
+            // Queue Button
+            NextUpButton(onClick = { showQueue = true })
+        }
+    }
+
+    // Queue Bottom Sheet
+    if (showQueue) {
+        ModalBottomSheet(
+            onDismissRequest = { showQueue = false },
+            sheetState = sheetState,
+            containerColor = SurfaceDark
+        ) {
+            QueueContent(
+                playlist = uiState.playlist,
+                currentIndex = uiState.currentIndex,
+                onTrackClick = { index ->
+                    viewModel.onTrackSelected(index)
+                    showQueue = false
+                }
+            )
         }
     }
 }
@@ -138,7 +152,12 @@ fun PlayerTopAppBar(onMinimizeClick: () -> Unit = {}) {
 }
 
 @Composable
-fun AlbumArtCard(coverUrl: String? = null) {
+fun AlbumArtCard(coverArtId: String? = null) {
+    // Only recompose when coverArtId changes, not on every state change
+    val coverUrl = remember(coverArtId) {
+        coverArtId?.let { CredentialsManager.getCoverArtUrl(it, 600) }
+    }
+    
     Surface(
         modifier = Modifier
             .aspectRatio(1f)
@@ -149,7 +168,10 @@ fun AlbumArtCard(coverUrl: String? = null) {
     ) {
         if (!coverUrl.isNullOrBlank()) {
             AsyncImage(
-                model = coverUrl,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(coverUrl)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -339,6 +361,89 @@ fun PlayerBottomNavigationBar(
             selected = false,
             onClick = onSettingsClick,
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+        )
+    }
+}
+
+@Composable
+fun QueueContent(
+    playlist: List<Track>,
+    currentIndex: Int,
+    onTrackClick: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.player_next_up),
+            color = TextPrimary,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "${playlist.size} tracks",
+            color = TextSecondary,
+            fontSize = 14.sp
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyColumn {
+            itemsIndexed(playlist) { index, track ->
+                QueueTrackItem(
+                    track = track,
+                    isCurrentTrack = index == currentIndex,
+                    onClick = { onTrackClick(index) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun QueueTrackItem(
+    track: Track,
+    isCurrentTrack: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (isCurrentTrack) AccentPurple.copy(alpha = 0.2f) else SurfaceContainer)
+        ) {
+            Icon(
+                if (isCurrentTrack) Icons.Default.PlayArrow else Icons.Default.MusicNote,
+                contentDescription = null,
+                tint = if (isCurrentTrack) AccentPurple else TextSecondary,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = track.title,
+                color = if (isCurrentTrack) AccentPurple else TextPrimary,
+                fontWeight = if (isCurrentTrack) FontWeight.Bold else FontWeight.Normal
+            )
+            Text(
+                text = track.artistName,
+                color = TextSecondary,
+                fontSize = 12.sp
+            )
+        }
+        Text(
+            text = formatTime(track.durationSec),
+            color = TextSecondary,
+            fontSize = 12.sp
         )
     }
 }

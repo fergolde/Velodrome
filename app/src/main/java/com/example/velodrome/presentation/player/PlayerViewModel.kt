@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.domain.usecase.GetStreamUrlUseCase
+import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -29,6 +30,11 @@ class PlayerViewModel @Inject constructor(
     private var progressJob: Job? = null
 
     init {
+        // Set up load more callback for infinite playlist
+        PlayerManager.setLoadMoreCallback {
+            Log.d(TAG, "PlayerManager requesting load more")
+        }
+
         // Sync with PlayerManager
         viewModelScope.launch {
             PlayerManager.playlist.collect { playlist ->
@@ -117,6 +123,26 @@ class PlayerViewModel @Inject constructor(
                 currentIndex = nextIndex,
                 currentPosition = 0
             ) }
+            PlayerManager.next()
+        }
+    }
+
+    /**
+     * Select a track from the queue (jump to index)
+     */
+    fun onTrackSelected(index: Int) {
+        val state = _uiState.value
+        if (index >= 0 && index < state.playlist.size) {
+            val track = state.playlist[index]
+            _uiState.update { it.copy(
+                currentTrack = track,
+                currentIndex = index,
+                currentPosition = 0,
+                isPlaying = true
+            ) }
+            // Update PlayerManager
+            PlayerManager.setCurrentIndex(index)
+            startProgressSimulation()
         }
     }
 
@@ -153,13 +179,13 @@ class PlayerViewModel @Inject constructor(
         val state = _uiState.value
         val remaining = state.playlist.size - state.currentIndex
         if (remaining <= 5) {
-            // TODO: Load more tracks from repository or genre playlist
-            Log.d(TAG, "Need to load more tracks, remaining: $remaining")
+            Log.d(TAG, "Need to load more tracks, remaining: $remaining, requesting from PlayerManager")
+            PlayerManager.requestLoadMore()
         }
     }
 
     /**
-     * Simulate progress (in real app would use MediaPlayer)
+     * Simulate progress and auto-load more tracks when needed
      */
     private fun startProgressSimulation() {
         progressJob?.cancel()
@@ -168,25 +194,31 @@ class PlayerViewModel @Inject constructor(
                 delay(1000)
                 val currentPos = _uiState.value.currentPosition
                 val duration = _uiState.value.currentTrack?.durationSec ?: 0
-                
-                if (currentPos >= duration) {
-                    // Song finished, play next
+
+                if (currentPos >= duration && duration > 0) {
+                    // Song finished, check if we can play next
                     if (_uiState.value.currentIndex < _uiState.value.playlist.size - 1) {
                         onNextClick()
-                    } else if (_uiState.value.repeatMode == RepeatMode.ALL) {
+                    } else if (_uiState.value.repeatMode == RepeatMode.ALL && _uiState.value.playlist.isNotEmpty()) {
                         // Loop to first
-                        val firstTrack = _uiState.value.playlist.firstOrNull() ?: return@launch
                         _uiState.update { it.copy(
-                            currentTrack = firstTrack,
                             currentIndex = 0,
-                            currentPosition = 0
+                            currentPosition = 0,
+                            currentTrack = it.playlist.firstOrNull()
                         ) }
+                        PlayerManager.updatePosition(0)
                     } else {
                         // Stop
                         _uiState.update { it.copy(isPlaying = false) }
+                        PlayerManager.togglePlayPause() // This will stop it
                     }
                 } else {
                     _uiState.update { it.copy(currentPosition = currentPos + 1) }
+                    // Update PlayerManager with current position
+                    PlayerManager.updatePosition(currentPos + 1)
+
+                    // Check if we need to load more tracks (approaching end of loaded playlist)
+                    checkAndLoadMore()
                 }
             }
         }

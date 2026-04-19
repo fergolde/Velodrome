@@ -95,6 +95,14 @@ object XmlParser {
             } else {
                 Log.d("XmlParser", "No <artists> tag found in XML. XML sample: ${xmlString.take(500)}")
             }
+
+            // Parse single album (getAlbum.view) - contains <song> children
+            // Note: <album> tag may have attributes, and contains <song> elements
+            if (xmlString.contains("<album ") && !xmlString.contains("<albumList2")) {
+                Log.d("XmlParser", "Found <album> tag in XML, parsing...")
+                val albumData = parseAlbumWithSongs(xmlString)
+                result["subsonic-response"] = (result["subsonic-response"] as? Map<String, Any> ?: emptyMap()) + mapOf("album" to albumData)
+            }
             
             Log.d("XmlParser", "Parsed response with albums and/or artists")
             
@@ -197,11 +205,90 @@ object XmlParser {
             }
         }
         
-        Log.d("XmlParser", "Total artists found: ${artistList.size}")
-        
+Log.d("XmlParser", "Total artists found: ${artistList.size}")
+
         return mapOf("artist" to artistList)
     }
-    
+
+    /**
+     * Parse album element with nested song children from getAlbum response
+     *
+     * Navidrome API returns album with song children:
+     * <album id="xxx" name="Album Title" artist="Artist" ...>
+     *   <genres>...</genres>
+     *   <artists>...</artists>
+     *   <song id="xxx" title="Track Name" track="1" duration="180" ...>
+     *     <genres>...</genres>
+     *     <artists>...</artists>
+     *   </song>
+     *   <song id="yyy" ...>...</song>
+     * </album>
+     */
+    private fun parseAlbumWithSongs(xmlString: String): Map<String, Any> {
+        val result = mutableMapOf<String, Any>()
+
+        // Match album OPENING tag to extract attributes
+        val albumRegex = """<album\s+([^>]*)>""".toRegex()
+        val albumMatch = albumRegex.find(xmlString)
+        if (albumMatch != null) {
+            val attrs = albumMatch.groupValues[1]
+            Log.d("XmlParserAlbumWithSongs", "Found album attrs: $attrs")
+
+            // Extract album attributes
+            putAttr(result, attrs, "id", """\bid="([^"]+)""")
+            putAttr(result, attrs, "name", """\bname="([^"]+)""")
+            putAttr(result, attrs, "artist", """\bartist="([^"]+)""")
+            putAttr(result, attrs, "artistId", """\bartistId="([^"]+)""")
+            putAttr(result, attrs, "coverArt", """\bcoverArt="([^"]+)""")
+
+            // Extract year
+            val yearVal = Regex("""\byear="(\d+)"""").find(attrs)?.groupValues?.get(1)
+            if (yearVal != null) {
+                result["year"] = yearVal.toIntOrNull() ?: yearVal
+            }
+            // Extract genre
+            val genreVal = Regex("""\bgenre="([^"]+)"""").find(attrs)?.groupValues?.get(1)
+            if (genreVal != null) {
+                result["genre"] = genreVal
+            }
+        }
+
+        // Parse all song elements inside the album
+        val songList = mutableListOf<Map<String, Any>>()
+        val songRegex = """<song\s+([^>]*)>""".toRegex()
+        val songMatches = songRegex.findAll(xmlString)
+        val songMatchCount = songMatches.count()
+        Log.d("XmlParserAlbumWithSongs", "Found $songMatchCount song tags in album XML")
+
+        for (songMatch in songMatches) {
+            val attrs = songMatch.groupValues[1]
+            val song = mutableMapOf<String, Any>()
+
+            // Extract song attributes - these contain all the data we need
+            putAttr(song, attrs, "id", """\bid="([^"]+)""")
+            putAttr(song, attrs, "title", """\btitle="([^"]+)""")
+            putAttr(song, attrs, "track", """\btrack="([^"]+)""")
+            putAttr(song, attrs, "duration", """\bduration="([^"]+)""")
+            putAttr(song, attrs, "size", """\bsize="([^"]+)""")
+            putAttr(song, attrs, "bitRate", """\bbitRate="([^"]+)""")
+            putAttr(song, attrs, "albumId", """\balbumId="([^"]+)""")
+            putAttr(song, attrs, "artistId", """\bartistId="([^"]+)""")
+            putAttr(song, attrs, "artist", """\bartist="([^"]+)""")
+            putAttr(song, attrs, "album", """\balbum="([^"]+)""")
+            putAttr(song, attrs, "path", """\bpath="([^"]+)""")
+            putAttr(song, attrs, "coverArt", """\bcoverArt="([^"]+)""")
+
+            if (song.isNotEmpty()) {
+                songList.add(song)
+            }
+        }
+
+        Log.d("XmlParserAlbumWithSongs", "Parsed ${songList.size} songs from album")
+        result["song"] = songList
+
+        return result
+    }
+
     /**
      * Helper to put attribute into map
      */

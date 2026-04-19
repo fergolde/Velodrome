@@ -187,6 +187,12 @@ class ExploreViewModel @Inject constructor(
                     dynamicPlaylist = initialTracks
                 ) }
                 
+                // Set up callback for PlayerManager to request more tracks
+                PlayerManager.setLoadMoreCallback {
+                    Log.d(TAG, "PlayerManager callback triggered")
+                    checkAndLoadMore()
+                }
+
                 // Set playlist in PlayerManager to start playback
                 if (initialTracks.isNotEmpty()) {
                     PlayerManager.setPlaylist(initialTracks, startPlaying = true)
@@ -206,32 +212,42 @@ class ExploreViewModel @Inject constructor(
      * Load more tracks when approaching the end
      * Called when 5 or fewer tracks remain
      */
-    private fun loadMoreTracks() {
+    fun loadMoreTracks() {
         if (isLoadingMore || currentPlaylistPosition >= playlist.size) return
-        
+
         isLoadingMore = true
         val remaining = playlist.size - currentPlaylistPosition
-        
+
         viewModelScope.launch {
             val nextBatch = playlist.drop(currentPlaylistPosition).take(5)
             currentPlaylistPosition += 5
-            
-            _uiState.update { state ->
-                val newPlaylist = state.dynamicPlaylist + nextBatch
-                state.copy(dynamicPlaylist = newPlaylist)
-            }
-            
+
+            // Update PlayerManager with more tracks
+            PlayerManager.appendToPlaylist(nextBatch)
+
             isLoadingMore = false
-            Log.d(TAG, "Loaded ${nextBatch.size} more tracks, total: ${playlist.size}")
+            Log.d(TAG, "Loaded ${nextBatch.size} more tracks, total playlist: ${playlist.size}")
         }
     }
-    
+
     /**
      * Call this when track position changes - auto-loads more when needed
      */
     fun onTrackPositionChanged(position: Int) {
         val remaining = playlist.size - position
         if (remaining <= 5) {
+            loadMoreTracks()
+        }
+    }
+
+    /**
+     * Check if we need to load more tracks - called from player
+     */
+    fun checkAndLoadMore() {
+        if (isLoadingMore) return
+        
+        val loadedSize = _uiState.value.dynamicPlaylist.size
+        if (loadedSize <= 5 && currentPlaylistPosition < playlist.size) {
             loadMoreTracks()
         }
     }

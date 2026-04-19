@@ -33,7 +33,8 @@ data class Track(
     val sizeBytes: Long,
     val bitrate: Int,
     val trackNumber: Int,
-    val isCached: Boolean = false
+    val isCached: Boolean = false,
+    val coverArtId: String? = null
 )
 
 data class AuthResult(

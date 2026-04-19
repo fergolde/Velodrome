@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.velodrome.domain.model.Artist
+import com.example.velodrome.presentation.player.PlayerManager
+import com.example.velodrome.presentation.player.PlayerManager.currentTrack
 import com.example.velodrome.util.CredentialsManager
 
 // --- Theme Tokens (Velvet Echo) ---
@@ -105,15 +107,22 @@ fun ArtistsScreen(
                 }
             }
 
-            // Mini Player - positioned just above the bottom navigation bar
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                MiniPlayer(
-                    modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMargin),
-                    currentTrackId = null,
-                    isPlaying = false,
-                    onPlayPauseClick = { },
-                    onClick = onPlayerClick
-                )
+            // Mini Player - only show if there's a track to play
+            val currentTrack by PlayerManager.currentTrack.collectAsState()
+            val isPlaying by PlayerManager.isPlaying.collectAsState()
+            
+            if (currentTrack != null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                    MiniPlayer(
+                        modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMargin),
+                        currentTrack = currentTrack,
+                        isPlaying = isPlaying,
+                        onPlayPauseClick = { PlayerManager.togglePlayPause() },
+                        onClick = onPlayerClick,
+                        onNextClick = { PlayerManager.next() },
+                        onPreviousClick = { PlayerManager.previous() }
+                    )
+                }
             }
         }
     }

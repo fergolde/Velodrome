@@ -147,7 +147,7 @@ class NavidromeRepositoryImpl @Inject constructor(
             val responseBody = api.getAlbum(albumId)
             val xmlString = responseBody.string()
             Log.d("Velodrome", "getTracks XML (first 500): ${xmlString.take(500)}")
-            val response = parseXmlResponse(responseBody)
+            val response = XmlParser.parse(xmlString)
             
             val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
             val albumData = subsonicResponse?.get("album") as? Map<String, Any>
@@ -155,15 +155,46 @@ class NavidromeRepositoryImpl @Inject constructor(
 
             songsList.mapNotNull { songMap ->
                 (songMap as? Map<String, Any>)?.let { sm ->
+                    val durationValue = sm["duration"]
+                    val durationSec = when (durationValue) {
+                        is Number -> durationValue.toInt()
+                        is String -> durationValue.toIntOrNull() ?: 0
+                        else -> 0
+                    }
+                    val sizeValue = sm["size"]
+                    val sizeBytes = when (sizeValue) {
+                        is Number -> sizeValue.toLong()
+                        is String -> sizeValue.toLongOrNull() ?: 0L
+                        else -> 0L
+                    }
+                    val bitrateValue = sm["bitRate"]
+                    val bitrate = when (bitrateValue) {
+                        is Number -> bitrateValue.toInt()
+                        is String -> bitrateValue.toIntOrNull() ?: 0
+                        else -> 0
+                    }
+                    val trackValue = sm["track"]
+                    val trackNumber = when (trackValue) {
+                        is Number -> trackValue.toInt()
+                        is String -> trackValue.toIntOrNull() ?: 0
+                        else -> 0
+                    }
+                    val coverArtValue = sm["coverArt"] as? String
+                    val albumNameValue = sm["album"] as? String ?: albumId
+                    // Fallback: si no hay coverArt, usar albumId como coverArtId (formato Subsonic: "al-{id}")
+                    val effectiveCoverArtId = coverArtValue ?: "al-$albumId"
                     Track(
                         id = sm["id"] as? String ?: "",
                         albumId = albumId,
                         title = sm["title"] as? String ?: "",
-                        durationSec = (sm["duration"] as? Number)?.toInt() ?: 0,
-                        sizeBytes = (sm["size"] as? Number)?.toLong() ?: 0L,
-                        bitrate = (sm["bitRate"] as? Number)?.toInt() ?: 0,
-                        trackNumber = (sm["track"] as? Number)?.toInt() ?: 0,
-                        isCached = false
+                        artistName = sm["artist"] as? String ?: "",
+                        albumName = albumNameValue,
+                        durationSec = durationSec,
+                        sizeBytes = sizeBytes,
+                        bitrate = bitrate,
+                        trackNumber = trackNumber,
+                        isCached = false,
+                        coverArtId = effectiveCoverArtId
                     )
                 }
             }.also { tracks ->

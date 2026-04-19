@@ -14,12 +14,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.example.velodrome.R
@@ -29,16 +31,24 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.velodrome.domain.model.Album
+import com.example.velodrome.domain.model.Track
+import com.example.velodrome.presentation.player.PlayerManager
+import com.example.velodrome.presentation.player.PlayerManager.currentTrack
 import com.example.velodrome.ui.theme.VelodromeTheme
+import com.example.velodrome.util.CredentialsManager
 
 // --- Theme Tokens (Velvet Echo) ---
 val PrimaryColor = Color(0xFF7C4DFF)
 val BackgroundDark = Color(0xFF0C0E17)
 val SurfaceDark = Color(0xFF171924)
+val SurfaceContainer = Color(0xFF222532)
 val TextPrimary = Color(0xFFF0F0FD)
 val TextSecondary = Color(0xFFAAAAB7)
 val AccentPurple = Color(0xFFB6A0FF)
+val BackgroundDark2 = Color(0xFF0C0E17)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,15 +118,25 @@ fun HomeScreen(
             }
         }
 
-        // Mini Player Positioned at the bottom
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-            MiniPlayer(
-                modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMarginInScaffold),
-                currentTrackId = state.currentTrackId,
-                isPlaying = state.isPlaying,
-                onPlayPauseClick = { viewModel.togglePlayPause() },
-                onClick = onPlayerClick
-            )
+        // Mini Player - only show if there's a track to play
+        val currentTrack by PlayerManager.currentTrack.collectAsState()
+        val currentPosition by PlayerManager.currentPosition.collectAsState()
+        val isPlaying by PlayerManager.isPlaying.collectAsState()
+        val playlist by PlayerManager.playlist.collectAsState()
+        
+        if (currentTrack != null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                MiniPlayer(
+                    modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMarginInScaffold),
+                    currentTrack = currentTrack,
+                    isPlaying = isPlaying,
+                    currentPosition = currentPosition,
+                    onPlayPauseClick = { PlayerManager.togglePlayPause() },
+                    onClick = onPlayerClick,
+                    onNextClick = { PlayerManager.next() },
+                    onPreviousClick = { PlayerManager.previous() }
+                )
+            }
         }
     }
 
@@ -330,46 +350,116 @@ fun AlbumGridItem(
 @Composable
 fun MiniPlayer(
     modifier: Modifier = Modifier,
-    currentTrackId: String?,
+    currentTrack: Track?,
     isPlaying: Boolean,
+    currentPosition: Int = 0,
     onPlayPauseClick: () -> Unit,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onNextClick: () -> Unit = {},
+    onPreviousClick: () -> Unit = {}
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-            .height(72.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(SurfaceDark.copy(alpha = 0.95f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(modifier = Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(Color.Gray))
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(stringResource(R.string.player_now_playing), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-            Text(currentTrackId ?: "", color = TextSecondary, fontSize = 11.sp)
-        }
-        Icon(Icons.Default.SkipPrevious, contentDescription = null, tint = TextPrimary)
-        Spacer(modifier = Modifier.width(16.dp))
+    // Only recompute coverUrl when track changes
+    val coverUrl = remember(currentTrack) {
+        currentTrack?.coverArtId?.let { CredentialsManager.getCoverArtUrl(it, 200) }
+    }
+
+    val progress = if (currentTrack != null && currentTrack.durationSec > 0) {
+        currentPosition.toFloat() / currentTrack.durationSec.toFloat()
+    } else {
+        0f
+    }
+    
+    Column(modifier = modifier) {
+        // Progress bar at top
         Box(
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(20.dp))
-                .background(AccentPurple)
-                .clickable { onPlayPauseClick() }
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(SurfaceContainer)
         ) {
-            Icon(
-                if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = null,
-                tint = BackgroundDark,
-                modifier = Modifier.align(Alignment.Center)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .background(AccentPurple)
             )
         }
-        Spacer(modifier = Modifier.width(16.dp))
-        Icon(Icons.Default.SkipNext, contentDescription = null, tint = TextPrimary)
+        
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .height(72.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(SurfaceDark.copy(alpha = 0.95f))
+                .clickable(onClick = onClick)
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Album art
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(SurfaceContainer)
+            ) {
+                if (coverUrl != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(coverUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = currentTrack?.title ?: stringResource(R.string.player_unknown_track),
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    maxLines = 1
+                )
+                Text(
+                    text = currentTrack?.artistName ?: stringResource(R.string.artists_unknown),
+                    color = TextSecondary,
+                    fontSize = 11.sp,
+                    maxLines = 1
+                )
+            }
+            Icon(
+                Icons.Default.SkipPrevious,
+                contentDescription = stringResource(R.string.player_previous),
+                tint = TextPrimary,
+                modifier = Modifier.clickable { onPreviousClick() }
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(AccentPurple)
+                    .clickable { onPlayPauseClick() }
+            ) {
+                Icon(
+                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = BackgroundDark,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                Icons.Default.SkipNext,
+                contentDescription = stringResource(R.string.player_next),
+                tint = TextPrimary,
+                modifier = Modifier.clickable { onNextClick() }
+            )
+        }
     }
 }
 

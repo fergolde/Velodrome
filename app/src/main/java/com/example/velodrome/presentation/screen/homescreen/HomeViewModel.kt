@@ -1,5 +1,6 @@
 package com.example.velodrome.presentation.screen.homescreen
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.domain.usecase.GetAlbumsByGenreUseCase
@@ -9,6 +10,8 @@ import com.example.velodrome.domain.usecase.GetLatestAlbumsUseCase
 import com.example.velodrome.domain.usecase.GetRandomAlbumsUseCase
 import com.example.velodrome.domain.usecase.GetRecentlyPlayedAlbumsUseCase
 import com.example.velodrome.domain.usecase.GetTopAlbumsUseCase
+import com.example.velodrome.domain.usecase.GetTracksUseCase
+import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +26,7 @@ import javax.inject.Inject
  * - Recently added albums
  * - Most played albums
  * - Genre and year filtering
- * - Playback state
+ * - Playback state (synced with PlayerManager)
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -33,7 +36,8 @@ class HomeViewModel @Inject constructor(
     private val getRandomAlbumsUseCase: GetRandomAlbumsUseCase,
     private val getAlbumsByYearUseCase: GetAlbumsByYearUseCase,
     private val getAlbumsByGenreUseCase: GetAlbumsByGenreUseCase,
-    private val getGenresUseCase: GetGenresUseCase
+    private val getGenresUseCase: GetGenresUseCase,
+    private val getTracksUseCase: GetTracksUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -41,6 +45,23 @@ class HomeViewModel @Inject constructor(
 
     init {
         loadInitialData()
+        syncWithPlayerManager()
+    }
+
+    /**
+     * Sync UI state with PlayerManager singleton
+     */
+    private fun syncWithPlayerManager() {
+        viewModelScope.launch {
+            PlayerManager.isPlaying.collect { isPlaying ->
+                _uiState.update { it.copy(isPlaying = isPlaying) }
+            }
+        }
+        viewModelScope.launch {
+            PlayerManager.currentTrack.collect { track ->
+                _uiState.update { it.copy(currentTrackId = track?.id) }
+            }
+        }
     }
 
     /**
@@ -305,24 +326,59 @@ class HomeViewModel @Inject constructor(
      * Toggles play/pause for the current track.
      */
     fun togglePlayPause() {
-        _uiState.update {
-            it.copy(isPlaying = !it.isPlaying)
+        PlayerManager.togglePlayPause()
+    }
+
+    /**
+     * Plays a random playlist from all available albums.
+     * Similar to ExploreScreen genre selection but for all albums.
+     */
+    fun playShuffle() {
+        val allAlbums = _uiState.value.latestAlbums + _uiState.value.topAlbums
+        if (allAlbums.isEmpty()) {
+            return
+        }
+
+        _uiState.update { it.copy(isLoading = true) }
+
+        viewModelScope.launch {
+            try {
+                val playlist = mutableListOf<com.example.velodrome.domain.model.Track>()
+
+                // Load tracks from all albums
+                for (album in allAlbums) {
+                    val result = getTracksUseCase(album.id)
+                    result.onSuccess { tracks ->
+                        if (tracks.isNotEmpty()) {
+                            playlist.addAll(tracks)
+                        }
+                    }
+                }
+
+                 Log.d("HomeViewModel", "Total tracks loaded for shuffle: ${playlist.size}")
+
+                // Shuffle the full playlist
+                playlist.shuffle()
+
+                // Start playback with first 10 tracks
+                val initialTracks = playlist.take(10)
+                Log.d("HomeViewModel", "Shuffle playlist (first 10): ${initialTracks.map { it.title }}")
+
+                _uiState.update { it.copy(isLoading = false, isPlaying = true) }
+
+                // Set playlist in PlayerManager to start playback
+                if (initialTracks.isNotEmpty()) {
+                    PlayerManager.setPlaylist(initialTracks, startPlaying = true)
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error in playShuffle", e)
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 
     /**
-     * Plays a specific album (shuffle mode).
+     * Get current track from PlayerManager for MiniPlayer display
      */
-    fun playShuffle() {
-        val allAlbums = _uiState.value.latestAlbums + _uiState.value.topAlbums
-        if (allAlbums.isNotEmpty()) {
-            // In a real implementation, this would trigger a shuffle play
-            _uiState.update {
-                it.copy(
-                    currentTrackId = allAlbums.random().id,
-                    isPlaying = true
-                )
-            }
-        }
-    }
+    fun getCurrentTrack() = PlayerManager.currentTrack.value
 }
