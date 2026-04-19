@@ -108,6 +108,16 @@ class AlbumDetailViewModel @Inject constructor(
         PlayerManager.setPlaylist(shuffled, startIndex = 0, startPlaying = true)
     }
 
+    fun addAllToQueue() {
+        val tracks = _uiState.value.tracks
+        if (tracks.isEmpty()) return
+
+        Log.d(TAG, "Adding all ${tracks.size} tracks to queue")
+        tracks.forEach { track ->
+            PlayerManager.addToQueue(track)
+        }
+    }
+
     fun playNext(track: Track) {
         Log.d(TAG, "Play next: ${track.title}")
         PlayerManager.playNext(track)

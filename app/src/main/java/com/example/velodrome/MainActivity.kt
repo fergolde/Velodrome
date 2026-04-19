@@ -174,6 +174,7 @@ fun MainApp() {
                 onAlbumClick = { albumId ->
                     navController.navigate("album/$albumId")
                 },
+                onExploreClick = { navController.navigate("explore") },
                 onPlayerClick = {
                     navController.navigate("player")
                 }
@@ -184,6 +185,7 @@ fun MainApp() {
             AlbumDetailScreen(
                 albumId = albumId,
                 onBackClick = { navController.popBackStack() },
+                onExploreClick = { navController.navigate("explore") },
                 onPlayerClick = {
                     navController.navigate("player")
                 }

@@ -72,6 +72,7 @@ fun ArtistDetailScreen(
     artistId: String,
     onBackClick: () -> Unit = {},
     onAlbumClick: (String) -> Unit = {},
+    onExploreClick: () -> Unit = {},
     onPlayerClick: () -> Unit = {},
     viewModel: ArtistDetailViewModel = hiltViewModel()
 ) {
@@ -107,7 +108,7 @@ fun ArtistDetailScreen(
         bottomBar = {
             ArtistDetailBottomNavigationBar(
                 onHomeClick = onPlayerClick,
-                onExploreClick = { /* Already on explore via artist */ }
+                onExploreClick = onExploreClick
             )
         },
         containerColor = BackgroundDark

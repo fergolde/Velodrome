@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -33,6 +34,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
@@ -86,6 +88,7 @@ private val AccentPurple = Color(0xFFB6A0FF)
 fun AlbumDetailScreen(
     albumId: String,
     onBackClick: () -> Unit = {},
+    onExploreClick: () -> Unit = {},
     onPlayerClick: () -> Unit = {},
     viewModel: AlbumDetailViewModel = hiltViewModel()
 ) {
@@ -129,7 +132,7 @@ fun AlbumDetailScreen(
         bottomBar = {
             AlbumDetailBottomNavigationBar(
                 onHomeClick = onPlayerClick,
-                onExploreClick = { /* Already explore */ }
+                onExploreClick = onExploreClick
             )
         },
         containerColor = BackgroundDark
@@ -169,7 +172,8 @@ fun AlbumDetailScreen(
                             showTrackOptions = true
                         },
                         onPlayAllClick = { viewModel.playAll() },
-                        onShuffleClick = { viewModel.shuffleAll() }
+                        onShuffleClick = { viewModel.shuffleAll() },
+                        onAddToQueueClick = { viewModel.addAllToQueue() }
                     )
                 }
             }
@@ -221,7 +225,8 @@ private fun AlbumContent(
     onTrackClick: (Track) -> Unit,
     onTrackLongClick: (Track) -> Unit,
     onPlayAllClick: () -> Unit,
-    onShuffleClick: () -> Unit
+    onShuffleClick: () -> Unit,
+    onAddToQueueClick: () -> Unit
 ) {
     val currentTrackId by PlayerManager.currentTrackId.collectAsState()
 
@@ -234,7 +239,8 @@ private fun AlbumContent(
                 album = album,
                 trackCount = tracks.size,
                 onPlayAllClick = onPlayAllClick,
-                onShuffleClick = onShuffleClick
+                onShuffleClick = onShuffleClick,
+                onAddToQueueClick = onAddToQueueClick
             )
         }
 
@@ -265,7 +271,8 @@ private fun AlbumHeader(
     album: com.example.velodrome.domain.model.Album?,
     trackCount: Int,
     onPlayAllClick: () -> Unit,
-    onShuffleClick: () -> Unit
+    onShuffleClick: () -> Unit,
+    onAddToQueueClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -374,6 +381,20 @@ private fun AlbumHeader(
                     tint = TextPrimary
                 )
             }
+
+            IconButton(
+                onClick = onAddToQueueClick,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(SurfaceContainer)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+                    contentDescription = stringResource(R.string.album_detail_add_to_queue),
+                    tint = TextPrimary
+                )
+            }
         }
     }
 }
@@ -455,23 +476,84 @@ private fun TrackOptionsSheet(
             .fillMaxWidth()
             .padding(bottom = 32.dp)
     ) {
+        // Track title
         Text(
             text = track.title,
             color = TextPrimary,
             fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            fontSize = 18.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
         )
 
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.track_options_play_next)) },
-            onClick = onPlayNext
-        )
+        HorizontalDivider(color = SurfaceContainer, modifier = Modifier.padding(horizontal = 16.dp))
 
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.track_options_add_to_queue)) },
-            onClick = onAddToQueue
-        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Play Next option
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onPlayNext)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(PrimaryColor.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = PrimaryColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = stringResource(R.string.track_options_play_next),
+                color = TextPrimary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        // Add to Queue option
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onAddToQueue)
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(AccentPurple.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+                    contentDescription = null,
+                    tint = AccentPurple,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = stringResource(R.string.track_options_add_to_queue),
+                color = TextPrimary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 

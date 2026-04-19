@@ -83,6 +83,7 @@
     <string name="album_detail_tracks">Temas</string>
     <string name="album_detail_play_all">Reproducir Todo</string>
     <string name="album_detail_shuffle">Aleatorio</string>
+    <string name="album_detail_add_to_queue">Añadir a la Cola</string>
 
     <!-- Track Options -->
     <string name="track_options_play_next">Reproducir Siguiente</string>
