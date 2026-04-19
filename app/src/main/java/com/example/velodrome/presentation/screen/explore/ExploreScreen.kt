@@ -22,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.size
+import androidx.compose.ui.layout.wrapContentSize
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -447,21 +449,38 @@ fun GenresRow(
     onGenreClick: (String) -> Unit
 ) {
     if (genres.isEmpty()) {
-        // Show placeholder when loading
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            repeat(6) { index ->
-                GenreChipPlaceholder()
+        // Show placeholder grid when loading
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            repeat(3) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    repeat(3) {
+                        GenreChipPlaceholder()
+                    }
+                }
             }
         }
         return
     }
     
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        items(genres) { genre ->
-            GenreChip(
-                genre = genre,
-                onClick = { onGenreClick(genre) }
-            )
+    // Show genres in 3-column grid
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        genres.chunked(3).forEach { rowGenres ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                rowGenres.forEach { genre ->
+                    GenreChip(
+                        genre = genre,
+                        onClick = { onGenreClick(genre) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                // Fill remaining columns if row has less than 3 items
+                repeat(3 - rowGenres.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -471,7 +490,6 @@ private fun GenreChipPlaceholder() {
     Box(
         modifier = Modifier
             .height(40.dp)
-            .width(100.dp)
             .clip(RoundedCornerShape(20.dp))
             .background(SurfaceContainer)
     )
@@ -480,20 +498,26 @@ private fun GenreChipPlaceholder() {
 @Composable
 fun GenreChip(
     genre: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
+            .height(40.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = SurfaceContainer
     ) {
         Text(
             text = genre,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentSize(Alignment.Center)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             color = TextPrimary,
             fontWeight = FontWeight.Medium,
-            fontSize = 14.sp
+            fontSize = 14.sp,
+            maxLines = 1
         )
     }
 }
