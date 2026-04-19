@@ -90,6 +90,22 @@
     <string name="track_options_add_to_queue">Añadir a la Cola</string>
     <string name="track_options_add_to_favorites">Añadir a Favoritos</string>
 
+    <!-- Settings -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_back">Volver</string>
+    <string name="settings_cache">Almacenamiento</string>
+    <string name="settings_image_cache">Caché de Imágenes</string>
+    <string name="settings_image_cache_desc">Almacenamiento para portadas de álbumes</string>
+    <string name="settings_music_cache">Caché de Música</string>
+    <string name="settings_music_cache_desc">Almacenamiento para canciones</string>
+    <string name="settings_clear_cache">Limpiar Caché</string>
+    <string name="settings_current">Actual</string>
+    <string name="settings_appearance">Apariencia</string>
+    <string name="settings_accent_color">Color de Acento</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_version">Versión</string>
+    <string name="settings_version_desc">Versión de la aplicación</string>
+
     <!-- Common -->
     <string name="nav_back">Atrás</string>
     <string name="view_all">Ver Todo</string>
