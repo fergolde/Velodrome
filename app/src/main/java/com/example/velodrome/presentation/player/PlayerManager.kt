@@ -2,52 +2,48 @@ package com.example.velodrome.presentation.player
 
 import android.util.Log
 import com.example.velodrome.domain.model.Track
+import com.example.velodrome.presentation.audio.AudioPlayerManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 
 /**
- * Singleton player state manager - shared across all screens
+ * Singleton player state manager - delegates to AudioPlayerManager for real playback.
+ * Maintains backward compatibility with existing UI code.
  */
 object PlayerManager {
-    private val _playlist = MutableStateFlow<List<Track>>(emptyList())
-    val playlist: StateFlow<List<Track>> = _playlist.asStateFlow()
-    
-    private val _currentIndex = MutableStateFlow(0)
-    val currentIndex: StateFlow<Int> = _currentIndex.asStateFlow()
-    
-    private val _isPlaying = MutableStateFlow(false)
-    val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
-    
-    private val _currentPosition = MutableStateFlow(0)
-    val currentPosition: StateFlow<Int> = _currentPosition.asStateFlow()
 
-    // Private MutableStateFlow that tracks current track
-    private val _currentTrack = MutableStateFlow<Track?>(null)
-    /**
-     * Observable current track.
-     * Automatically updates when playlist or currentIndex changes.
-     */
-    val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
+    private const val TAG = "PlayerManager"
 
-    /**
-     * Sync currentTrack whenever playlist or index changes.
-     * Call this after any operation that changes playlist or index.
-     */
-    private fun syncCurrentTrack() {
-        _currentTrack.value = _playlist.value.getOrNull(_currentIndex.value)
-    }
+    // Expose state from AudioPlayerManager
+    val playlist: StateFlow<List<Track>> = AudioPlayerManager.playlist
+    val currentIndex: StateFlow<Int> = AudioPlayerManager.currentIndex
+    val isPlaying: StateFlow<Boolean> = AudioPlayerManager.isPlaying
+    val currentPosition: StateFlow<Long> = AudioPlayerManager.currentPosition
+    val currentTrack: StateFlow<Track?> = AudioPlayerManager.currentTrack
+    val isBuffering: StateFlow<Boolean> = AudioPlayerManager.isBuffering
+
+    // Keep local state for duration (not exposed by AudioPlayerManager in same way)
+    private val _duration = MutableStateFlow(0L)
+    val duration: StateFlow<Long> = _duration.asStateFlow()
 
     /**
      * Set a new playlist and start playing from index 0
      */
     fun setPlaylist(tracks: List<Track>, startPlaying: Boolean = true) {
-        _playlist.value = tracks
-        _currentIndex.value = 0
-        _currentPosition.value = 0
-        _isPlaying.value = startPlaying
-        syncCurrentTrack()
+        Log.d(TAG, "setPlaylist: ${tracks.size} tracks, startPlaying: $startPlaying")
+        if (tracks.isNotEmpty()) {
+            AudioPlayerManager.playTrack(tracks[0], tracks, 0)
+        }
+    }
+
+    /**
+     * Play a specific track from a playlist
+     */
+    fun playTrack(track: Track, playlist: List<Track> = listOf(track)) {
+        Log.d(TAG, "playTrack: ${track.title}")
+        val index = playlist.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
+        AudioPlayerManager.playTrack(track, playlist, index)
     }
 
     /**
@@ -55,8 +51,8 @@ object PlayerManager {
      */
     fun appendToPlaylist(tracks: List<Track>) {
         if (tracks.isNotEmpty()) {
-            _playlist.value = _playlist.value + tracks
-            Log.d("PlayerManager", "Appended ${tracks.size} tracks, playlist size: ${_playlist.value.size}")
+            AudioPlayerManager.setPlaylist(AudioPlayerManager.playlist.value + tracks)
+            Log.d(TAG, "Appended ${tracks.size} tracks, playlist size: ${AudioPlayerManager.playlist.value.size}")
         }
     }
 
@@ -64,69 +60,89 @@ object PlayerManager {
      * Replace entire playlist with new tracks
      */
     fun replacePlaylist(tracks: List<Track>) {
-        _playlist.value = tracks
-        _currentIndex.value = 0
-        _currentPosition.value = 0
-        syncCurrentTrack()
+        AudioPlayerManager.setPlaylist(tracks)
+        if (tracks.isNotEmpty()) {
+            AudioPlayerManager.playTrack(tracks[0], tracks, 0)
+        }
     }
 
     /**
      * Set current index directly (for queue navigation)
      */
     fun setCurrentIndex(index: Int) {
-        if (index >= 0 && index < _playlist.value.size) {
-            _currentIndex.value = index
-            _currentPosition.value = 0
-            Log.d("PlayerManager", "Set current index to $index, track: ${_playlist.value[index].title}")
-            syncCurrentTrack()
+        val playlist = AudioPlayerManager.playlist.value
+        if (index in playlist.indices) {
+            Log.d(TAG, "Set current index to $index, track: ${playlist[index].title}")
+            AudioPlayerManager.playTrack(playlist[index], playlist, index)
         }
     }
-    
+
     /**
-     * Update current track position (called by player)
+     * Update current track position
      */
     fun updatePosition(position: Int) {
-        _currentPosition.value = position
+        AudioPlayerManager.seekTo(position.toLong())
     }
-    
+
     /**
      * Toggle play/pause
      */
     fun togglePlayPause() {
-        _isPlaying.value = !_isPlaying.value
+        Log.d(TAG, "togglePlayPause")
+        AudioPlayerManager.togglePlayPause()
     }
-    
+
+    /**
+     * Pause playback
+     */
+    fun pause() {
+        AudioPlayerManager.pause()
+    }
+
+    /**
+     * Start/resume playback
+     */
+    fun play() {
+        AudioPlayerManager.play()
+    }
+
     /**
      * Go to next track
      */
     fun next(): Boolean {
-        return if (_currentIndex.value < _playlist.value.size - 1) {
-            _currentIndex.value++
-            _currentPosition.value = 0
-            syncCurrentTrack()
-            true
-        } else {
-            false
-        }
+        return AudioPlayerManager.next()
     }
-    
+
     /**
      * Go to previous track
      */
     fun previous(): Boolean {
-        return if (_currentIndex.value > 0) {
-            _currentIndex.value--
-            _currentPosition.value = 0
-            syncCurrentTrack()
-            true
-        } else {
-            false
-        }
+        return AudioPlayerManager.previous()
     }
-    
+
+    /**
+     * Seek to position in milliseconds
+     */
+    fun seekTo(positionMs: Long) {
+        AudioPlayerManager.seekTo(positionMs)
+    }
+
+    /**
+     * Get current position in milliseconds directly from MediaController
+     */
+    fun getCurrentPositionMs(): Long {
+        return AudioPlayerManager.getCurrentPositionMs()
+    }
+
+    /**
+     * Clear the playlist
+     */
+    fun clearPlaylist() {
+        AudioPlayerManager.clearPlaylist()
+    }
+
     /**
      * Register a callback to be called when more tracks need to be loaded
-     * The callback should load more tracks and append them via appendToPlaylist
      */
     private var loadMoreCallback: (() -> Unit)? = null
 
@@ -135,7 +151,7 @@ object PlayerManager {
     }
 
     /**
-     * Notify that more tracks are needed (called from PlayerViewModel)
+     * Notify that more tracks are needed
      */
     fun requestLoadMore() {
         loadMoreCallback?.invoke()

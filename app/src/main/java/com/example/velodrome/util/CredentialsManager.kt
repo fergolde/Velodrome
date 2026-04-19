@@ -141,4 +141,35 @@ object CredentialsManager {
         Log.d("CredMgr", "Generated cover URL: ${url.take(100)}...")
         return url
     }
+
+    /**
+     * Build stream URL for a track from Navidrome server
+     * @param trackId The track ID from API (e.g., "12345")
+     * @param maxBitRate Maximum bitrate for streaming (default 320)
+     */
+    fun getStreamUrl(trackId: String, maxBitRate: Int = 320): String {
+        Log.d("CredMgr", "getStreamUrl called: trackId='$trackId', maxBitRate=$maxBitRate")
+
+        val serverUrl = getServerUrl()
+        Log.d("CredMgr", "serverUrl='$serverUrl'")
+
+        if (serverUrl == null) {
+            Log.w("CredMgr", "No server URL found")
+            return ""
+        }
+
+        val authParams = generateAuthParams()
+        if (authParams == null) {
+            Log.e("CredMgr", "No auth params (not logged in)")
+            return ""
+        }
+
+        val (username, token, salt) = authParams
+
+        // Ensure serverUrl ends with "/" before appending "rest/"
+        val normalizedUrl = serverUrl.trimEnd('/') + "/"
+        val url = "${normalizedUrl}rest/stream.view?id=$trackId&u=$username&t=$token&s=$salt&v=1.16.1&c=Velodrome&maxBitRate=$maxBitRate"
+        Log.d("CredMgr", "Generated stream URL: ${url.take(100)}...")
+        return url
+    }
 }

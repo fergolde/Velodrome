@@ -13,6 +13,7 @@ data class PlayerUiState(
     val currentIndex: Int = 0,
     val isShuffle: Boolean = false,
     val repeatMode: RepeatMode = RepeatMode.OFF,
+    val isBuffering: Boolean = false,
     val error: String? = null
 )
 

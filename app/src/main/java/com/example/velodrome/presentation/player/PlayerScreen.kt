@@ -33,7 +33,7 @@ import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.screen.homescreen.BottomNavigationBar
-import com.example.velodrome.presentation.screen.homescreen.MiniPlayer
+import com.example.velodrome.presentation.components.MiniPlayer
 import com.example.velodrome.util.CredentialsManager
 
 // --- Theme Tokens (Velvet Echo) ---
@@ -56,13 +56,14 @@ fun PlayerScreen(
     onQueueClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currentPosition by PlayerManager.currentPosition.collectAsState()
     val sheetState = rememberModalBottomSheetState()
 
     // Queue bottom sheet state - controlled by button click
     var showQueue by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { PlayerTopAppBar(onMinimizeClick = onMinimizeClick) },
+        //topBar = { PlayerTopAppBar(onMinimizeClick = onMinimizeClick) },
         bottomBar = { PlayerBottomNavigationBar(onHomeClick = onHomeClick, onExploreClick = onExploreClick, onSettingsClick = onSettingsClick) },
         containerColor = BackgroundDark
     ) { paddingValues ->
@@ -93,7 +94,7 @@ fun PlayerScreen(
 
             // Main Controls Panel
             PlaybackControlsPanel(
-                currentPosition = uiState.currentPosition,
+                currentPosition = (currentPosition / 1000L).toInt(),
                 duration = uiState.currentTrack?.durationSec ?: 0,
                 isPlaying = uiState.isPlaying,
                 onPlayPauseClick = viewModel::onPlayPauseClick,
