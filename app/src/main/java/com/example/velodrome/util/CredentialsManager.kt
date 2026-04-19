@@ -134,7 +134,10 @@ object CredentialsManager {
         }
         
         val (username, token, salt) = authParams
-        val url = "${serverUrl}rest/getCoverArt.view?id=$coverArtId&size=$size&u=$username&t=$token&s=$salt&v=1.16.1&c=Velodrome"
+        
+        // Ensure serverUrl ends with "/" before appending "rest/"
+        val normalizedUrl = serverUrl.trimEnd('/') + "/"
+        val url = "${normalizedUrl}rest/getCoverArt.view?id=$coverArtId&size=$size&u=$username&t=$token&s=$salt&v=1.16.1&c=Velodrome"
         Log.d("CredMgr", "Generated cover URL: ${url.take(100)}...")
         return url
     }
