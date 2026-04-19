@@ -45,7 +45,8 @@ val AccentPurple = Color(0xFFB6A0FF)
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onAlbumClick: (String) -> Unit = {},
-    onExploreClick: () -> Unit = {}
+    onExploreClick: () -> Unit = {},
+    onPlayerClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -113,7 +114,8 @@ fun HomeScreen(
                 modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMarginInScaffold),
                 currentTrackId = state.currentTrackId,
                 isPlaying = state.isPlaying,
-                onPlayPauseClick = { viewModel.togglePlayPause() }
+                onPlayPauseClick = { viewModel.togglePlayPause() },
+                onClick = onPlayerClick
             )
         }
     }
@@ -330,7 +332,8 @@ fun MiniPlayer(
     modifier: Modifier = Modifier,
     currentTrackId: String?,
     isPlaying: Boolean,
-    onPlayPauseClick: () -> Unit
+    onPlayPauseClick: () -> Unit,
+    onClick: () -> Unit = {}
 ) {
     Row(
         modifier = modifier
@@ -339,6 +342,7 @@ fun MiniPlayer(
             .height(72.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(SurfaceDark.copy(alpha = 0.95f))
+            .clickable(onClick = onClick)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

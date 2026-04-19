@@ -50,7 +50,8 @@ fun ExploreScreen(
     viewModel: ExploreViewModel = hiltViewModel(),
     onHomeClick: () -> Unit = {},
     onArtistsViewAllClick: () -> Unit = {},
-    onAlbumsViewAllClick: () -> Unit = {}
+    onAlbumsViewAllClick: () -> Unit = {},
+    onPlayerClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
@@ -109,7 +110,7 @@ fun ExploreScreen(
                     title = stringResource(R.string.explore_genres),
                     subtitle = stringResource(R.string.explore_all_genres),
                     onViewAllClick = null,
-                    showActionText = if (uiState.selectedGenres.isNotEmpty()) stringResource(R.string.play) else null,
+                    showActionText = stringResource(R.string.play),
                     onActionClick = viewModel::onPlayGenres
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -132,7 +133,8 @@ fun ExploreScreen(
                 modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMarginInScaffold),
                 currentTrackId = null,
                 isPlaying = false,
-                onPlayPauseClick = { }
+                onPlayPauseClick = { },
+                onClick = onPlayerClick
             )
         }
     }

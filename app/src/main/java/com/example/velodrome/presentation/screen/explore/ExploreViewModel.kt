@@ -121,9 +121,8 @@ class ExploreViewModel @Inject constructor(
 
     fun onPlayGenres() {
         val selectedGenres = _uiState.value.selectedGenres
-        if (selectedGenres.isEmpty()) return
         
-        Log.d(TAG, "Playing genres: $selectedGenres")
+        Log.d(TAG, "Playing: ${if (selectedGenres.isEmpty()) "all genres" else selectedGenres}")
         _uiState.update { it.copy(isLoading = true) }
         
         // Clear and rebuild playlist
@@ -133,27 +132,44 @@ class ExploreViewModel @Inject constructor(
         
         viewModelScope.launch {
             try {
-                // Get albums for each selected genre
-                for (genre in selectedGenres) {
-                    Log.d(TAG, "Loading albums for genre: $genre")
-                    getAlbumsByGenreUseCase(genre, size = 50)
+                if (selectedGenres.isEmpty()) {
+                    // No genre selected - load random albums (all genres)
+                    Log.d(TAG, "Loading random albums (all genres)")
+                    getRandomAlbumsUseCase(size = 50)
                         .onSuccess { albums ->
-                            Log.d(TAG, "Got ${albums.size} albums for $genre")
-                            // Get tracks from each album
                             for (album in albums) {
                                 getTracksUseCase(album.id)
                                     .onSuccess { tracks ->
                                         if (tracks.isNotEmpty()) {
                                             genresByAlbum[album.id] = tracks
                                             playlist.addAll(tracks)
-                                            Log.d(TAG, "Added ${tracks.size} tracks from album ${album.id}")
                                         }
                                     }
                             }
                         }
-                        .onFailure { e ->
-                            Log.e(TAG, "Error loading albums for $genre: ${e.message}")
-                        }
+                } else {
+                    // Get albums for each selected genre
+                    for (genre in selectedGenres) {
+                        Log.d(TAG, "Loading albums for genre: $genre")
+                        getAlbumsByGenreUseCase(genre, size = 50)
+                            .onSuccess { albums ->
+                                Log.d(TAG, "Got ${albums.size} albums for $genre")
+                                // Get tracks from each album
+                                for (album in albums) {
+                                    getTracksUseCase(album.id)
+                                        .onSuccess { tracks ->
+                                            if (tracks.isNotEmpty()) {
+                                                genresByAlbum[album.id] = tracks
+                                                playlist.addAll(tracks)
+                                                Log.d(TAG, "Added ${tracks.size} tracks from album ${album.id}")
+                                            }
+                                        }
+                                }
+                            }
+                            .onFailure { e ->
+                                Log.e(TAG, "Error loading albums for $genre: ${e.message}")
+                            }
+                    }
                 }
                 
                 // Shuffle the full playlist

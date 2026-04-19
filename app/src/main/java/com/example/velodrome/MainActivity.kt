@@ -21,6 +21,7 @@ import com.example.velodrome.presentation.screen.login.LoginScreen
 import com.example.velodrome.presentation.screen.explore.ExploreScreen
 import com.example.velodrome.presentation.screen.artists.ArtistsScreen
 import com.example.velodrome.presentation.screen.albums.AlbumsScreen
+import com.example.velodrome.presentation.player.PlayerScreen
 import com.example.velodrome.ui.theme.VelodromeTheme
 import com.example.velodrome.util.CredentialsManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -76,6 +77,9 @@ fun MainApp() {
                 },
                 onExploreClick = {
                     navController.navigate("explore")
+                },
+                onPlayerClick = {
+                    navController.navigate("player")
                 }
             )
         }
@@ -91,6 +95,9 @@ fun MainApp() {
                 },
                 onAlbumsViewAllClick = {
                     navController.navigate("albums")
+                },
+                onPlayerClick = {
+                    navController.navigate("player")
                 }
             )
         }
@@ -103,6 +110,9 @@ fun MainApp() {
                 },
                 onExploreClick = {
                     navController.navigate("explore")
+                },
+                onPlayerClick = {
+                    navController.navigate("player")
                 }
             )
         }
@@ -115,6 +125,27 @@ fun MainApp() {
                 },
                 onExploreClick = {
                     navController.navigate("explore")
+                },
+                onPlayerClick = {
+                    navController.navigate("player")
+                }
+            )
+        }
+        composable("player") {
+            PlayerScreen(
+                onMinimizeClick = {
+                    navController.popBackStack()
+                },
+                onHomeClick = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                },
+                onExploreClick = {
+                    navController.navigate("explore")
+                },
+                onSettingsClick = {
+                    navController.navigate("settings")
                 }
             )
         }

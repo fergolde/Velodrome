@@ -44,7 +44,8 @@ val AccentPurple = Color(0xFFB6A0FF)
 fun AlbumsScreen(
     viewModel: AlbumsViewModel = hiltViewModel(),
     onHomeClick: () -> Unit = {},
-    onExploreClick: () -> Unit = {}
+    onExploreClick: () -> Unit = {},
+    onPlayerClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -110,7 +111,8 @@ fun AlbumsScreen(
                     modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMargin),
                     currentTrackId = null,
                     isPlaying = false,
-                    onPlayPauseClick = { }
+                    onPlayPauseClick = { },
+                    onClick = onPlayerClick
                 )
             }
         }
