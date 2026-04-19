@@ -143,7 +143,10 @@ class NavidromeRepositoryImpl @Inject constructor(
     @Suppress("UNCHECKED_CAST")
     override suspend fun getTracks(albumId: String): Result<List<Track>> {
         return runCatching {
+            Log.d("Velodrome", "getTracks called for albumId: $albumId")
             val responseBody = api.getAlbum(albumId)
+            val xmlString = responseBody.string()
+            Log.d("Velodrome", "getTracks XML (first 500): ${xmlString.take(500)}")
             val response = parseXmlResponse(responseBody)
             
             val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
@@ -163,6 +166,8 @@ class NavidromeRepositoryImpl @Inject constructor(
                         isCached = false
                     )
                 }
+            }.also { tracks ->
+                Log.d("Velodrome", "Parsed ${tracks.size} tracks from album $albumId")
             }
         }
     }

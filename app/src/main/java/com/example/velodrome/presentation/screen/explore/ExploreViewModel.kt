@@ -133,20 +133,15 @@ class ExploreViewModel @Inject constructor(
         
         viewModelScope.launch {
             try {
+                val allAlbums = mutableListOf<Album>()
+                
                 if (selectedGenres.isEmpty()) {
                     // No genre selected - load random albums (all genres)
                     Log.d(TAG, "Loading random albums (all genres)")
                     getRandomAlbumsUseCase(size = 50)
                         .onSuccess { albums ->
-                            for (album in albums) {
-                                getTracksUseCase(album.id)
-                                    .onSuccess { tracks ->
-                                        if (tracks.isNotEmpty()) {
-                                            genresByAlbum[album.id] = tracks
-                                            playlist.addAll(tracks)
-                                        }
-                                    }
-                            }
+                            allAlbums.addAll(albums)
+                            Log.d(TAG, "Got ${albums.size} albums")
                         }
                 } else {
                     // Get albums for each selected genre
@@ -154,24 +149,29 @@ class ExploreViewModel @Inject constructor(
                         Log.d(TAG, "Loading albums for genre: $genre")
                         getAlbumsByGenreUseCase(genre, size = 50)
                             .onSuccess { albums ->
+                                allAlbums.addAll(albums)
                                 Log.d(TAG, "Got ${albums.size} albums for $genre")
-                                // Get tracks from each album
-                                for (album in albums) {
-                                    getTracksUseCase(album.id)
-                                        .onSuccess { tracks ->
-                                            if (tracks.isNotEmpty()) {
-                                                genresByAlbum[album.id] = tracks
-                                                playlist.addAll(tracks)
-                                                Log.d(TAG, "Added ${tracks.size} tracks from album ${album.id}")
-                                            }
-                                        }
-                                }
                             }
                             .onFailure { e ->
                                 Log.e(TAG, "Error loading albums for $genre: ${e.message}")
                             }
                     }
                 }
+                
+                // Now load tracks from all albums - wait for each one
+                Log.d(TAG, "Loading tracks from ${allAlbums.size} albums...")
+                for (album in allAlbums) {
+                    val result = getTracksUseCase(album.id)
+                    result.onSuccess { tracks ->
+                        if (tracks.isNotEmpty()) {
+                            genresByAlbum[album.id] = tracks
+                            playlist.addAll(tracks)
+                            Log.d(TAG, "Added ${tracks.size} tracks from album ${album.title}")
+                        }
+                    }
+                }
+                
+                Log.d(TAG, "Total tracks loaded: ${playlist.size}")
                 
                 // Shuffle the full playlist
                 playlist.shuffle()
