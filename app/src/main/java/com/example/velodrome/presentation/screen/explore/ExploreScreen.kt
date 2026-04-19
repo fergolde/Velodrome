@@ -90,16 +90,6 @@ fun ExploreScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            item {
-                SectionHeader(title = stringResource(R.string.explore_curated_albums), subtitle = stringResource(R.string.explore_based_on_activity))
-                Spacer(modifier = Modifier.height(16.dp))
-                CuratedAlbumsRow(
-                    albums = uiState.curatedAlbums,
-                    onAlbumClick = viewModel::onAlbumClick
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
             // Random Albums Carousel
             item {
                 SectionHeader(
