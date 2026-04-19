@@ -26,6 +26,8 @@ data class Album(
 data class Track(
     val id: String,
     val albumId: String,
+    val albumName: String = "",
+    val artistName: String = "",
     val title: String,
     val durationSec: Int,
     val sizeBytes: Long,

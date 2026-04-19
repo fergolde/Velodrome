@@ -198,21 +198,22 @@ fun ShuffleButton(
 fun SectionHeader(
     title: String,
     subtitle: String,
-    onViewAllClick: (() -> Unit)? = null
+    onViewAllClick: (() -> Unit)? = null,
+    showActionText: String? = null,
+    onActionClick: (() -> Unit)? = null
 ) {
     Column {
         Text(subtitle, color = AccentPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(title, color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-            if (onViewAllClick != null) {
+            val actionText = showActionText ?: if (onViewAllClick != null) stringResource(R.string.view_all) else null
+            if (actionText != null) {
                 Text(
-                    text = stringResource(R.string.view_all),
+                    text = actionText,
                     color = AccentPurple,
                     fontSize = 14.sp,
-                    modifier = Modifier.clickable(onClick = onViewAllClick)
+                    modifier = Modifier.clickable(onClick = { onActionClick?.invoke() ?: onViewAllClick?.invoke() })
                 )
-            } else {
-                Text(stringResource(R.string.view_all), color = AccentPurple, fontSize = 14.sp)
             }
         }
     }

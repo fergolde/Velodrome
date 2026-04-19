@@ -108,14 +108,15 @@ fun ExploreScreen(
                 SectionHeader(
                     title = stringResource(R.string.explore_genres),
                     subtitle = stringResource(R.string.explore_all_genres),
-                    onViewAllClick = null
+                    onViewAllClick = null,
+                    showActionText = if (uiState.selectedGenres.isNotEmpty()) stringResource(R.string.play) else null,
+                    onActionClick = viewModel::onPlayGenres
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 GenresRow(
                     genres = uiState.genres,
                     selectedGenres = uiState.selectedGenres,
-                    onGenreToggle = viewModel::onGenreToggle,
-                    onPlayClick = viewModel::onPlayGenres
+                    onGenreToggle = viewModel::onGenreToggle
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }
@@ -437,8 +438,7 @@ fun ArtistListRow(
 fun GenresRow(
     genres: List<String>,
     selectedGenres: Set<String> = emptySet(),
-    onGenreToggle: (String) -> Unit = {},
-    onPlayClick: () -> Unit = {}
+    onGenreToggle: (String) -> Unit = {}
 ) {
     if (genres.isEmpty()) {
         // Show placeholder grid when loading
@@ -454,41 +454,25 @@ fun GenresRow(
         return
     }
     
-    Column {
-        // Show genres in 3-column grid
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            genres.chunked(3).forEach { rowGenres ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    rowGenres.forEach { genre ->
-                        GenreChip(
-                            genre = genre,
-                            isSelected = selectedGenres.contains(genre),
-                            onClick = { onGenreToggle(genre) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    // Fill remaining columns if row has less than 3 items
-                    repeat(3 - rowGenres.size) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                }
-            }
-        }
-        
-        // Show Play button if any genre is selected
-        if (selectedGenres.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = onPlayClick,
+    // Show genres in 3-column grid
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        genres.chunked(3).forEach { rowGenres ->
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(24.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.play), fontWeight = FontWeight.Bold)
+                rowGenres.forEach { genre ->
+                    GenreChip(
+                        genre = genre,
+                        isSelected = selectedGenres.contains(genre),
+                        onClick = { onGenreToggle(genre) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                // Fill remaining columns if row has less than 3 items
+                repeat(3 - rowGenres.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
         }
     }

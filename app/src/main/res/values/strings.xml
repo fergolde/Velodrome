@@ -33,6 +33,15 @@
     <!-- Player -->
     <string name="player_now_playing">Reproduciendo Ahora</string>
     <string name="player_unknown_track">Tema Desconocido</string>
+    <string name="player_minimize">Minimizar</string>
+    <string name="player_menu">Menú</string>
+    <string name="player_shuffle">Aleatorio</string>
+    <string name="player_previous">Anterior</string>
+    <string name="player_next">Siguiente</string>
+    <string name="player_repeat">Repetir</string>
+    <string name="player_next_up">COLA</string>
+    <string name="player_progress">Progreso</string>
+    <string name="player_pause">Pausar</string>
 
     <!-- Explore -->
     <string name="explore_title">Sonic Gallery</string>

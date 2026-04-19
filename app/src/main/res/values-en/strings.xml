@@ -33,6 +33,15 @@
     <!-- Player -->
     <string name="player_now_playing">Now Playing</string>
     <string name="player_unknown_track">Unknown Track</string>
+    <string name="player_minimize">Minimize</string>
+    <string name="player_menu">Menu</string>
+    <string name="player_shuffle">Shuffle</string>
+    <string name="player_previous">Previous</string>
+    <string name="player_next">Next</string>
+    <string name="player_repeat">Repeat</string>
+    <string name="player_next_up">QUEUE</string>
+    <string name="player_progress">Progress</string>
+    <string name="player_pause">Pause</string>
 
     <!-- Explore -->
     <string name="explore_title">Sonic Gallery</string>
