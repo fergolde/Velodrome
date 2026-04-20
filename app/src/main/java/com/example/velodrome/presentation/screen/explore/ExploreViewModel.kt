@@ -134,28 +134,37 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val allAlbums = mutableListOf<Album>()
+                val genresToPlay: List<String>
                 
                 if (selectedGenres.isEmpty()) {
                     // No genre selected - load random albums (all genres)
                     Log.d(TAG, "Loading random albums (all genres)")
+                    genresToPlay = emptyList()
                     getRandomAlbumsUseCase(size = 50)
                         .onSuccess { albums ->
                             allAlbums.addAll(albums)
                             Log.d(TAG, "Got ${albums.size} albums")
                         }
+                } else if (selectedGenres.size == 1) {
+                    // Single genre - only that genre
+                    val genre = selectedGenres.first()
+                    Log.d(TAG, "Loading albums for single genre: $genre")
+                    genresToPlay = listOf(genre)
+                    getAlbumsByGenreUseCase(genre, size = 50)
+                        .onSuccess { albums ->
+                            allAlbums.addAll(albums)
+                            Log.d(TAG, "Got ${albums.size} albums for $genre")
+                        }
                 } else {
-                    // Get albums for each selected genre
-                    for (genre in selectedGenres) {
-                        Log.d(TAG, "Loading albums for genre: $genre")
-                        getAlbumsByGenreUseCase(genre, size = 50)
-                            .onSuccess { albums ->
-                                allAlbums.addAll(albums)
-                                Log.d(TAG, "Got ${albums.size} albums for $genre")
-                            }
-                            .onFailure { e ->
-                                Log.e(TAG, "Error loading albums for $genre: ${e.message}")
-                            }
-                    }
+                    // Multiple genres - randomly select ONE of the genres
+                    val randomGenre = selectedGenres.random()
+                    Log.d(TAG, "Multiple genres selected: $selectedGenres, randomly picked: $randomGenre")
+                    genresToPlay = listOf(randomGenre)
+                    getAlbumsByGenreUseCase(randomGenre, size = 50)
+                        .onSuccess { albums ->
+                            allAlbums.addAll(albums)
+                            Log.d(TAG, "Got ${albums.size} albums for $randomGenre")
+                        }
                 }
                 
                 // Now load tracks from all albums - wait for each one
@@ -231,16 +240,6 @@ class ExploreViewModel @Inject constructor(
     }
 
     /**
-     * Call this when track position changes - auto-loads more when needed
-     */
-    fun onTrackPositionChanged(position: Int) {
-        val remaining = playlist.size - position
-        if (remaining <= 5) {
-            loadMoreTracks()
-        }
-    }
-
-    /**
      * Check if we need to load more tracks - called from player
      */
     fun checkAndLoadMore() {
@@ -250,13 +249,5 @@ class ExploreViewModel @Inject constructor(
         if (loadedSize <= 5 && currentPlaylistPosition < playlist.size) {
             loadMoreTracks()
         }
-    }
-
-    fun onArtistClick(artist: com.example.velodrome.domain.model.Artist) {
-        // This will be handled by the UI with navigation
-    }
-
-    fun onAlbumClick(album: com.example.velodrome.domain.model.Album) {
-        // This will be handled by the UI with navigation
     }
 }
