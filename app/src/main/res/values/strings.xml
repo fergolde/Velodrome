@@ -29,6 +29,7 @@
     <string name="home_random">Aleatorio</string>
     <string name="home_discover">DESCUBRE</string>
     <string name="home_retry">Reintentar</string>
+    <string name="home_search_hint">Buscar artistas, álbumes o canciones…</string>
 
     <!-- Player -->
     <string name="player_now_playing">Reproduciendo Ahora</string>

@@ -1,6 +1,8 @@
 package com.example.velodrome.presentation.screen.homescreen
 
 import com.example.velodrome.domain.model.Album
+import com.example.velodrome.domain.model.Artist
+import com.example.velodrome.domain.model.Track
 
 /**
  * UI State for the Home screen.
@@ -43,5 +45,18 @@ data class HomeUiState(
     val isPlaying: Boolean = false,
 
     // Refresh state
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
+
+    // Global search state
+    val searchQuery: String = "",
+    val isSearching: Boolean = false,
+    val searchResults: SearchResults = SearchResults()
 )
+
+data class SearchResults(
+    val artists: List<Artist> = emptyList(),
+    val albums: List<Album> = emptyList(),
+    val tracks: List<Track> = emptyList()
+) {
+    val isEmpty: Boolean get() = artists.isEmpty() && albums.isEmpty() && tracks.isEmpty()
+}

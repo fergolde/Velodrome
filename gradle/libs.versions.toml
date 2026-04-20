@@ -22,7 +22,7 @@ junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 hilt = "2.59.2"
 hiltNavigationCompose = "1.3.0"
-room = "2.7.0"
+room = "2.8.4"
 
 [libraries]
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }

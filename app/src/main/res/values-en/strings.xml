@@ -29,6 +29,7 @@
     <string name="home_random">Random</string>
     <string name="home_discover">DISCOVER</string>
     <string name="home_retry">Retry</string>
+    <string name="home_search_hint">Search artists, albums or songs…</string>
 
     <!-- Player -->
     <string name="player_now_playing">Now Playing</string>
