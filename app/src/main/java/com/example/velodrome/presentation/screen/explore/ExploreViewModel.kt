@@ -213,11 +213,14 @@ class ExploreViewModel @Inject constructor(
      * Called when 5 or fewer tracks remain
      */
     fun loadMoreTracks() {
-        if (isLoadingMore) return
-        
+        Log.d(TAG, "=== loadMoreTracks ENTRY ===")
+        if (isLoadingMore) {
+            Log.d(TAG, "loadMoreTracks: already loading, returning")
+            return
+        }
+
         isLoadingMore = true
-        Log.d(TAG, "=== loadMoreTracks() called ===")
-        Log.d(TAG, "Current playlist size: ${playlist.size}, position: $currentPlaylistPosition")
+        Log.d(TAG, "loadMoreTracks: Current playlist size: ${playlist.size}, position: $currentPlaylistPosition")
         
         viewModelScope.launch {
             try {
@@ -299,17 +302,25 @@ class ExploreViewModel @Inject constructor(
      * Check if we need to load more tracks - called from player
      */
     fun checkAndLoadMore() {
-        if (isLoadingMore) {
-            Log.d(TAG, "checkAndLoadMore: already loading, skipping")
-            return
+        Log.d(TAG, "checkAndLoadMore ENTRY")
+        try {
+            if (isLoadingMore) {
+                Log.d(TAG, "checkAndLoadMore: already loading, skipping")
+                return
+            }
+            
+            val remainingInPlaylist = playlist.size - currentPlaylistPosition
+            Log.d(TAG, "checkAndLoadMore: remaining=$remainingInPlaylist, playlist.size=${playlist.size}")
+            
+            if (remainingInPlaylist <= 10) {
+                Log.d(TAG, "checkAndLoadMore: calling loadMoreTracks()")
+                loadMoreTracks()
+            } else {
+                Log.d(TAG, "checkAndLoadMore: not needed, remaining > 10")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "checkAndLoadMore EXCEPTION: ${e.message}", e)
         }
-        
-        val remainingInPlaylist = playlist.size - currentPlaylistPosition
-        Log.d(TAG, "checkAndLoadMore: remaining=$remainingInPlaylist, playlist.size=${playlist.size}")
-        
-        if (remainingInPlaylist <= 10) {
-            Log.d(TAG, "checkAndLoadMore: calling loadMoreTracks()")
-            loadMoreTracks()
-        }
+        Log.d(TAG, "checkAndLoadMore EXIT")
     }
 }
