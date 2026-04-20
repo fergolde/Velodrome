@@ -5,9 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -26,31 +26,25 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.velodrome.data.datasource.CacheService
-import com.example.velodrome.ui.theme.SurfaceDark
 import com.example.velodrome.ui.theme.TextSecondary
 import com.example.velodrome.util.CredentialsManager
 import java.io.File
 
 /**
- * Album cover image component with Coil and local cache.
- * Implements read-through cache:
- * 1. Check local cache
- * 2. If not cached, download and cache
- * 3. Load from local cache
+ * Artist avatar image component with local cache.
+ * Uses the same image cache as AlbumCover.
  *
- * @param coverArtId The coverArt ID from API (e.g., "al-123")
+ * @param coverUrl The coverArt ID from API (e.g., "ar-123")
  * @param contentDescription Description for accessibility
  * @param modifier Modifier for the component
- * @param size Size of the cover (default 160.dp)
- * @param cornerRadius Corner radius for the shape
+ * @param size Size of the avatar (default 80.dp)
  */
 @Composable
-fun AlbumCover(
+fun ArtistAvatar(
     coverArtId: String?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    size: Dp = 160.dp,
-    cornerRadius: Dp = 12.dp
+    size: Dp = 80.dp
 ) {
     // Get ImageCacheDataSource from global singleton
     val imageCacheDataSource = CacheService.imageCacheDataSource
@@ -75,9 +69,9 @@ fun AlbumCover(
             try {
                 val path = imageCacheDataSource.getImage(remoteUrl)
                 cachedImagePath = path
-                Log.d("AlbumCover", "Image loaded: path=$path")
+                Log.d("ArtistAvatar", "Image loaded: path=$path")
             } catch (e: Exception) {
-                Log.e("AlbumCover", "Error loading image: ${e.message}")
+                Log.e("ArtistAvatar", "Error loading image: ${e.message}")
             } finally {
                 isLoading = false
             }
@@ -87,18 +81,19 @@ fun AlbumCover(
     Box(
         modifier = modifier
             .size(size)
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(SurfaceDark),
+            .clip(CircleShape)
+            .background(
+                androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
+            ),
         contentAlignment = Alignment.Center
     ) {
         when {
             coverArtId.isNullOrBlank() -> {
-                Log.w("AlbumCover", "NULL cover URL for coverArtId: $coverArtId")
-                PlaceholderCover(modifier = Modifier.fillMaxSize())
+                PlaceholderAvatar(modifier = Modifier.fillMaxSize())
             }
             isLoading -> {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(size / 3),
                     color = TextSecondary
                 )
             }
@@ -127,30 +122,30 @@ fun AlbumCover(
                 )
             }
             else -> {
-                PlaceholderCover(modifier = Modifier.fillMaxSize())
+                PlaceholderAvatar(modifier = Modifier.fillMaxSize())
             }
         }
     }
 }
 
 /**
- * Placeholder shown when no cover image is available.
- *
- * @param modifier Modifier for the component
+ * Placeholder shown when no artist image is available.
  */
 @Composable
-private fun PlaceholderCover(
+private fun PlaceholderAvatar(
     modifier: Modifier = Modifier
 ) {
     Box(
-        modifier = modifier.background(SurfaceDark),
+        modifier = modifier.background(
+            androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
+        ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            imageVector = Icons.Default.Album,
+            imageVector = Icons.Default.Person,
             contentDescription = null,
             tint = TextSecondary,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(24.dp)
         )
     }
 }

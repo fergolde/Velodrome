@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import com.example.velodrome.presentation.screen.homescreen.AlbumCover
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -199,14 +200,12 @@ fun AlbumCard(album: Album, onClick: () -> Unit = {}) {
                     .clip(RoundedCornerShape(8.dp))
                     .background(color = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                if (!album.coverUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = CredentialsManager.getCoverArtUrl(album.coverUrl, 128),
-                        contentDescription = album.title,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+                AlbumCover(
+                    coverArtId = album.coverUrl,
+                    contentDescription = album.title,
+                    size = 64.dp,
+                    cornerRadius = 8.dp
+                )
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {

@@ -33,6 +33,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import com.example.velodrome.presentation.screen.homescreen.ArtistAvatar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -246,15 +247,12 @@ fun ArtistCircleCard(
                 .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            // Artist image placeholder or actual image
-            if (!artist.coverUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = CredentialsManager.getCoverArtUrl(artist.coverUrl, 160),
-                    contentDescription = artist.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
+            // Artist image with cache
+            ArtistAvatar(
+                coverArtId = artist.coverUrl,
+                contentDescription = artist.name,
+                size = 80.dp
+            )
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(

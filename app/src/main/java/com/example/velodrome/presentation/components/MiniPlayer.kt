@@ -36,6 +36,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
+import com.example.velodrome.presentation.screen.homescreen.AlbumCover
 import com.example.velodrome.util.CredentialsManager
 
 // Theme tokens needed for MiniPlayer
@@ -56,11 +57,6 @@ fun MiniPlayer(
     onNextClick: () -> Unit = {},
     onPreviousClick: () -> Unit = {}
 ) {
-    // Only recompute coverUrl when track changes
-    val coverUrl = remember(currentTrack) {
-        currentTrack?.coverArtId?.let { CredentialsManager.getCoverArtUrl(it, 200) }
-    }
-
     // Convert position from ms to seconds for progress calculation
     val positionSec = (currentPosition / 1000).toInt()
     val progress = if (currentTrack != null && currentTrack.durationSec > 0) {
@@ -103,17 +99,12 @@ fun MiniPlayer(
                     .clip(RoundedCornerShape(8.dp))
                     .background(SurfaceContainer)
             ) {
-                if (coverUrl != null) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(coverUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+                AlbumCover(
+                    coverArtId = currentTrack?.coverArtId,
+                    contentDescription = null,
+                    size = 48.dp,
+                    cornerRadius = 8.dp
+                )
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import com.example.velodrome.presentation.screen.homescreen.ArtistAvatar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
@@ -224,14 +225,11 @@ fun ArtistCard(artist: Artist, onClick: () -> Unit = {}) {
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                if (!artist.coverUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = CredentialsManager.getCoverArtUrl(artist.coverUrl, 128),
-                        contentDescription = artist.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
+                ArtistAvatar(
+                    coverArtId = artist.coverUrl,
+                    contentDescription = artist.name,
+                    size = 64.dp
+                )
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
