@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.velodrome.data.local.datasource.LocalMusicDataSource
 import com.example.velodrome.data.local.entity.AlbumEntity
 import com.example.velodrome.data.local.entity.ArtistEntity
+import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.domain.repository.NavidromeRepository
 import com.example.velodrome.domain.usecase.GetArtistsUseCase
@@ -159,6 +160,56 @@ class ExploreViewModel @Inject constructor(
 
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
+
+        if (query.isBlank()) {
+            _uiState.update { it.copy(isSearching = false, searchResults = SearchResults()) }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSearching = true) }
+
+            try {
+                // Search in local database
+                val artistEntities = localMusicDataSource.searchArtists(query)
+                val albumEntities = localMusicDataSource.searchAlbums(query)
+
+                val artists = artistEntities.map { it.toDomain() }
+                val albums = albumEntities.map { it.toDomain() }
+
+                // Search tracks from server
+                val tracks = try {
+                    navidromeRepository.getRandomSongs(size = 50).getOrNull()
+                        ?.filter { track ->
+                            track.title?.lowercase()?.contains(query.lowercase()) == true ||
+                            track.artistName?.lowercase()?.contains(query.lowercase()) == true
+                        } ?: emptyList()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error searching tracks", e)
+                    emptyList()
+                }
+
+                _uiState.update {
+                    it.copy(
+                        isSearching = false,
+                        searchResults = SearchResults(
+                            artists = artists,
+                            albums = albums,
+                            tracks = tracks
+                        )
+                    )
+                }
+
+                Log.d(TAG, "Search '$query': ${artists.size} artists, ${albums.size} albums, ${tracks.size} tracks")
+            } catch (e: Exception) {
+                Log.e(TAG, "Search error", e)
+                _uiState.update { it.copy(isSearching = false) }
+            }
+        }
+    }
+
+    fun clearSearch() {
+        _uiState.update { it.copy(searchQuery = "", isSearching = false, searchResults = SearchResults()) }
     }
 
     fun onGenreToggle(genre: String) {

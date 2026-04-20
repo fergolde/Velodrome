@@ -4,10 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.data.local.datasource.LocalMusicDataSource
-import com.example.velodrome.data.local.mapper.toDomain
-import com.example.velodrome.domain.model.Album
-import com.example.velodrome.domain.model.Artist
-import com.example.velodrome.domain.model.Track
+import com.example.velodrome.data.local.entity.AlbumEntity
+import com.example.velodrome.data.local.entity.ArtistEntity
 import com.example.velodrome.domain.repository.NavidromeRepository
 import com.example.velodrome.domain.usecase.GetAlbumsByGenreUseCase
 import com.example.velodrome.domain.usecase.GetAlbumsByYearUseCase
@@ -26,8 +24,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val TAG = "HomeViewModel"
-
 /**
  * ViewModel for the Navidrome Home Screen.
  * Manages the state of all home screen features including:
@@ -35,7 +31,7 @@ private const val TAG = "HomeViewModel"
  * - Most played albums
  * - Genre and year filtering
  * - Playback state (synced with PlayerManager)
- * - Global search
+ * - Initial sync to local DB for search
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -57,6 +53,79 @@ class HomeViewModel @Inject constructor(
     init {
         loadInitialData()
         syncWithPlayerManager()
+        syncDataToLocal()
+    }
+
+    /**
+     * Sync all artists and albums to local DB on first load
+     * This enables offline search in Explore screen
+     */
+    private fun syncDataToLocal() {
+        viewModelScope.launch {
+            try {
+                val artistCount = localMusicDataSource.getArtistCount()
+                val albumCount = localMusicDataSource.getAlbumCount()
+
+                Log.d("HomeViewModel", "Local DB: $artistCount artists, $albumCount albums")
+
+                // Load and sync all artists
+                if (artistCount == 0) {
+                    Log.d("HomeViewModel", "Syncing artists to local DB...")
+                    var offset = 0
+                    while (offset < 10000) {
+                        val result = navidromeRepository.getArtists(offset = offset, size = 500)
+                        val artists = result.getOrNull() ?: break
+                        if (artists.isEmpty()) break
+
+                        val entities = artists.map { artist ->
+                            ArtistEntity(
+                                id = artist.id,
+                                name = artist.name ?: "",
+                                albumCount = artist.albumCount,
+                                coverUrl = artist.coverUrl
+                            )
+                        }
+                        localMusicDataSource.insertArtists(entities)
+                        Log.d("HomeViewModel", "Synced ${entities.size} artists")
+                        if (artists.size < 500) break
+                        offset += 500
+                    }
+                    Log.d("HomeViewModel", "Artist sync complete")
+                }
+
+                // Load and sync all albums (using alphabetical to get more)
+                if (albumCount == 0) {
+                    Log.d("HomeViewModel", "Syncing albums to local DB...")
+                    var offset = 0
+                    while (offset < 10000) {
+                        val result = navidromeRepository.getAllAlbumsFromServer(offset = offset, size = 500)
+                        val albums = result.getOrNull() ?: break
+                        if (albums.isEmpty()) break
+
+                        val entities = albums.map { album ->
+                            AlbumEntity(
+                                id = album.id,
+                                artistId = album.artistId,
+                                artistName = album.artistName ?: "",
+                                title = album.title ?: "",
+                                year = album.year,
+                                genre = album.genre,
+                                coverUrl = album.coverUrl
+                            )
+                        }
+                        localMusicDataSource.insertAlbums(entities)
+                        Log.d("HomeViewModel", "Synced ${entities.size} albums")
+                        if (entities.size < 500) break
+                        offset += 500
+                    }
+                    Log.d("HomeViewModel", "Album sync complete")
+                }
+
+                Log.d("HomeViewModel", "Initial sync complete!")
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error syncing data", e)
+            }
+        }
     }
 
     /**
@@ -86,72 +155,6 @@ class HomeViewModel @Inject constructor(
         loadRandomAlbums()
         loadGenres()
         loadAvailableYears()
-    }
-
-    /**
-     * Global search across artists, albums, and tracks from local database.
-     * @param query The search query
-     */
-    fun onSearchQueryChange(query: String) {
-        _uiState.update { it.copy(searchQuery = query) }
-
-        if (query.isBlank()) {
-            _uiState.update { it.copy(isSearching = false, searchResults = SearchResults()) }
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isSearching = true) }
-
-            try {
-                val lowerQuery = query.lowercase()
-
-                // Search artists
-                val artistEntities = localMusicDataSource.searchArtists(query)
-                val artists = artistEntities.map { it.toDomain() }
-
-                // Search albums
-                val albumEntities = localMusicDataSource.searchAlbums(query)
-                val albums = albumEntities.map { it.toDomain() }
-
-                // Search tracks (tracks not yet synced, so search server)
-                val tracks = searchTracksFromServer(query)
-
-                _uiState.update {
-                    it.copy(
-                        isSearching = false,
-                        searchResults = SearchResults(
-                            artists = artists,
-                            albums = albums,
-                            tracks = tracks
-                        )
-                    )
-                }
-                Log.d(TAG, "Search '$query': ${artists.size} artists, ${albums.size} albums, ${tracks.size} tracks")
-            } catch (e: Exception) {
-                Log.e(TAG, "Search error", e)
-                _uiState.update { it.copy(isSearching = false) }
-            }
-        }
-    }
-
-    private suspend fun searchTracksFromServer(query: String): List<Track> {
-        // For now, tracks are not in local DB, so we search from server
-        // In a full implementation, you'd have TrackDao and sync tracks too
-        return try {
-            navidromeRepository.getRandomSongs(size = 50).getOrNull()
-                ?.filter { track ->
-                    track.title?.lowercase()?.contains(query.lowercase()) == true ||
-                    track.artistName?.lowercase()?.contains(query.lowercase()) == true
-                } ?: emptyList()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error searching tracks", e)
-            emptyList()
-        }
-    }
-
-    fun clearSearch() {
-        _uiState.update { it.copy(searchQuery = "", isSearching = false, searchResults = SearchResults()) }
     }
 
     /**
@@ -337,25 +340,25 @@ class HomeViewModel @Inject constructor(
             try {
                 // Load 10 random songs directly from API
                 val songsResult = navidromeRepository.getRandomSongs(size = 10)
-
+                
                 songsResult.onSuccess { songs ->
                     Log.d("HomeViewModel", "Loaded ${songs.size} random songs")
-
+                    
                     if (songs.isNotEmpty()) {
                         // Shuffle and play first 10
                         val shuffledSongs = songs.shuffled().take(10)
-
+                        
                         // Set up callback for infinite scroll
                         PlayerManager.setLoadMoreCallback {
                             Log.d("HomeViewModel", "Home shuffle: loading more songs")
                             loadMoreRandomSongs()
                         }
-
+                        
                         // Start playback
                         PlayerManager.setPlaylist(shuffledSongs, startPlaying = true)
                         Log.d("HomeViewModel", "Started shuffle playback with ${shuffledSongs.size} songs")
                     }
-
+                    
                     _uiState.update { it.copy(isLoading = false, isPlaying = true) }
                 }.onFailure { error ->
                     Log.e("HomeViewModel", "Error loading random songs: ${error.message}")
