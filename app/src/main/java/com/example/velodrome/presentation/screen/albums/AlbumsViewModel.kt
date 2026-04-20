@@ -57,9 +57,4 @@ class AlbumsViewModel @Inject constructor(
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
     }
-
-    fun onAlbumClick(album: Album) {
-        Log.d(TAG, "Album clicked: ${album.title}")
-        // TODO: navigate to album detail
-    }
 }

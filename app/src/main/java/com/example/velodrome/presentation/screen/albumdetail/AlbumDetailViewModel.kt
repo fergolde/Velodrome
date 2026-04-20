@@ -127,8 +127,4 @@ class AlbumDetailViewModel @Inject constructor(
         Log.d(TAG, "Add to queue: ${track.title}")
         PlayerManager.addToQueue(track)
     }
-
-    fun retry() {
-        loadAlbumData()
-    }
 }

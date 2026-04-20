@@ -1,5 +1,6 @@
 package com.example.velodrome.presentation.screen.homescreen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,13 +9,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material3.Icon
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
@@ -76,46 +75,6 @@ fun AlbumCover(
 }
 
 /**
- * Album cover with custom size.
- *
- * @param coverUrl URL of the cover image
- * @param modifier Modifier for the component
- */
-@Composable
-fun AlbumCoverSmall(
-    coverArtId: String?,
-    modifier: Modifier = Modifier
-) {
-    AlbumCover(
-        coverArtId = coverArtId,
-        contentDescription = null,
-        modifier = modifier,
-        size = 120.dp,
-        cornerRadius = 8.dp
-    )
-}
-
-/**
- * Album cover for featured section.
- *
- * @param coverArtId The coverArt ID from the API
- * @param modifier Modifier for the component
- */
-@Composable
-fun AlbumCoverLarge(
-    coverArtId: String?,
-    modifier: Modifier = Modifier
-) {
-    AlbumCover(
-        coverArtId = coverArtId,
-        contentDescription = null,
-        modifier = modifier,
-        size = 180.dp,
-        cornerRadius = 16.dp
-    )
-}
-
-/**
  * Placeholder shown when no cover image is available.
  *
  * @param modifier Modifier for the component
@@ -134,42 +93,5 @@ private fun PlaceholderCover(
             tint = TextSecondary,
             modifier = Modifier.size(48.dp)
         )
-    }
-}
-
-/**
- * Full-size album cover that fills parent.
- *
- * @param coverUrl URL of the cover image
- * @param contentDescription Description for accessibility
- * @param modifier Modifier for the component
- */
-@Composable
-fun AlbumCoverFull(
-    coverUrl: String?,
-    contentDescription: String?,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(SurfaceDark),
-        contentAlignment = Alignment.Center
-    ) {
-        if (coverUrl.isNullOrBlank()) {
-            PlaceholderCover(
-                modifier = Modifier.fillMaxSize()
-            )
-        } else {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(coverUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = contentDescription,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-        }
     }
 }

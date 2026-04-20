@@ -1,20 +1,42 @@
 package com.example.velodrome.presentation.screen.homescreen
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -26,18 +48,7 @@ import com.example.velodrome.domain.model.Album
 import com.example.velodrome.presentation.UiConstants
 import com.example.velodrome.presentation.components.MiniPlayer
 import com.example.velodrome.presentation.player.PlayerManager
-import com.example.velodrome.presentation.player.PlayerManager.currentTrack
 import com.example.velodrome.ui.theme.VelodromeTheme
-
-// --- Theme Tokens (Velvet Echo) ---
-val PrimaryColor = Color(0xFF7C4DFF)
-val BackgroundDark = Color(0xFF0C0E17)
-val SurfaceDark = Color(0xFF171924)
-val SurfaceContainer = Color(0xFF222532)
-val TextPrimary = Color(0xFFF0F0FD)
-val TextSecondary = Color(0xFFAAAAB7)
-val AccentPurple = Color(0xFFB6A0FF)
-val BackgroundDark2 = Color(0xFF0C0E17)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +63,7 @@ fun HomeScreen(
 
     Scaffold(
         bottomBar = { BottomNavigationBar(onExploreClick = onExploreClick, onSettingsClick = onSettingsClick) },
-        containerColor = BackgroundDark
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -66,6 +77,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
+            //Recien añadidos
             item {
                 SectionHeader(title = stringResource(R.string.home_recently_added), subtitle = stringResource(R.string.home_new_arrivals))
                 Spacer(modifier = Modifier.height(16.dp))
@@ -76,6 +88,18 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
+            //Aleatorios
+            item {
+                SectionHeader(title = stringResource(R.string.home_random), subtitle = stringResource(R.string.home_discover))
+                Spacer(modifier = Modifier.height(16.dp))
+                RecentAlbumsRow(
+                    albums = state.randomAlbums,
+                    onAlbumClick = onAlbumClick
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+            }
+
+            //Mas reproducidos
             item {
                 SectionHeader(title = stringResource(R.string.home_most_played), subtitle = stringResource(R.string.home_your_favorites))
                 Spacer(modifier = Modifier.height(16.dp))
@@ -86,6 +110,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
+            //Recientemente reproducidos
             item {
                 SectionHeader(title = stringResource(R.string.home_recently_played), subtitle = stringResource(R.string.home_just_for_you))
                 Spacer(modifier = Modifier.height(16.dp))
@@ -95,23 +120,12 @@ fun HomeScreen(
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }
-
-            item {
-                SectionHeader(title = stringResource(R.string.home_random), subtitle = stringResource(R.string.home_discover))
-                Spacer(modifier = Modifier.height(16.dp))
-                RecentAlbumsRow(
-                    albums = state.randomAlbums,
-                    onAlbumClick = onAlbumClick
-                )
-                Spacer(modifier = Modifier.height(100.dp)) // Padding for mini player
-            }
         }
 
         // Mini Player - only show if there's a track to play
         val currentTrack by PlayerManager.currentTrack.collectAsState()
         val currentPosition by PlayerManager.currentPosition.collectAsState()
         val isPlaying by PlayerManager.isPlaying.collectAsState()
-        val playlist by PlayerManager.playlist.collectAsState()
         
         if (currentTrack != null) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
@@ -135,7 +149,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(color = AccentPurple)
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
     }
 
@@ -148,15 +162,15 @@ fun HomeScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = error,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
                     onClick = { viewModel.retry() },
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text(stringResource(R.string.home_retry), color = BackgroundDark)
+                    Text(stringResource(R.string.home_retry), color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }
@@ -172,12 +186,12 @@ fun ShuffleButton(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = AccentPurple),
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
         shape = RoundedCornerShape(28.dp)
     ) {
         Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(20.dp))
         Spacer(modifier = Modifier.width(8.dp))
-        Text(stringResource(R.string.home_shuffle), color = BackgroundDark, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.home_shuffle), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -190,14 +204,14 @@ fun SectionHeader(
     onActionClick: (() -> Unit)? = null
 ) {
     Column {
-        Text(subtitle, color = AccentPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        Text(subtitle, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(title, color = TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+            Text(title, color = MaterialTheme.colorScheme.onBackground, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
             val actionText = showActionText ?: if (onViewAllClick != null) stringResource(R.string.view_all) else null
             if (actionText != null) {
                 Text(
                     text = actionText,
-                    color = AccentPurple,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 14.sp,
                     modifier = Modifier.clickable(onClick = { onActionClick?.invoke() ?: onViewAllClick?.invoke() })
                 )
@@ -229,7 +243,7 @@ fun BottomNavigationBar(
     onSettingsClick: () -> Unit = {}
 ) {
     NavigationBar(
-        containerColor = SurfaceDark.copy(alpha = 0.9f),
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
         tonalElevation = 0.dp
     ) {
         NavigationBarItem(
@@ -237,21 +251,21 @@ fun BottomNavigationBar(
             label = { Text(stringResource(R.string.nav_home)) },
             selected = true,
             onClick = { },
-            colors = NavigationBarItemDefaults.colors(selectedIconColor = AccentPurple, selectedTextColor = AccentPurple, unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary, unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Explore, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_explore)) },
             selected = false,
             onClick = onExploreClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
             onClick = onSettingsClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
     }
 }

@@ -71,4 +71,18 @@ interface NavidromeApi {
         @Query("time") time: Long? = null,
         @Query("submission") submission: Boolean = true
     ): ResponseBody
+
+    // Genre-based song retrieval
+    @GET("rest/getSongsByGenre.view")
+    suspend fun getSongsByGenre(
+        @Query("genre") genre: String,
+        @Query("count") count: Int = 50,
+        @Query("offset") offset: Int = 0
+    ): ResponseBody
+
+    @GET("rest/getRandomSongs.view")
+    suspend fun getRandomSongs(
+        @Query("size") size: Int = 50,
+        @Query("genre") genre: String? = null
+    ): ResponseBody
 }

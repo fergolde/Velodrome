@@ -20,16 +20,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -43,7 +41,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -53,23 +50,13 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.velodrome.R
-import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.presentation.UiConstants
-import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.screen.homescreen.RecentAlbumsRow
 import com.example.velodrome.presentation.screen.homescreen.SectionHeader
 import com.example.velodrome.util.CredentialsManager
-
-// --- Theme Tokens (Velvet Echo) ---
-val PrimaryColor = Color(0xFF7C4DFF)
-val BackgroundDark = Color(0xFF0C0E17)
-val SurfaceDark = Color(0xFF171924)
-val SurfaceContainer = Color(0xFF222532)
-val TextPrimary = Color(0xFFF0F0FD)
-val TextSecondary = Color(0xFFAAAAB7)
-val AccentPurple = Color(0xFFB6A0FF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,13 +67,14 @@ fun ExploreScreen(
     onAlbumsViewAllClick: () -> Unit = {},
     onPlayerClick: () -> Unit = {},
     onArtistClick: (String) -> Unit = {},
-    onAlbumClick: (String) -> Unit = {}
+    onAlbumClick: (String) -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
     Scaffold(
-        bottomBar = { ExploreBottomNavigationBar(onHomeClick = onHomeClick) },
-        containerColor = BackgroundDark
+        bottomBar = { ExploreBottomNavigationBar(onHomeClick = onHomeClick, onSettingsClick = onSettingsClick) },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -189,10 +177,10 @@ fun SearchBar(
             .fillMaxWidth()
             .height(56.dp)
             .clip(RoundedCornerShape(28.dp))
-            .background(SurfaceDark),
-        placeholder = { Text(stringResource(R.string.explore_search_hint), color = TextSecondary) },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
-        trailingIcon = { Icon(Icons.Default.Mic, contentDescription = null, tint = TextSecondary) },
+            .background(MaterialTheme.colorScheme.surface),
+        placeholder = { Text(stringResource(R.string.explore_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+        trailingIcon = { Icon(Icons.Default.Mic, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
         singleLine = true,
         shape = RoundedCornerShape(28.dp)
     )
@@ -232,12 +220,12 @@ private fun ArtistPlaceholder(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape)
-                .background(SurfaceContainer)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Box(modifier = Modifier.width(40.dp).height(12.dp).background(SurfaceContainer.copy(alpha = 0.5f)))
+        Box(modifier = Modifier.width(40.dp).height(12.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)))
         Spacer(modifier = Modifier.height(4.dp))
-        Box(modifier = Modifier.width(25.dp).height(8.dp).background(SurfaceContainer.copy(alpha = 0.3f)))
+        Box(modifier = Modifier.width(25.dp).height(8.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)))
     }
 }
 
@@ -256,7 +244,7 @@ fun ArtistCircleCard(
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape)
-                .background(SurfaceContainer)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             // Artist image placeholder or actual image
             if (!artist.coverUrl.isNullOrBlank()) {
@@ -271,45 +259,11 @@ fun ArtistCircleCard(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = artist.name ?: "Unknown",
-            color = TextPrimary,
+color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
             fontSize = 12.sp,
             maxLines = 1
         )
-    }
-}
-
-@Composable
-fun AlbumExploreCard(
-    title: String,
-    artist: String,
-    coverArt: String? = null,
-    color: Color = Color(0xFF3D3D3D),
-    onClick: (() -> Unit)? = null
-) {
-    Column(
-        modifier = Modifier
-            .width(160.dp)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(160.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(color)
-        ) {
-            if (!coverArt.isNullOrBlank()) {
-                AsyncImage(
-                    model = CredentialsManager.getCoverArtUrl(coverArt, 320),
-                    contentDescription = title,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(title, color = TextPrimary, fontWeight = FontWeight.Bold, maxLines = 1)
-        Text(artist, color = TextSecondary, fontSize = 12.sp, maxLines = 1)
     }
 }
 
@@ -363,7 +317,7 @@ private fun GenreChipPlaceholder() {
         modifier = Modifier
             .height(40.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(SurfaceContainer)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
     )
 }
 
@@ -379,7 +333,7 @@ fun GenreChip(
             .height(40.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) PrimaryColor else SurfaceContainer
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
     ) {
         Text(
             text = genre,
@@ -387,7 +341,7 @@ fun GenreChip(
                 .fillMaxWidth()
                 .wrapContentSize(Alignment.Center)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
-            color = if (isSelected) Color.White else TextPrimary,
+            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             maxLines = 1
@@ -396,9 +350,12 @@ fun GenreChip(
 }
 
 @Composable
-fun ExploreBottomNavigationBar(onHomeClick: () -> Unit = {}) {
+fun ExploreBottomNavigationBar(
+    onHomeClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
+){
     NavigationBar(
-        containerColor = SurfaceDark.copy(alpha = 0.9f),
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
         tonalElevation = 0.dp
     ) {
         NavigationBarItem(
@@ -406,21 +363,21 @@ fun ExploreBottomNavigationBar(onHomeClick: () -> Unit = {}) {
             label = { Text(stringResource(R.string.nav_home)) },
             selected = false,
             onClick = onHomeClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Explore, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_explore)) },
             selected = true,
             onClick = { },
-            colors = NavigationBarItemDefaults.colors(selectedIconColor = AccentPurple, selectedTextColor = AccentPurple, unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary, unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
-            onClick = { },
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            onClick = onSettingsClick,
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
     }
 }

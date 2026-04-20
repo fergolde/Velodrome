@@ -63,7 +63,6 @@ fun PlayerScreen(
     var showQueue by remember { mutableStateOf(false) }
 
     Scaffold(
-        //topBar = { PlayerTopAppBar(onMinimizeClick = onMinimizeClick) },
         bottomBar = { PlayerBottomNavigationBar(onHomeClick = onHomeClick, onExploreClick = onExploreClick, onSettingsClick = onSettingsClick) },
         containerColor = BackgroundDark
     ) { paddingValues ->

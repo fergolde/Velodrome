@@ -564,4 +564,118 @@ class NavidromeRepositoryImpl @Inject constructor(
             Log.d("NavidromeRepository", "Scrobbled track: $trackId, submission: $submission")
         }
     }
+
+    override suspend fun getSongsByGenre(genre: String, count: Int, offset: Int): Result<List<Track>> {
+        return runCatching {
+            Log.d("NavidromeRepository", "getSongsByGenre: genre=$genre, count=$count, offset=$offset")
+            val responseBody = api.getSongsByGenre(genre, count, offset)
+            val xmlString = responseBody.string()
+            Log.d("NavidromeRepository", "getSongsByGenre XML (first 500): ${xmlString.take(500)}")
+            val response = XmlParser.parse(xmlString)
+
+            val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
+            val songsByGenre = subsonicResponse?.get("songsByGenre") as? Map<String, Any>
+            val songsList = songsByGenre?.get("song") as? List<Any> ?: emptyList()
+
+            songsList.mapNotNull { songMap ->
+                (songMap as? Map<String, Any>)?.let { sm ->
+                    parseTrackFromSongMap(sm)
+                }
+            }.also { tracks ->
+                Log.d("NavidromeRepository", "Parsed ${tracks.size} songs from genre $genre")
+            }
+        }
+    }
+
+    override suspend fun getRandomSongsByGenre(genre: String, size: Int): Result<List<Track>> {
+        return runCatching {
+            Log.d("NavidromeRepository", "getRandomSongsByGenre: genre=$genre, size=$size")
+            val responseBody = api.getRandomSongs(size, genre)
+            val xmlString = responseBody.string()
+            Log.d("NavidromeRepository", "getRandomSongsByGenre XML (first 500): ${xmlString.take(500)}")
+            val response = XmlParser.parse(xmlString)
+
+            val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
+            val songsList = subsonicResponse?.get("randomSongs") as? Map<String, Any>
+            val songList = songsList?.get("song") as? List<Any> ?: emptyList()
+
+            songList.mapNotNull { songMap ->
+                (songMap as? Map<String, Any>)?.let { sm ->
+                    parseTrackFromSongMap(sm)
+                }
+            }.also { tracks ->
+                Log.d("NavidromeRepository", "Parsed ${tracks.size} random songs from genre $genre")
+            }
+        }
+    }
+
+    override suspend fun getRandomSongs(size: Int): Result<List<Track>> {
+        return runCatching {
+            Log.d("NavidromeRepository", "getRandomSongs: size=$size")
+            val responseBody = api.getRandomSongs(size, null)
+            val xmlString = responseBody.string()
+            Log.d("NavidromeRepository", "getRandomSongs XML (first 500): ${xmlString.take(500)}")
+            val response = XmlParser.parse(xmlString)
+
+            val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
+            val songsList = subsonicResponse?.get("randomSongs") as? Map<String, Any>
+            val songList = songsList?.get("song") as? List<Any> ?: emptyList()
+
+            songList.mapNotNull { songMap ->
+                (songMap as? Map<String, Any>)?.let { sm ->
+                    parseTrackFromSongMap(sm)
+                }
+            }.also { tracks ->
+                Log.d("NavidromeRepository", "Parsed ${tracks.size} random songs")
+            }
+        }
+    }
+
+    /**
+     * Helper to parse a Track from a song map (common parsing logic)
+     */
+    private fun parseTrackFromSongMap(sm: Map<String, Any>): Track {
+        val albumId = sm["albumId"] as? String ?: sm["album"] as? String ?: ""
+        val durationValue = sm["duration"]
+        val durationSec = when (durationValue) {
+            is Number -> durationValue.toInt()
+            is String -> durationValue.toIntOrNull() ?: 0
+            else -> 0
+        }
+        val sizeValue = sm["size"]
+        val sizeBytes = when (sizeValue) {
+            is Number -> sizeValue.toLong()
+            is String -> sizeValue.toLongOrNull() ?: 0L
+            else -> 0L
+        }
+        val bitrateValue = sm["bitRate"]
+        val bitrate = when (bitrateValue) {
+            is Number -> bitrateValue.toInt()
+            is String -> bitrateValue.toIntOrNull() ?: 0
+            else -> 0
+        }
+        val trackValue = sm["track"]
+        val trackNumber = when (trackValue) {
+            is Number -> trackValue.toInt()
+            is String -> trackValue.toIntOrNull() ?: 0
+            else -> 0
+        }
+        val coverArtValue = sm["coverArt"] as? String
+        val albumNameValue = sm["album"] as? String ?: albumId
+        val effectiveCoverArtId = coverArtValue ?: "al-$albumId"
+
+        return Track(
+            id = sm["id"] as? String ?: "",
+            albumId = albumId,
+            title = sm["title"] as? String ?: "",
+            artistName = sm["artist"] as? String ?: "",
+            albumName = albumNameValue,
+            durationSec = durationSec,
+            sizeBytes = sizeBytes,
+            bitrate = bitrate,
+            trackNumber = trackNumber,
+            isCached = false,
+            coverArtId = effectiveCoverArtId
+        )
+    }
 }

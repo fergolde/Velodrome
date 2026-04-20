@@ -5,7 +5,6 @@ import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.audio.AudioPlayerManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Singleton player state manager - delegates to AudioPlayerManager for real playback.
@@ -26,7 +25,6 @@ object PlayerManager {
 
     // Keep local state for duration (not exposed by AudioPlayerManager in same way)
     private val _duration = MutableStateFlow(0L)
-    val duration: StateFlow<Long> = _duration.asStateFlow()
 
     /**
      * Set a new playlist and start playing from index 0
@@ -70,15 +68,6 @@ object PlayerManager {
         }
     }
 
-    /**
-     * Replace entire playlist with new tracks
-     */
-    fun replacePlaylist(tracks: List<Track>) {
-        AudioPlayerManager.setPlaylist(tracks)
-        if (tracks.isNotEmpty()) {
-            AudioPlayerManager.playTrack(tracks[0], tracks, 0)
-        }
-    }
 
     /**
      * Set current index directly (for queue navigation)
@@ -107,13 +96,6 @@ object PlayerManager {
     }
 
     /**
-     * Pause playback
-     */
-    fun pause() {
-        AudioPlayerManager.pause()
-    }
-
-    /**
      * Start/resume playback
      */
     fun play() {
@@ -139,20 +121,6 @@ object PlayerManager {
      */
     fun seekTo(positionMs: Long) {
         AudioPlayerManager.seekTo(positionMs)
-    }
-
-    /**
-     * Get current position in milliseconds directly from MediaController
-     */
-    fun getCurrentPositionMs(): Long {
-        return AudioPlayerManager.getCurrentPositionMs()
-    }
-
-    /**
-     * Clear the playlist
-     */
-    fun clearPlaylist() {
-        AudioPlayerManager.clearPlaylist()
     }
 
     /**
@@ -186,12 +154,5 @@ object PlayerManager {
 
     fun setLoadMoreCallback(callback: () -> Unit) {
         loadMoreCallback = callback
-    }
-
-    /**
-     * Notify that more tracks are needed
-     */
-    fun requestLoadMore() {
-        loadMoreCallback?.invoke()
     }
 }

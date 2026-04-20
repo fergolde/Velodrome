@@ -78,14 +78,6 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Refreshes all data.
-     */
-    fun refresh() {
-        _uiState.update { it.copy(isRefreshing = true) }
-        loadInitialData()
-    }
-
-    /**
      * Loads the latest added albums.
      * @param size Number of albums to fetch
      */
@@ -190,44 +182,6 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Filters albums by year.
-     * Clears genre filter when year is selected.
-     * @param year The year to filter by, or null to clear filter
-     */
-    fun onYearSelected(year: Int?) {
-        _uiState.update {
-            it.copy(
-                selectedYear = year,
-                selectedGenre = null,
-                filteredAlbums = emptyList()
-            )
-        }
-
-        if (year != null) {
-            loadAlbumsByYear(year)
-        }
-    }
-
-    /**
-     * Filters albums by genre.
-     * Clears year filter when genre is selected.
-     * @param genre The genre to filter by, or null to clear filter
-     */
-    fun onGenreSelected(genre: String?) {
-        _uiState.update {
-            it.copy(
-                selectedGenre = genre,
-                selectedYear = null,
-                filteredAlbums = emptyList()
-            )
-        }
-
-        if (genre != null) {
-            loadAlbumsByGenre(genre)
-        }
-    }
-
-    /**
      * Loads albums filtered by year.
      * @param year The year to filter by
      */
@@ -282,44 +236,10 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Clears all active filters.
-     */
-    fun clearFilters() {
-        _uiState.update {
-            it.copy(
-                selectedYear = null,
-                selectedGenre = null,
-                filteredAlbums = emptyList()
-            )
-        }
-    }
-
-    /**
      * Retries loading all data after an error.
      */
     fun retry() {
         loadInitialData()
-    }
-
-    /**
-     * Clears the current error.
-     */
-    fun clearError() {
-        _uiState.update { it.copy(error = null) }
-    }
-
-    /**
-     * Updates the playback state.
-     * @param trackId The ID of the track being played
-     * @param isPlaying Whether the track is currently playing
-     */
-    fun updatePlaybackState(trackId: String?, isPlaying: Boolean) {
-        _uiState.update {
-            it.copy(
-                currentTrackId = trackId,
-                isPlaying = isPlaying
-            )
-        }
     }
 
     /**
@@ -376,9 +296,4 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-
-    /**
-     * Get current track from PlayerManager for MiniPlayer display
-     */
-    fun getCurrentTrack() = PlayerManager.currentTrack.value
 }

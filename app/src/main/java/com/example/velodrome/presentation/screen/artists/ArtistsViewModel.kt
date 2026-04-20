@@ -54,9 +54,4 @@ class ArtistsViewModel @Inject constructor(
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
     }
-
-    fun onArtistClick(artist: Artist) {
-        Log.d(TAG, "Artist clicked: ${artist.name}")
-        // TODO: navigate to artist detail
-    }
 }
