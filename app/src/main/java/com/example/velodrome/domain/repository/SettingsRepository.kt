@@ -12,13 +12,13 @@ interface SettingsRepository {
 
     /**
      * Image cache size in megabytes (MB).
-     * Default: 100 MB
+     * Default: 200 MB
      */
     val imageCacheSizeMb: Flow<Int>
 
     /**
      * Music cache size in gigabytes (GB).
-     * Default: 1 GB
+     * Default: 2 GB
      */
     val musicCacheSizeGb: Flow<Int>
 

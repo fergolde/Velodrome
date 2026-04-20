@@ -32,6 +32,7 @@ import coil.request.ImageRequest
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.player.PlayerManager
+import com.example.velodrome.presentation.screen.homescreen.AlbumCover
 import com.example.velodrome.presentation.screen.homescreen.BottomNavigationBar
 import com.example.velodrome.presentation.components.MiniPlayer
 import com.example.velodrome.util.CredentialsManager
@@ -153,11 +154,6 @@ fun PlayerTopAppBar(onMinimizeClick: () -> Unit = {}) {
 
 @Composable
 fun AlbumArtCard(coverArtId: String? = null) {
-    // Only recompose when coverArtId changes, not on every state change
-    val coverUrl = remember(coverArtId) {
-        coverArtId?.let { CredentialsManager.getCoverArtUrl(it, 600) }
-    }
-    
     Surface(
         modifier = Modifier
             .aspectRatio(1f)
@@ -166,39 +162,13 @@ fun AlbumArtCard(coverArtId: String? = null) {
         color = SurfaceDark,
         shadowElevation = 20.dp
     ) {
-        if (!coverUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(coverUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-        } else {
-            // Placeholder for Album Art Image
-            Box(modifier = Modifier.fillMaxSize().background(
-                Brush.linearGradient(listOf(Color(0xFF2A2D3E), Color(0xFF171924)))
-            )) {
-                // Inner vinyl-style circle placeholder
-                Box(
-                    modifier = Modifier
-                        .size(240.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black)
-                        .align(Alignment.Center)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFD4A373))
-                            .align(Alignment.Center)
-                    )
-                }
-            }
-        }
+        AlbumCover(
+            coverArtId = coverArtId,
+            contentDescription = null,
+            size = 300.dp,
+            cornerRadius = 32.dp,
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 

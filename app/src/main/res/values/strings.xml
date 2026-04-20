@@ -104,7 +104,7 @@
     <string name="settings_accent_color">Color de Acento</string>
     <string name="settings_scrobble">Integraciones</string>
     <string name="settings_scrobble_enabled">Scrobbling</string>
-    <string name="settings_scrobble_desc">Enviar reproducción a last.fm</string>
+    <string name="settings_scrobble_desc">Enviar reproducción al servidor</string>
     <string name="settings_about">Acerca de</string>
     <string name="settings_version">Versión</string>
     <string name="settings_version_desc">Versión de la aplicación</string>

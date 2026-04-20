@@ -9,10 +9,14 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.example.velodrome.data.datasource.MusicCacheDataSource
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.util.CredentialsManager
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,7 +63,11 @@ object AudioPlayerManager {
     // Scrobble manager reference
     var scrobbleManager: ScrobbleManager? = null
     var isLoadingMoreCallbackInvoked = false  // Prevent multiple calls
-    
+
+    // Music cache for offline playback
+    var musicCacheDataSource: MusicCacheDataSource? = null
+    private val playerScope = CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
+
     // Callback for loading more tracks when playlist runs out
     private var loadMoreCallback: (() -> Unit)? = null
 
@@ -203,7 +211,8 @@ object AudioPlayerManager {
     }
 
     /**
-     * Start playback of a track with a given playlist
+     * Start playback of a track with a given playlist.
+     * Uses local cache if available, otherwise streams and caches in background.
      */
     fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
         _playlist.value = playlist
@@ -215,18 +224,18 @@ object AudioPlayerManager {
         scrobbleManager?.onTrackChanged(track.id)
         scrobbleManager?.sendNowPlaying(track.id)
         lastScrobbleCheckTime = 0  // Reset scrobble timer
-        
+
         // Also reset the loading flag for new play session
         isLoadingMoreCallbackInvoked = false
 
-        // Build media items with proper IDs for tracking
+        // Build media items - check cache first, fallback to streaming
         val mediaItems = playlist.mapIndexed { index, t ->
-            val streamUrl = CredentialsManager.getStreamUrl(t.id)
+            val mediaSource = getMediaSourceUrl(t)
             val coverUrl = t.coverArtId?.let { CredentialsManager.getCoverArtUrl(it, 400) }
 
             MediaItem.Builder()
                 .setMediaId(index.toString())
-                .setUri(streamUrl)
+                .setUri(mediaSource)
                 .setMediaMetadata(
                     MediaMetadata.Builder()
                         .setTitle(t.title)
@@ -248,7 +257,48 @@ object AudioPlayerManager {
     }
 
     /**
-     * Append tracks to the current playlist in MediaController
+     * Get media source URL for a track.
+     * Strategy: check cache first → if not cached, get stream URL.
+     * Background: downloads to cache if not present.
+     */
+    private fun getMediaSourceUrl(track: Track): String {
+        val cacheDataSource = musicCacheDataSource
+
+        return if (cacheDataSource != null) {
+            // Check if cached locally
+            val cached = cacheDataSource.isCached(track.id)
+            if (cached) {
+                // Return cached file path
+                cacheDataSource.getCacheFilePath(track.id).also {
+                    Log.d(TAG, "Playing from cache: ${track.id}")
+                }
+            } else {
+                // Not cached - start background download and use streaming
+                val streamUrl = CredentialsManager.getStreamUrl(track.id)
+                // Trigger background cache download (fire and forget)
+                playerScope.launch {
+                    try {
+                        cacheDataSource.getMusic(
+                            trackId = track.id,
+                            artistName = track.artistName,
+                            title = track.title
+                        )
+                        Log.d(TAG, "Background cache download started: ${track.id}")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Background cache download failed: ${e.message}")
+                    }
+                }
+                streamUrl
+            }
+        } else {
+            // No cache data source - use streaming
+            CredentialsManager.getStreamUrl(track.id)
+        }
+    }
+
+    /**
+     * Append tracks to the current playlist in MediaController.
+     * Uses cache when available.
      */
     fun appendToPlaylist(tracks: List<Track>) {
         Log.d(TAG, "appendToPlaylist() called with ${tracks.size} tracks")
@@ -265,12 +315,12 @@ object AudioPlayerManager {
         // Build media items for new tracks
         val startIndex = _playlist.value.size - tracks.size
         val mediaItems = tracks.mapIndexed { index, t ->
-            val streamUrl = CredentialsManager.getStreamUrl(t.id)
+            val mediaSource = getMediaSourceUrl(t)
             val coverUrl = t.coverArtId?.let { CredentialsManager.getCoverArtUrl(it, 400) }
 
             MediaItem.Builder()
                 .setMediaId((startIndex + index).toString())
-                .setUri(streamUrl)
+                .setUri(mediaSource)
                 .setMediaMetadata(
                     MediaMetadata.Builder()
                         .setTitle(t.title)
@@ -289,7 +339,7 @@ object AudioPlayerManager {
             controller.addMediaItems(mediaItems)
             val controllerTotal = controller.mediaItemCount
             Log.d(TAG, "Appended ${tracks.size} tracks to MediaController, total in controller: $controllerTotal")
-            
+
             // Reset the flag so more can be loaded if needed
             isLoadingMoreCallbackInvoked = false
         }

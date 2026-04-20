@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Button
+import com.example.velodrome.presentation.screen.homescreen.AlbumCover
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -275,14 +276,13 @@ private fun AlbumHeader(
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            if (!album?.coverUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = CredentialsManager.getCoverArtUrl(album.coverUrl, 640),
-                    contentDescription = album.title,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
+            AlbumCover(
+                coverArtId = album?.coverUrl,
+                contentDescription = album?.title,
+                size = 200.dp,
+                cornerRadius = 16.dp,
+                modifier = Modifier.fillMaxSize()
+            )
             // Gradient overlay at bottom
             Box(
                 modifier = Modifier

@@ -23,6 +23,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
+import com.example.velodrome.presentation.screen.homescreen.AlbumCover
+import com.example.velodrome.presentation.screen.homescreen.ArtistAvatar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -180,14 +182,11 @@ private fun ArtistAlbumsList(
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    if (!artist?.coverUrl.isNullOrBlank()) {
-                        AsyncImage(
-                            model = CredentialsManager.getCoverArtUrl(artist.coverUrl, 240),
-                            contentDescription = artist.name,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                    ArtistAvatar(
+                        coverArtId = artist?.coverUrl,
+                        contentDescription = artist?.name,
+                        size = 120.dp
+                    )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
@@ -263,14 +262,12 @@ private fun ArtistAlbumCard(
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            if (!album.coverUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = CredentialsManager.getCoverArtUrl(album.coverUrl, 320),
-                    contentDescription = album.title,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
+            AlbumCover(
+                coverArtId = album.coverUrl,
+                contentDescription = album.title,
+                size = 160.dp,
+                cornerRadius = 16.dp
+            )
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
