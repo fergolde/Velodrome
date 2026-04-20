@@ -27,6 +27,7 @@ interface NavidromeRepository {
     suspend fun getRecentlyPlayedAlbums(size: Int = 20): Result<List<Album>>
     suspend fun getRandomAlbums(size: Int = 20): Result<List<Album>>
     suspend fun getAllAlbums(size: Int = 100): Result<List<Album>>
+    suspend fun getAllAlbumsFromServer(offset: Int = 0, size: Int = 100): Result<List<Album>>
     suspend fun getAlbumsByYear(year: Int, size: Int = 20): Result<List<Album>>
     suspend fun getAlbumsByGenre(genre: String, size: Int = 20): Result<List<Album>>
     suspend fun getGenres(): Result<List<String>>

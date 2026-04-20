@@ -3,8 +3,10 @@ package com.example.velodrome.presentation.screen.albums
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.velodrome.data.local.datasource.LocalMusicDataSource
+import com.example.velodrome.data.local.mapper.toDomain
+import com.example.velodrome.data.sync.SyncManager
 import com.example.velodrome.domain.model.Album
-import com.example.velodrome.domain.usecase.GetAllAlbumsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,48 +20,77 @@ private const val TAG = "AlbumsViewModel"
 data class AlbumsUiState(
     val albums: List<Album> = emptyList(),
     val isLoading: Boolean = true,
+    val isSyncing: Boolean = false,
     val error: String? = null,
-    val searchQuery: String = "",
-    val filteredAlbums: List<Album> = emptyList()
+    val searchQuery: String = ""
 )
 
 @HiltViewModel
 class AlbumsViewModel @Inject constructor(
-    private val getAllAlbumsUseCase: GetAllAlbumsUseCase
+    private val localMusicDataSource: LocalMusicDataSource,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AlbumsUiState())
     val uiState: StateFlow<AlbumsUiState> = _uiState.asStateFlow()
 
-    // Original albums loaded from server (without filtering)
     private var allAlbums: List<Album> = emptyList()
 
     init {
-        loadAlbums()
+        observeAlbums()
+        triggerSyncIfNeeded()
+    }
+
+    private fun observeAlbums() {
+        viewModelScope.launch {
+            localMusicDataSource.observeAllAlbums().collect { entities ->
+                allAlbums = entities.map { it.toDomain() }
+                val filtered = filterAlbums(allAlbums, _uiState.value.searchQuery)
+                _uiState.update {
+                    it.copy(
+                        albums = filtered,
+                        isLoading = false,
+                        error = null
+                    )
+                }
+            }
+        }
+    }
+
+    private fun triggerSyncIfNeeded() {
+        viewModelScope.launch {
+            val count = localMusicDataSource.getAlbumCount()
+            Log.d(TAG, "Local album count: $count")
+
+            if (count == 0) {
+                Log.d(TAG, "No albums in local DB, triggering sync...")
+                _uiState.update { it.copy(isSyncing = true) }
+
+                val result = syncManager.syncAlbums()
+                when (result) {
+                    is com.example.velodrome.data.sync.SyncResult.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isSyncing = false,
+                                error = "Failed to sync albums: ${result.message}"
+                            )
+                        }
+                    }
+                    is com.example.velodrome.data.sync.SyncResult.Success -> {
+                        _uiState.update { it.copy(isSyncing = false) }
+                    }
+                }
+            }
+        }
     }
 
     fun loadAlbums() {
-        Log.d(TAG, "Loading albums...")
-        _uiState.update { it.copy(isLoading = true, error = null) }
-
-        viewModelScope.launch {
-            getAllAlbumsUseCase(size = 100)
-                .onSuccess { albums ->
-                    Log.d(TAG, "Loaded ${albums.size} albums")
-                    allAlbums = albums
-                    val filtered = filterAlbums(albums, _uiState.value.searchQuery)
-                    _uiState.update { it.copy(albums = filtered, filteredAlbums = filtered, isLoading = false) }
-                }
-                .onFailure { e ->
-                    Log.e(TAG, "Error loading albums: ${e.message}")
-                    _uiState.update { it.copy(error = e.message, isLoading = false) }
-                }
-        }
+        triggerSyncIfNeeded()
     }
 
     fun onSearchQueryChange(query: String) {
         val filtered = filterAlbums(allAlbums, query)
-        _uiState.update { it.copy(searchQuery = query, albums = filtered, filteredAlbums = filtered) }
+        _uiState.update { it.copy(searchQuery = query, albums = filtered) }
     }
 
     private fun filterAlbums(albums: List<Album>, query: String): List<Album> {
