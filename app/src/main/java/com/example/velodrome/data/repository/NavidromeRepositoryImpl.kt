@@ -570,20 +570,12 @@ class NavidromeRepositoryImpl @Inject constructor(
             Log.d("NavidromeRepository", "getSongsByGenre: genre=$genre, count=$count, offset=$offset")
             val responseBody = api.getSongsByGenre(genre, count, offset)
             val xmlString = responseBody.string()
-            Log.d("NavidromeRepository", "getSongsByGenre XML (first 500): ${xmlString.take(500)}")
-            val response = XmlParser.parse(xmlString)
-
-            val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
-            val songsByGenre = subsonicResponse?.get("songsByGenre") as? Map<String, Any>
-            val songsList = songsByGenre?.get("song") as? List<Any> ?: emptyList()
-
-            songsList.mapNotNull { songMap ->
-                (songMap as? Map<String, Any>)?.let { sm ->
-                    parseTrackFromSongMap(sm)
-                }
-            }.also { tracks ->
-                Log.d("NavidromeRepository", "Parsed ${tracks.size} songs from genre $genre")
-            }
+            Log.d("NavidromeRepository", "getSongsByGenre XML (first 1000): ${xmlString.take(1000)}")
+            
+            // Parse songs directly using regex
+            val songs = parseSongsFromXml(xmlString)
+            Log.d("NavidromeRepository", "Parsed ${songs.size} songs from genre $genre")
+            songs
         }
     }
 
@@ -592,20 +584,12 @@ class NavidromeRepositoryImpl @Inject constructor(
             Log.d("NavidromeRepository", "getRandomSongsByGenre: genre=$genre, size=$size")
             val responseBody = api.getRandomSongs(size, genre)
             val xmlString = responseBody.string()
-            Log.d("NavidromeRepository", "getRandomSongsByGenre XML (first 500): ${xmlString.take(500)}")
-            val response = XmlParser.parse(xmlString)
-
-            val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
-            val songsList = subsonicResponse?.get("randomSongs") as? Map<String, Any>
-            val songList = songsList?.get("song") as? List<Any> ?: emptyList()
-
-            songList.mapNotNull { songMap ->
-                (songMap as? Map<String, Any>)?.let { sm ->
-                    parseTrackFromSongMap(sm)
-                }
-            }.also { tracks ->
-                Log.d("NavidromeRepository", "Parsed ${tracks.size} random songs from genre $genre")
-            }
+            Log.d("NavidromeRepository", "getRandomSongsByGenre XML (first 1000): ${xmlString.take(1000)}")
+            
+            // Parse songs directly using regex
+            val songs = parseSongsFromXml(xmlString)
+            Log.d("NavidromeRepository", "Parsed ${songs.size} random songs from genre $genre")
+            songs
         }
     }
 
@@ -614,20 +598,64 @@ class NavidromeRepositoryImpl @Inject constructor(
             Log.d("NavidromeRepository", "getRandomSongs: size=$size")
             val responseBody = api.getRandomSongs(size, null)
             val xmlString = responseBody.string()
-            Log.d("NavidromeRepository", "getRandomSongs XML (first 500): ${xmlString.take(500)}")
-            val response = XmlParser.parse(xmlString)
+            Log.d("NavidromeRepository", "getRandomSongs XML (first 1000): ${xmlString.take(1000)}")
+            
+            // Parse songs directly using regex
+            val songs = parseSongsFromXml(xmlString)
+            Log.d("NavidromeRepository", "Parsed ${songs.size} random songs")
+            songs
+        }
+    }
 
-            val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
-            val songsList = subsonicResponse?.get("randomSongs") as? Map<String, Any>
-            val songList = songsList?.get("song") as? List<Any> ?: emptyList()
-
-            songList.mapNotNull { songMap ->
-                (songMap as? Map<String, Any>)?.let { sm ->
-                    parseTrackFromSongMap(sm)
+    /**
+     * Parse song elements directly from XML using regex
+     */
+    private fun parseSongsFromXml(xmlString: String): List<Track> {
+        val songs = mutableListOf<Track>()
+        
+        // Match all <song> elements with their attributes
+        val songRegex = """<song\s+([^>]*)>""".toRegex()
+        val matches = songRegex.findAll(xmlString)
+        
+        for (match in matches) {
+            val attrs = match.groupValues[1]
+            val songMap = mutableMapOf<String, Any>()
+            
+            // Extract common attributes using regex
+            putAttr(songMap, attrs, "id", """\bid="([^"]+)""")
+            putAttr(songMap, attrs, "parent", """\bparent="([^"]+)""")
+            putAttr(songMap, attrs, "title", """\btitle="([^"]+)""")
+            putAttr(songMap, attrs, "album", """\balbum="([^"]+)""")
+            putAttr(songMap, attrs, "artist", """\bartist="([^"]+)""")
+            putAttr(songMap, attrs, "track", """\btrack="([^"]+)""")
+            putAttr(songMap, attrs, "year", """\byear="([^"]+)""")
+            putAttr(songMap, attrs, "genre", """\bgenre="([^"]+)""")
+            putAttr(songMap, attrs, "coverArt", """\bcoverArt="([^"]+)""")
+            putAttr(songMap, attrs, "size", """\bsize="([^"]+)""")
+            putAttr(songMap, attrs, "contentType", """\bcontentType="([^"]+)""")
+            putAttr(songMap, attrs, "suffix", """\bsuffix="([^"]+)""")
+            putAttr(songMap, attrs, "duration", """\bduration="([^"]+)""")
+            putAttr(songMap, attrs, "bitRate", """\bbitRate="([^"]+)""")
+            
+            if (songMap.isNotEmpty()) {
+                try {
+                    songs.add(parseTrackFromSongMap(songMap))
+                } catch (e: Exception) {
+                    Log.w("NavidromeRepository", "Error parsing song: ${e.message}")
                 }
-            }.also { tracks ->
-                Log.d("NavidromeRepository", "Parsed ${tracks.size} random songs")
             }
+        }
+        
+        return songs
+    }
+
+    /**
+     * Helper to put attribute from regex match
+     */
+    private fun putAttr(map: MutableMap<String, Any>, attrs: String, key: String, regex: String) {
+        val match = Regex(regex).find(attrs)
+        if (match != null) {
+            map[key] = match.groupValues[1]
         }
     }
 
