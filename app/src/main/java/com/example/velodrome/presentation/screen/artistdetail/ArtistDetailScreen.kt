@@ -22,12 +22,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -35,14 +35,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,18 +51,9 @@ import coil.compose.AsyncImage
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.presentation.UiConstants
-import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.util.CredentialsManager
-
-// --- Theme Tokens ---
-private val PrimaryColor = Color(0xFF7C4DFF)
-private val BackgroundDark = Color(0xFF0C0E17)
-private val SurfaceDark = Color(0xFF171924)
-private val SurfaceContainer = Color(0xFF222532)
-private val TextPrimary = Color(0xFFF0F0FD)
-private val TextSecondary = Color(0xFFAAAAB7)
-private val AccentPurple = Color(0xFFB6A0FF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +76,7 @@ fun ArtistDetailScreen(
                 title = {
                     Text(
                         text = uiState.artist?.name ?: stringResource(R.string.artist_detail_title),
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -96,12 +85,12 @@ fun ArtistDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.nav_back),
-                            tint = TextPrimary
+                            tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BackgroundDark
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
@@ -111,7 +100,7 @@ fun ArtistDetailScreen(
                 onExploreClick = onExploreClick
             )
         },
-        containerColor = BackgroundDark
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -124,7 +113,7 @@ fun ArtistDetailScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = AccentPurple)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 uiState.error != null -> {
@@ -135,7 +124,7 @@ fun ArtistDetailScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = uiState.error ?: stringResource(R.string.error_loading),
-                                color = TextSecondary
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -189,7 +178,7 @@ private fun ArtistAlbumsList(
                     modifier = Modifier
                         .size(120.dp)
                         .clip(CircleShape)
-                        .background(SurfaceContainer)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     if (!artist?.coverUrl.isNullOrBlank()) {
                         AsyncImage(
@@ -204,13 +193,13 @@ private fun ArtistAlbumsList(
                 Column {
                     Text(
                         text = stringResource(R.string.artist_detail_albums_count, artist?.albumCount ?: 0),
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = artist?.name ?: "",
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp
                     )
@@ -222,7 +211,7 @@ private fun ArtistAlbumsList(
         item {
             Text(
                 text = stringResource(R.string.artist_detail_albums),
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -272,7 +261,7 @@ private fun ArtistAlbumCard(
             modifier = Modifier
                 .size(160.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(SurfaceContainer)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             if (!album.coverUrl.isNullOrBlank()) {
                 AsyncImage(
@@ -286,7 +275,7 @@ private fun ArtistAlbumCard(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = album.title,
-            color = TextPrimary,
+            color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             fontSize = 14.sp
@@ -294,7 +283,7 @@ private fun ArtistAlbumCard(
         album.year?.let { year ->
             Text(
                 text = year.toString(),
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
         }
@@ -307,7 +296,7 @@ fun ArtistDetailBottomNavigationBar(
     onExploreClick: () -> Unit = {}
 ) {
     NavigationBar(
-        containerColor = SurfaceDark.copy(alpha = 0.9f),
+        containerColor = MaterialTheme.colorScheme.background,
         tonalElevation = 0.dp
     ) {
         NavigationBarItem(
@@ -315,21 +304,21 @@ fun ArtistDetailBottomNavigationBar(
             label = { Text(stringResource(R.string.nav_home)) },
             selected = false,
             onClick = onHomeClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Explore, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_explore)) },
             selected = false,
             onClick = onExploreClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
             onClick = { },
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
     }
 }
