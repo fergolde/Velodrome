@@ -17,13 +17,16 @@ import javax.inject.Inject
  * UI State for the Settings screen.
  */
 data class SettingsUiState(
-    val imageCacheSizeMb: Int = 100,
-    val musicCacheSizeGb: Int = 1,
+    val imageCacheSizeMb: Int = 200,
+    val musicCacheSizeGb: Int = 2,
     val accentColor: String = "#B6A0FF",
     val scrobbleEnabled: Boolean = false,
     val currentImageCacheSize: String = "0 MB",
     val currentMusicCacheSize: String = "0 GB",
-    val isClearingCache: Boolean = false
+    val isClearingCache: Boolean = false,
+    val pendingImageCacheMb: Int = 100,
+    val pendingMusicCacheGb: Int = 1,
+    val hasPendingChanges: Boolean = false
 )
 
 /**
@@ -42,6 +45,11 @@ class SettingsViewModel @Inject constructor(
 
     private val _isClearingCache = MutableStateFlow(false)
 
+    // Pending changes for confirmation dialog
+    private val _pendingImageCacheMb = MutableStateFlow(200)
+    private val _pendingMusicCacheGb = MutableStateFlow(2)
+    private val _hasPendingChanges = MutableStateFlow(false)
+
     /**
      * UI State as a StateFlow.
      */
@@ -51,17 +59,23 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.accentColor,
         settingsRepository.scrobbleEnabled,
         _currentCacheSizes,
-        _isClearingCache
+        _isClearingCache,
+        _pendingImageCacheMb,
+        _pendingMusicCacheGb,
+        _hasPendingChanges
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         SettingsUiState(
             imageCacheSizeMb = values[0] as Int,
-            musicCacheSizeGb = values[1] as Int,
+            musicCacheSizeGb = (values[1] as? Int) ?: 2,
             accentColor = values[2] as String,
             scrobbleEnabled = values[3] as Boolean,
             currentImageCacheSize = (values[4] as Pair<*, *>).first as String,
             currentMusicCacheSize = (values[4] as Pair<*, *>).second as String,
-            isClearingCache = values[5] as Boolean
+            isClearingCache = values[5] as Boolean,
+            pendingImageCacheMb = values[6] as Int,
+            pendingMusicCacheGb = values[7] as Int,
+            hasPendingChanges = values[8] as Boolean
         )
     }.stateIn(
         scope = viewModelScope,
@@ -70,6 +84,17 @@ class SettingsViewModel @Inject constructor(
     )
 
     init {
+        // Initialize pending values from current settings
+        viewModelScope.launch {
+            settingsRepository.imageCacheSizeMb.collect { limitMb ->
+                _pendingImageCacheMb.value = limitMb
+            }
+        }
+        viewModelScope.launch {
+            settingsRepository.musicCacheSizeGb.collect { limitGb ->
+                _pendingMusicCacheGb.value = limitGb
+            }
+        }
         // Clean caches on startup based on current settings
         viewModelScope.launch {
             settingsRepository.imageCacheSizeMb.collect { limitMb ->
@@ -88,27 +113,56 @@ class SettingsViewModel @Inject constructor(
     // --- Actions ---
 
     /**
-     * Update image cache size limit in MB.
+     * Update image cache size limit in MB (pending, needs confirmation).
      */
     fun setImageCacheSizeMb(sizeMb: Int) {
+        _pendingImageCacheMb.value = sizeMb
+        checkPendingChanges()
+    }
+
+    /**
+     * Update music cache size limit in GB (pending, needs confirmation).
+     */
+    fun setMusicCacheSizeGb(sizeGb: Int) {
+        _pendingMusicCacheGb.value = sizeGb
+        checkPendingChanges()
+    }
+
+    /**
+     * Confirm and apply pending changes.
+     */
+    fun confirmChanges() {
         viewModelScope.launch {
-            settingsRepository.setImageCacheSizeMb(sizeMb)
-            // Clean immediately after setting new limit
-            cacheManager.cleanImageCacheIfNeeded(sizeMb)
+            val imageMb = _pendingImageCacheMb.value
+            val musicGb = _pendingMusicCacheGb.value
+
+            settingsRepository.setImageCacheSizeMb(imageMb)
+            settingsRepository.setMusicCacheSizeGb(musicGb)
+
+            cacheManager.cleanImageCacheIfNeeded(imageMb)
+            cacheManager.cleanMusicCacheIfNeeded(musicGb)
+
             refreshCacheSizes()
+            _hasPendingChanges.value = false
         }
     }
 
     /**
-     * Update music cache size limit in GB.
+     * Discard pending changes.
      */
-    fun setMusicCacheSizeGb(sizeGb: Int) {
-        viewModelScope.launch {
-            settingsRepository.setMusicCacheSizeGb(sizeGb)
-            // Clean immediately after setting new limit
-            cacheManager.cleanMusicCacheIfNeeded(sizeGb)
-            refreshCacheSizes()
-        }
+    fun discardChanges() {
+        _pendingImageCacheMb.value = uiState.value.imageCacheSizeMb
+        _pendingMusicCacheGb.value = uiState.value.musicCacheSizeGb
+        _hasPendingChanges.value = false
+    }
+
+    /**
+     * Check if there are pending changes.
+     */
+    private fun checkPendingChanges() {
+        val imageChanged = _pendingImageCacheMb.value != uiState.value.imageCacheSizeMb
+        val musicChanged = _pendingMusicCacheGb.value != uiState.value.musicCacheSizeGb
+        _hasPendingChanges.value = imageChanged || musicChanged
     }
 
     /**

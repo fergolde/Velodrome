@@ -42,6 +42,66 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showColorPicker by remember { mutableStateOf(false) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
+
+    // Show dialog when pending changes detected
+    LaunchedEffect(uiState.hasPendingChanges) {
+        if (uiState.hasPendingChanges) {
+            showConfirmDialog = true
+        }
+    }
+
+    // Confirmation dialog
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = {
+                Text(
+                    text = "Confirm Changes",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    if (uiState.pendingImageCacheMb != uiState.imageCacheSizeMb) {
+                        Text("Image cache: ${uiState.imageCacheSizeMb} MB → ${uiState.pendingImageCacheMb} MB")
+                    }
+                    if (uiState.pendingMusicCacheGb != uiState.musicCacheSizeGb) {
+                        Text("Music cache: ${uiState.musicCacheSizeGb} GB → ${uiState.pendingMusicCacheGb} GB")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Apply these changes?",
+                        color = Color(0xFFAAAAB7),
+                        fontSize = 12.sp
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.confirmChanges()
+                        showConfirmDialog = false
+                    }
+                ) {
+                    Text("Apply", color = Color(0xFFB6A0FF))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.discardChanges()
+                        showConfirmDialog = false
+                    }
+                ) {
+                    Text("Cancel", color = Color(0xFFAAAAB7))
+                }
+            },
+            containerColor = Color(0xFF1A1D26),
+            titleContentColor = Color.White,
+            textContentColor = Color.White
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -78,31 +138,33 @@ fun SettingsScreen(
 
             // --- Cache Section ---
             SettingsSection(title = stringResource(R.string.settings_cache)) {
-                // Image Cache
-                CacheSliderItem(
-                    title = stringResource(R.string.settings_image_cache),
-                    subtitle = stringResource(R.string.settings_image_cache_desc),
-                    currentValue = uiState.imageCacheSizeMb,
-                    maxValue = 500,
-                    currentSizeFormatted = uiState.currentImageCacheSize,
-                    unit = "MB",
-                    onValueChange = { viewModel.setImageCacheSizeMb(it) }
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Music Cache
-                CacheSliderItem(
+                // Music Cache with Chips
+                CacheChipsItem(
                     title = stringResource(R.string.settings_music_cache),
                     subtitle = stringResource(R.string.settings_music_cache_desc),
                     currentValue = uiState.musicCacheSizeGb,
-                    maxValue = 20,
-                    currentSizeFormatted = uiState.currentMusicCacheSize,
+                    pendingValue = uiState.pendingMusicCacheGb,
+                    options = listOf(2, 4, 6, 8, 10),
                     unit = "GB",
+                    currentSizeFormatted = uiState.currentMusicCacheSize,
                     onValueChange = { viewModel.setMusicCacheSizeGb(it) }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // Image Cache with Chips
+                CacheChipsItem(
+                    title = stringResource(R.string.settings_image_cache),
+                    subtitle = stringResource(R.string.settings_image_cache_desc),
+                    currentValue = uiState.imageCacheSizeMb,
+                    pendingValue = uiState.pendingImageCacheMb,
+                    options = listOf(200, 400, 600, 800, 1000),
+                    unit = "MB",
+                    currentSizeFormatted = uiState.currentImageCacheSize,
+                    onValueChange = { viewModel.setImageCacheSizeMb(it) }
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
 
                 // Clear Cache Button
                 OutlinedButton(
@@ -222,22 +284,30 @@ fun SettingsSection(
 }
 
 @Composable
-fun CacheSliderItem(
+fun CacheChipsItem(
     title: String,
     subtitle: String,
     currentValue: Int,
-    maxValue: Int,
-    currentSizeFormatted: String,
+    pendingValue: Int,
+    options: List<Int>,
     unit: String,
+    currentSizeFormatted: String,
     onValueChange: (Int) -> Unit
 ) {
+    var selectedValue by remember { mutableStateOf(pendingValue) }
+
+    LaunchedEffect(pendingValue) {
+        selectedValue = pendingValue
+    }
+
     Column {
+        // Header row with title and value side by side
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column {
                 Text(
                     text = title,
                     color = Color.White,
@@ -252,8 +322,8 @@ fun CacheSliderItem(
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "$currentValue $unit",
-                    color = Color(0xFFB6A0FF),
+                    text = "$selectedValue $unit",
+                    color = if (selectedValue != currentValue) Color(0xFFFFC107) else Color(0xFFB6A0FF),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -264,18 +334,49 @@ fun CacheSliderItem(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Slider(
-            value = currentValue.toFloat(),
-            onValueChange = { onValueChange(it.toInt()) },
-            valueRange = 0f..maxValue.toFloat(),
-            steps = maxValue - 1,
-            colors = SliderDefaults.colors(
-                thumbColor = Color(0xFFB6A0FF),
-                activeTrackColor = Color(0xFFB6A0FF),
-                inactiveTrackColor = Color(0xFF2A2D3A)
-            )
-        )
+        Spacer(modifier = Modifier.height(12.dp))
+        // Chips row with equal spacing
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            options.forEach { option ->
+                val isSelected = option == selectedValue
+                val isCurrent = option == currentValue
+
+                Box(
+                    modifier = Modifier
+                        .height(40.dp)
+                        .width(if (options.size <= 5) 56.dp else 44.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            when {
+                                isSelected -> Color(0xFFB6A0FF)
+                                isCurrent -> Color(0xFF2A2D3A)
+                                else -> Color(0xFF1A1D26)
+                            }
+                        )
+                        .border(
+                            width = if (isCurrent && !isSelected) 1.dp else 0.dp,
+                            color = if (isCurrent && !isSelected) Color(0xFFB6A0FF) else Color.Transparent,
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable { onValueChange(option) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "$option",
+                        color = when {
+                            isSelected -> Color.Black
+                            isCurrent -> Color(0xFFB6A0FF)
+                            else -> Color(0xFFAAAAB7)
+                        },
+                        fontSize = 13.sp,
+                        fontWeight = if (isSelected || isCurrent) FontWeight.Bold else FontWeight.Normal
+                    )
+                }
+            }
+        }
     }
 }
 
