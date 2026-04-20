@@ -130,11 +130,9 @@ class ExploreViewModel @Inject constructor(
         // Determine which genre(s) to use for this session
         currentGenreFilter = if (selectedGenres.isEmpty()) {
             emptyList()
-        } else if (selectedGenres.size == 1) {
-            listOf(selectedGenres.first())
         } else {
-            // Multiple genres - randomly pick ONE
-            listOf(selectedGenres.random())
+            // Keep all selected genres
+            selectedGenres.toList()
         }
         Log.d(TAG, "Genre filter for this session: $currentGenreFilter")
         
@@ -153,10 +151,17 @@ class ExploreViewModel @Inject constructor(
                     Log.d(TAG, "Loading songs for single genre: $genre using getSongsByGenre")
                     songsResult = navidromeRepository.getSongsByGenre(genre, count = 100, offset = 0)
                 } else {
-                    // Multiple genres - randomly select ONE genre and use getRandomSongsByGenre
-                    val randomGenre = selectedGenres.random()
-                    Log.d(TAG, "Multiple genres selected: $selectedGenres, randomly picked: $randomGenre")
-                    songsResult = navidromeRepository.getRandomSongsByGenre(randomGenre, size = 100)
+                    // Multiple genres - get songs from ALL selected genres and mix them
+                    Log.d(TAG, "Multiple genres selected: $selectedGenres, loading from ALL")
+                    val allSongs = mutableListOf<Track>()
+                    for (genre in selectedGenres) {
+                        val result = navidromeRepository.getSongsByGenre(genre, count = 50, offset = 0)
+                        result.onSuccess { songs ->
+                            allSongs.addAll(songs)
+                            Log.d(TAG, "Got ${songs.size} songs for genre: $genre")
+                        }
+                    }
+                    songsResult = Result.success(allSongs)
                 }
                 
                 songsResult.onSuccess { songs ->
@@ -243,19 +248,24 @@ class ExploreViewModel @Inject constructor(
                     // No genre filter - get more random songs
                     Log.d(TAG, "Loading 50 more random songs...")
                     songsResult = navidromeRepository.getRandomSongs(size = 50)
-                } else {
-                    // Use the genre from current filter
+                } else if (currentGenreFilter.size == 1) {
+                    // Single genre - use getSongsByGenre with offset
                     val genre = currentGenreFilter.first()
-                    if (currentGenreFilter.size > 1) {
-                        // Multiple genres originally - use getRandomSongsByGenre
-                        Log.d(TAG, "Loading 50 more random songs for genre: $genre (from multiple selection)")
-                        songsResult = navidromeRepository.getRandomSongsByGenre(genre, size = 50)
-                    } else {
-                        // Single genre - use getSongsByGenre with offset
-                        val offset = playlist.size
-                        Log.d(TAG, "Loading 50 more songs for genre: $genre with offset: $offset")
-                        songsResult = navidromeRepository.getSongsByGenre(genre, count = 50, offset = offset)
+                    val offset = playlist.size
+                    Log.d(TAG, "Loading 50 more songs for genre: $genre with offset: $offset")
+                    songsResult = navidromeRepository.getSongsByGenre(genre, count = 50, offset = offset)
+                } else {
+                    // Multiple genres - load from ALL of them
+                    Log.d(TAG, "Loading 50 more songs from ALL genres: $currentGenreFilter")
+                    val allSongs = mutableListOf<Track>()
+                    for (genre in currentGenreFilter) {
+                        val result = navidromeRepository.getSongsByGenre(genre, count = 25, offset = 0)
+                        result.onSuccess { songs ->
+                            allSongs.addAll(songs)
+                            Log.d(TAG, "Got ${songs.size} more songs for genre: $genre")
+                        }
                     }
+                    songsResult = Result.success(allSongs)
                 }
                 
                 songsResult.onSuccess { newSongs ->
