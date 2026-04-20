@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.velodrome.R
 import androidx.compose.material3.SliderDefaults
+import com.example.velodrome.presentation.screen.homescreen.BottomNavigationBar
 
 /**
  * Settings screen with cache configuration, appearance, and stream settings.
@@ -33,7 +35,10 @@ import androidx.compose.material3.SliderDefaults
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    onHomeClick: () -> Unit = {},
+    onExploreClick: () -> Unit = {},
+
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showColorPicker by remember { mutableStateOf(false) }
@@ -49,7 +54,7 @@ fun SettingsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.settings_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -59,6 +64,7 @@ fun SettingsScreen(
                 )
             )
         },
+        bottomBar = { SettingsBottomNavigationBar(onHomeClick=onHomeClick,onExploreClick = onExploreClick) },
         containerColor = Color(0xFF0C0E17)
     ) { paddingValues ->
         Column(
@@ -106,7 +112,7 @@ fun SettingsScreen(
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = Color(0xFFEF5350)
                     ),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                    border = ButtonDefaults.outlinedButtonBorder(enabled = !uiState.isClearingCache).copy(
                         brush = androidx.compose.ui.graphics.SolidColor(Color(0xFFEF5350))
                     )
                 ) {
@@ -154,6 +160,18 @@ fun SettingsScreen(
                         }
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // --- Scrobble Section ---
+            SettingsSection(title = stringResource(R.string.settings_scrobble)) {
+                SettingsSwitchItem(
+                    title = stringResource(R.string.settings_scrobble_enabled),
+                    subtitle = stringResource(R.string.settings_scrobble_desc),
+                    checked = uiState.scrobbleEnabled,
+                    onCheckedChange = { viewModel.setScrobbleEnabled(it) }
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -316,6 +334,7 @@ fun SettingsSwitchItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -337,9 +356,9 @@ fun SettingsSwitchItem(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0xFFB6A0FF),
-                uncheckedThumbColor = Color.White,
+                checkedThumbColor = Color(0xFFB6A0FF),
+                checkedTrackColor = Color(0xFFB6A0FF).copy(alpha = 0.5f),
+                uncheckedThumbColor = Color(0xFFAAAAB7),
                 uncheckedTrackColor = Color(0xFF2A2D3A)
             )
         )
@@ -428,5 +447,38 @@ fun parseHexColor(hex: String): Color {
         Color(android.graphics.Color.parseColor("#$cleanHex"))
     } catch (e: Exception) {
         Color(0xFFB6A0FF) // Default purple
+    }
+}
+
+@Composable
+fun SettingsBottomNavigationBar(
+    onHomeClick: () -> Unit = {},
+    onExploreClick: () -> Unit = {}
+) {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+        tonalElevation = 0.dp
+    ) {
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Home, contentDescription = null) },
+            label = { Text(stringResource(R.string.nav_home)) },
+            selected = false,
+            onClick = onHomeClick,
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Explore, contentDescription = null) },
+            label = { Text(stringResource(R.string.nav_explore)) },
+            selected = false,
+            onClick = onExploreClick,
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+            label = { Text(stringResource(R.string.nav_settings)) },
+            selected = true,
+            onClick = { },
+            colors = NavigationBarItemDefaults.colors(selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary, unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
+        )
     }
 }

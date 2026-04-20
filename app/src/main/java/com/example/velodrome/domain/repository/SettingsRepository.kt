@@ -30,6 +30,14 @@ interface SettingsRepository {
      */
     val accentColor: Flow<String>
 
+    // --- Scrobble Settings ---
+
+    /**
+     * Whether scrobbling to last.fm is enabled.
+     * Default: false
+     */
+    val scrobbleEnabled: Flow<Boolean>
+
     // --- Actions ---
 
     suspend fun setImageCacheSizeMb(sizeMb: Int)
@@ -37,4 +45,6 @@ interface SettingsRepository {
     suspend fun setMusicCacheSizeGb(sizeGb: Int)
 
     suspend fun setAccentColor(hexColor: String)
+
+    suspend fun setScrobbleEnabled(enabled: Boolean)
 }

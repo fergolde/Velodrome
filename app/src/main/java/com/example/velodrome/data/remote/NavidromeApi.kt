@@ -64,4 +64,11 @@ interface NavidromeApi {
     suspend fun getArtist(
         @Query("id") artistId: String
     ): ResponseBody
+
+    @GET("rest/scrobble.view")
+    suspend fun scrobble(
+        @Query("id") trackId: String,
+        @Query("time") time: Long? = null,
+        @Query("submission") submission: Boolean = true
+    ): ResponseBody
 }

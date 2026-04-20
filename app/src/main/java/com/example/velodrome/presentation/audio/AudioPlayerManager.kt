@@ -1,9 +1,9 @@
 package com.example.velodrome.presentation.audio
 
 import android.content.ComponentName
+import android.util.Log
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -16,7 +16,6 @@ import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 
 /**
  * Singleton manager for audio playback.
@@ -57,17 +56,40 @@ object AudioPlayerManager {
     private var mediaController: MediaController? = null
     private var controllerFuture: ListenableFuture<MediaController>? = null
 
+    // Scrobble manager reference
+    var scrobbleManager: ScrobbleManager? = null
+
+    // Position polling interval in milliseconds
+    var positionUpdateIntervalMs: Long = 1000L  // 1 second for progress bar
+
     // Position polling handler - runs when playing to keep UI updated
     private val positionHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var lastScrobbleCheckTime: Long = 0
+    private val scrobbleCheckIntervalMs: Long = 10000L  // 10 seconds for scrobble check
+
     private val positionPollRunnable = object : Runnable {
         override fun run() {
             mediaController?.let { controller ->
                 if (controller.isPlaying) {
                     _currentPosition.value = controller.currentPosition
                     _bufferedPosition.value = controller.bufferedPosition
+                    _duration.value = controller.duration
+
+                    // Check for scrobble every 10 seconds
+                    val currentTime = System.currentTimeMillis()
+                    if (currentTime - lastScrobbleCheckTime >= scrobbleCheckIntervalMs) {
+                        lastScrobbleCheckTime = currentTime
+                        scrobbleManager?.let { sm ->
+                            val trackId = _currentTrackId.value
+                            val duration = _duration.value
+                            if (trackId != null && duration > 0) {
+                                sm.checkAndScrobble(trackId, _currentPosition.value, duration)
+                            }
+                        }
+                    }
                 }
             }
-            positionHandler.postDelayed(this, 500)
+            positionHandler.postDelayed(this, positionUpdateIntervalMs)
         }
     }
 
@@ -76,8 +98,6 @@ object AudioPlayerManager {
      * Should be called once from Application class.
      */
     fun initialize(context: Context) {
-        Log.d(TAG, "Initializing AudioPlayerManager")
-
         val sessionToken = SessionToken(
             context,
             ComponentName(context, AudioPlayerService::class.java)
@@ -88,9 +108,7 @@ object AudioPlayerManager {
             try {
                 mediaController = controllerFuture?.get()
                 setupControllerListener()
-                Log.d(TAG, "MediaController connected successfully")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to get MediaController", e)
             }
         }, MoreExecutors.directExecutor())
     }
@@ -102,7 +120,6 @@ object AudioPlayerManager {
         mediaController?.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _isPlaying.value = isPlaying
-                Log.d(TAG, "onIsPlayingChanged: $isPlaying")
                 // Start/stop position polling
                 if (isPlaying) {
                     positionHandler.post(positionPollRunnable)
@@ -112,7 +129,6 @@ object AudioPlayerManager {
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
-                Log.d(TAG, "onPlaybackStateChanged: $playbackState")
                 when (playbackState) {
                     Player.STATE_READY -> {
                         _isBuffering.value = false
@@ -134,7 +150,6 @@ object AudioPlayerManager {
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                Log.d(TAG, "onMediaItemTransition: ${mediaItem?.mediaMetadata?.title}")
                 mediaItem?.let { updateCurrentTrackFromMediaItem(it) }
             }
 
@@ -155,8 +170,20 @@ object AudioPlayerManager {
         val playlist = _playlist.value
         val index = mediaItem.mediaId.toIntOrNull() ?: -1
         if (index in playlist.indices) {
+            val newTrackId = playlist[index].id
+            val previousTrackId = _currentTrackId.value
+
             _currentIndex.value = index
             _currentTrack.value = playlist[index]
+            _currentTrackId.value = newTrackId
+
+            // Only reset scrobble state if track actually changed
+            if (previousTrackId != newTrackId) {
+                scrobbleManager?.onTrackChanged(newTrackId)
+                // Send "now playing" notification when track changes
+                scrobbleManager?.sendNowPlaying(newTrackId)
+                lastScrobbleCheckTime = 0  // Reset scrobble timer
+            }
         }
     }
 
@@ -164,11 +191,15 @@ object AudioPlayerManager {
      * Start playback of a track with a given playlist
      */
     fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
-        Log.d(TAG, "playTrack: ${track.title}, playlist size: ${playlist.size}, startIndex: $startIndex")
         _playlist.value = playlist
         _currentIndex.value = startIndex
         _currentTrack.value = track
         _currentTrackId.value = track.id
+
+        // Reset scrobble state for new track and send now playing
+        scrobbleManager?.onTrackChanged(track.id)
+        scrobbleManager?.sendNowPlaying(track.id)
+        lastScrobbleCheckTime = 0  // Reset scrobble timer
 
         // Build media items with proper IDs for tracking
         val mediaItems = playlist.mapIndexed { index, t ->
@@ -203,13 +234,6 @@ object AudioPlayerManager {
      */
     fun play() {
         mediaController?.play()
-    }
-
-    /**
-     * Pause playback
-     */
-    fun pause() {
-        mediaController?.pause()
     }
 
     /**
@@ -302,7 +326,6 @@ object AudioPlayerManager {
      * Release resources
      */
     fun release() {
-        Log.d(TAG, "Releasing AudioPlayerManager")
         controllerFuture?.let { MediaController.releaseFuture(it) }
         mediaController = null
     }

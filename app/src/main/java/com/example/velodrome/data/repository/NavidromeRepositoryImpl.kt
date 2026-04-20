@@ -557,4 +557,11 @@ class NavidromeRepositoryImpl @Inject constructor(
             ArtistWithAlbums(artist = artist, albums = albums)
         }
     }
+
+    override suspend fun scrobble(trackId: String, time: Long?, submission: Boolean): Result<Unit> {
+        return runCatching {
+            api.scrobble(trackId, time, submission)
+            Log.d("NavidromeRepository", "Scrobbled track: $trackId, submission: $submission")
+        }
+    }
 }
