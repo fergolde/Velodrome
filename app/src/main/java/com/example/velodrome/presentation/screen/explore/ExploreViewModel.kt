@@ -189,7 +189,7 @@ class ExploreViewModel @Inject constructor(
                 
                 // Set up callback for PlayerManager to request more tracks
                 PlayerManager.setLoadMoreCallback {
-                    Log.d(TAG, "PlayerManager callback triggered")
+                    Log.d(TAG, "=== PlayerManager callback triggered! ===")
                     checkAndLoadMore()
                 }
 

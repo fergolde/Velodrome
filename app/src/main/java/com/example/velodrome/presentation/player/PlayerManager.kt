@@ -154,5 +154,11 @@ object PlayerManager {
 
     fun setLoadMoreCallback(callback: () -> Unit) {
         loadMoreCallback = callback
+        // Also set it in AudioPlayerManager
+        AudioPlayerManager.setLoadMoreCallback {
+            Log.d(TAG, "LoadMoreCallback invoked from AudioPlayerManager")
+            callback()
+        }
+        Log.d(TAG, "LoadMoreCallback set in both PlayerManager and AudioPlayerManager")
     }
 }
