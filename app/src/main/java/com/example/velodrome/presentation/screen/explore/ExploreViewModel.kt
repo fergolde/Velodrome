@@ -141,21 +141,21 @@ class ExploreViewModel @Inject constructor(
                 // Use the new API endpoints to get songs directly by genre
                 val songsResult: Result<List<Track>>
                 
-                if (selectedGenres.isEmpty()) {
+if (selectedGenres.isEmpty()) {
                     // No genre selected - get random songs (all genres)
-                    Log.d(TAG, "Loading random songs (all genres)")
-                    songsResult = navidromeRepository.getRandomSongs(size = 100)
+                    Log.d(TAG, "Loading 10 random songs (all genres)")
+                    songsResult = navidromeRepository.getRandomSongs(size = 10)
                 } else if (selectedGenres.size == 1) {
                     // Single genre - use getSongsByGenre for exact genre filtering
                     val genre = selectedGenres.first()
-                    Log.d(TAG, "Loading songs for single genre: $genre using getSongsByGenre")
-                    songsResult = navidromeRepository.getSongsByGenre(genre, count = 100, offset = 0)
+                    Log.d(TAG, "Loading 10 songs for single genre: $genre using getSongsByGenre")
+                    songsResult = navidromeRepository.getSongsByGenre(genre, count = 10, offset = 0)
                 } else {
                     // Multiple genres - get songs from ALL selected genres and mix them
-                    Log.d(TAG, "Multiple genres selected: $selectedGenres, loading from ALL")
+                    Log.d(TAG, "Multiple genres selected: $selectedGenres, loading 10 from EACH")
                     val allSongs = mutableListOf<Track>()
                     for (genre in selectedGenres) {
-                        val result = navidromeRepository.getSongsByGenre(genre, count = 50, offset = 0)
+                        val result = navidromeRepository.getSongsByGenre(genre, count = 10, offset = 0)
                         result.onSuccess { songs ->
                             allSongs.addAll(songs)
                             Log.d(TAG, "Got ${songs.size} songs for genre: $genre")
@@ -163,7 +163,7 @@ class ExploreViewModel @Inject constructor(
                     }
                     songsResult = Result.success(allSongs)
                 }
-                
+
                 songsResult.onSuccess { songs ->
                     playlist.addAll(songs)
                     Log.d(TAG, "Total tracks loaded: ${playlist.size}")
@@ -208,9 +208,9 @@ class ExploreViewModel @Inject constructor(
         }
     }
     
-    /**
+/**
      * Load more tracks when approaching the end
-     * Called when 5 or fewer tracks remain
+     * Simply loads more songs and appends to player
      */
     fun loadMoreTracks() {
         Log.d(TAG, "=== loadMoreTracks ENTRY ===")
@@ -220,107 +220,60 @@ class ExploreViewModel @Inject constructor(
         }
 
         isLoadingMore = true
-        Log.d(TAG, "loadMoreTracks: Current playlist size: ${playlist.size}, position: $currentPlaylistPosition")
-        
+        Log.d(TAG, "loadMoreTracks: loading more songs from server")
+
         viewModelScope.launch {
             try {
-                // First, check if there are remaining tracks in current playlist
-                val remaining = playlist.size - currentPlaylistPosition
-                Log.d(TAG, "Remaining tracks in playlist: $remaining")
-                
-                if (remaining > 0) {
-                    // Use remaining tracks from current playlist
-                    val nextBatch = playlist.drop(currentPlaylistPosition).take(10)
-                    currentPlaylistPosition += nextBatch.size
-                    PlayerManager.appendToPlaylist(nextBatch)
-                    Log.d(TAG, "Added ${nextBatch.size} tracks from existing playlist")
-                    
-                    // If we still have enough, stop here
-                    if (remaining > 10) {
-                        isLoadingMore = false
-                        return@launch
-                    }
-                }
-
-                // Need to load more songs from server using the new API
-                Log.d(TAG, "Loading more songs with genre filter: $currentGenreFilter")
-                
                 val songsResult: Result<List<Track>>
                 
                 if (currentGenreFilter.isEmpty()) {
                     // No genre filter - get more random songs
-                    Log.d(TAG, "Loading 50 more random songs...")
-                    songsResult = navidromeRepository.getRandomSongs(size = 50)
+                    Log.d(TAG, "loadMoreTracks: Loading 10 random songs...")
+                    songsResult = navidromeRepository.getRandomSongs(size = 10)
                 } else if (currentGenreFilter.size == 1) {
-                    // Single genre - use getSongsByGenre with offset
+                    // Single genre
                     val genre = currentGenreFilter.first()
-                    val offset = playlist.size
-                    Log.d(TAG, "Loading 50 more songs for genre: $genre with offset: $offset")
-                    songsResult = navidromeRepository.getSongsByGenre(genre, count = 50, offset = offset)
+                    Log.d(TAG, "loadMoreTracks: Loading 10 songs for genre: $genre")
+                    songsResult = navidromeRepository.getSongsByGenre(genre, count = 10, offset = 0)
                 } else {
-                    // Multiple genres - load from ALL of them
-                    Log.d(TAG, "Loading 50 more songs from ALL genres: $currentGenreFilter")
+                    // Multiple genres - get from ALL
+                    Log.d(TAG, "loadMoreTracks: Loading 10 songs from ALL genres: $currentGenreFilter")
                     val allSongs = mutableListOf<Track>()
                     for (genre in currentGenreFilter) {
-                        val result = navidromeRepository.getSongsByGenre(genre, count = 25, offset = 0)
+                        val result = navidromeRepository.getSongsByGenre(genre, count = 5, offset = 0)
                         result.onSuccess { songs ->
                             allSongs.addAll(songs)
-                            Log.d(TAG, "Got ${songs.size} more songs for genre: $genre")
                         }
                     }
                     songsResult = Result.success(allSongs)
                 }
-                
-                songsResult.onSuccess { newSongs ->
-                    playlist.addAll(newSongs)
-                    Log.d(TAG, "Added ${newSongs.size} new songs, playlist size now: ${playlist.size}")
-                }.onFailure { error ->
-                    Log.e(TAG, "Error loading more songs: ${error.message}")
-                }
 
-                // Now add new tracks to player
-                val newTracks = playlist.drop(currentPlaylistPosition).take(10)
-                currentPlaylistPosition += newTracks.size
-                
-                if (newTracks.isNotEmpty()) {
-                    PlayerManager.appendToPlaylist(newTracks)
-                    Log.d(TAG, "Added ${newTracks.size} NEW tracks to PlayerManager")
-                } else {
-                    Log.w(TAG, "No new tracks to add!")
+                songsResult.onSuccess { newSongs ->
+                    if (newSongs.isNotEmpty()) {
+                        PlayerManager.appendToPlaylist(newSongs)
+                        Log.d(TAG, "loadMoreTracks: Appended ${newSongs.size} new songs to PlayerManager")
+                    } else {
+                        Log.w(TAG, "loadMoreTracks: No new songs received")
+                    }
+                }.onFailure { error ->
+                    Log.e(TAG, "loadMoreTracks: Error: ${error.message}")
                 }
 
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading more tracks", e)
+                Log.e(TAG, "loadMoreTracks EXCEPTION: ${e.message}", e)
             } finally {
                 isLoadingMore = false
-                Log.d(TAG, "loadMoreTracks completed, isLoadingMore=false")
+                Log.d(TAG, "loadMoreTracks EXIT")
             }
         }
     }
 
     /**
      * Check if we need to load more tracks - called from player
+     * Simply triggers loadMoreTracks - AudioPlayerManager handles when to call it
      */
     fun checkAndLoadMore() {
-        Log.d(TAG, "checkAndLoadMore ENTRY")
-        try {
-            if (isLoadingMore) {
-                Log.d(TAG, "checkAndLoadMore: already loading, skipping")
-                return
-            }
-            
-            val remainingInPlaylist = playlist.size - currentPlaylistPosition
-            Log.d(TAG, "checkAndLoadMore: remaining=$remainingInPlaylist, playlist.size=${playlist.size}")
-            
-            if (remainingInPlaylist <= 10) {
-                Log.d(TAG, "checkAndLoadMore: calling loadMoreTracks()")
-                loadMoreTracks()
-            } else {
-                Log.d(TAG, "checkAndLoadMore: not needed, remaining > 10")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "checkAndLoadMore EXCEPTION: ${e.message}", e)
-        }
-        Log.d(TAG, "checkAndLoadMore EXIT")
+        Log.d(TAG, "=== checkAndLoadMore called - triggering loadMoreTracks ===")
+        loadMoreTracks()
     }
 }
