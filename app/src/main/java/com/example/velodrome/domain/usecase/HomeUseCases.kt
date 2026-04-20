@@ -59,3 +59,11 @@ class GetRandomAlbumsUseCase @Inject constructor(
         return repository.getRandomAlbums(size)
     }
 }
+
+class GetAllAlbumsUseCase @Inject constructor(
+    private val repository: NavidromeRepository
+) {
+    suspend operator fun invoke(size: Int = 100): Result<List<Album>> {
+        return repository.getAllAlbums(size)
+    }
+}

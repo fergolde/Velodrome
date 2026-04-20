@@ -138,6 +138,9 @@ fun MainApp() {
                 },
                 onArtistClick = { artist ->
                     navController.navigate("artist/${artist.id}")
+                },
+                onSettingsClick = {
+                    navController.navigate("settings")
                 }
             )
         }
@@ -156,6 +159,9 @@ fun MainApp() {
                 },
                 onAlbumClick = { album ->
                     navController.navigate("album/${album.id}")
+                },
+                onSettingsClick = {
+                    navController.navigate("settings")
                 }
             )
         }

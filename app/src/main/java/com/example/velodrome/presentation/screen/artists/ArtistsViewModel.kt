@@ -19,7 +19,8 @@ data class ArtistsUiState(
     val artists: List<Artist> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val filteredArtists: List<Artist> = emptyList()
 )
 
 @HiltViewModel
@@ -29,6 +30,9 @@ class ArtistsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ArtistsUiState())
     val uiState: StateFlow<ArtistsUiState> = _uiState.asStateFlow()
+
+    // Original artists loaded from server (without filtering)
+    private var allArtists: List<Artist> = emptyList()
 
     init {
         loadArtists()
@@ -42,7 +46,9 @@ class ArtistsViewModel @Inject constructor(
             getArtistsUseCase(offset = 0, size = 100)
                 .onSuccess { artists ->
                     Log.d(TAG, "Loaded ${artists.size} artists")
-                    _uiState.update { it.copy(artists = artists, isLoading = false) }
+                    allArtists = artists
+                    val filtered = filterArtists(artists, _uiState.value.searchQuery)
+                    _uiState.update { it.copy(artists = filtered, filteredArtists = filtered, isLoading = false) }
                 }
                 .onFailure { e ->
                     Log.e(TAG, "Error loading artists: ${e.message}")
@@ -52,6 +58,17 @@ class ArtistsViewModel @Inject constructor(
     }
 
     fun onSearchQueryChange(query: String) {
-        _uiState.update { it.copy(searchQuery = query) }
+        val filtered = filterArtists(allArtists, query)
+        _uiState.update { it.copy(searchQuery = query, artists = filtered, filteredArtists = filtered) }
+    }
+
+    private fun filterArtists(artists: List<Artist>, query: String): List<Artist> {
+        if (query.isBlank()) {
+            return artists
+        }
+        val lowerQuery = query.lowercase()
+        return artists.filter { artist ->
+            artist.name?.lowercase()?.contains(lowerQuery) == true
+        }
     }
 }

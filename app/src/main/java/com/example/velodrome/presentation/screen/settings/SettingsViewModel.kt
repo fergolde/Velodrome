@@ -24,8 +24,8 @@ data class SettingsUiState(
     val currentImageCacheSize: String = "0 MB",
     val currentMusicCacheSize: String = "0 GB",
     val isClearingCache: Boolean = false,
-    val pendingImageCacheMb: Int = 100,
-    val pendingMusicCacheGb: Int = 1,
+    val pendingImageCacheMb: Int = 200,
+    val pendingMusicCacheGb: Int = 2,
     val hasPendingChanges: Boolean = false
 )
 

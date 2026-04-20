@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.domain.model.Album
-import com.example.velodrome.domain.usecase.GetRandomAlbumsUseCase
+import com.example.velodrome.domain.usecase.GetAllAlbumsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,16 +19,20 @@ data class AlbumsUiState(
     val albums: List<Album> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val filteredAlbums: List<Album> = emptyList()
 )
 
 @HiltViewModel
 class AlbumsViewModel @Inject constructor(
-    private val getRandomAlbumsUseCase: GetRandomAlbumsUseCase
+    private val getAllAlbumsUseCase: GetAllAlbumsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AlbumsUiState())
     val uiState: StateFlow<AlbumsUiState> = _uiState.asStateFlow()
+
+    // Original albums loaded from server (without filtering)
+    private var allAlbums: List<Album> = emptyList()
 
     init {
         loadAlbums()
@@ -39,13 +43,12 @@ class AlbumsViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
-            getRandomAlbumsUseCase(size = 100)
+            getAllAlbumsUseCase(size = 100)
                 .onSuccess { albums ->
                     Log.d(TAG, "Loaded ${albums.size} albums")
-                    albums.forEach { album ->
-                        Log.d(TAG, "Album: ${album.title}, coverUrl: ${album.coverUrl}")
-                    }
-                    _uiState.update { it.copy(albums = albums, isLoading = false) }
+                    allAlbums = albums
+                    val filtered = filterAlbums(albums, _uiState.value.searchQuery)
+                    _uiState.update { it.copy(albums = filtered, filteredAlbums = filtered, isLoading = false) }
                 }
                 .onFailure { e ->
                     Log.e(TAG, "Error loading albums: ${e.message}")
@@ -55,6 +58,25 @@ class AlbumsViewModel @Inject constructor(
     }
 
     fun onSearchQueryChange(query: String) {
-        _uiState.update { it.copy(searchQuery = query) }
+        val filtered = filterAlbums(allAlbums, query)
+        _uiState.update { it.copy(searchQuery = query, albums = filtered, filteredAlbums = filtered) }
+    }
+
+    private fun filterAlbums(albums: List<Album>, query: String): List<Album> {
+        if (query.isBlank()) {
+            return albums
+        }
+        val lowerQuery = query.lowercase()
+        Log.d(TAG, "Filtering by query: '$lowerQuery'")
+        val filtered = albums.filter { album ->
+            val titleMatch = album.title?.lowercase()?.contains(lowerQuery) == true
+            val artistMatch = album.artistName?.lowercase()?.contains(lowerQuery) == true
+            if (titleMatch || artistMatch) {
+                Log.d(TAG, "Match: ${album.title} by ${album.artistName}")
+            }
+            titleMatch || artistMatch
+        }
+        Log.d(TAG, "Found ${filtered.size} albums matching '$query'")
+        return filtered
     }
 }

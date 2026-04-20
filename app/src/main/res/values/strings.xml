@@ -62,13 +62,13 @@
 
 <!-- Artists -->
     <string name="artists_title">Artistas</string>
-    <string name="artists_search_hint">Buscar en tu biblioteca…</string>
+    <string name="artists_search_hint">Buscar en tu biblioteca de artistas…</string>
     <string name="artists_albums_count">ÁLBUMES</string>
     <string name="artists_unknown">Artista Desconocido</string>
 
     <!-- Albums -->
     <string name="albums_title">Álbumes</string>
-    <string name="albums_search_hint">Buscar en tu biblioteca…</string>
+    <string name="albums_search_hint">Buscar en tu biblioteca de albumes…</string>
     <string name="albums_unknown_title">Álbum Desconocido</string>
     <string name="albums_unknown_artist">Artista Desconocido</string>
 

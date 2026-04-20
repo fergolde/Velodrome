@@ -412,6 +412,34 @@ class NavidromeRepositoryImpl @Inject constructor(
     }
 
     @Suppress("UNCHECKED_CAST")
+    override suspend fun getAllAlbums(size: Int): Result<List<Album>> {
+        return runCatching {
+            Log.d("Repo", "=== getAllAlbums (alphabeticalByName) ===")
+            val responseBody = api.getAlbumList2(type = "alphabeticalByName", size = size)
+            val response = parseXmlResponse(responseBody)
+            
+            val subsonicResponse = response["subsonic-response"] as? Map<String, Any>
+            val albumList = subsonicResponse?.get("albumList2") as? Map<String, Any>
+            val albums = albumList?.get("album") as? List<Any> ?: emptyList()
+            Log.d("Repo", "Found ${albums.size} albums")
+
+            albums.mapNotNull { albumMap ->
+                (albumMap as? Map<String, Any>)?.let { am ->
+                    Album(
+                        id = am["id"] as? String ?: "",
+                        artistId = am["artistId"] as? String ?: "",
+                        artistName = am["artist"] as? String ?: "",
+                        title = am["title"] as? String ?: "",
+                        year = (am["year"] as? Number)?.toInt(),
+                        genre = am["genre"] as? String,
+                        coverUrl = am["coverArt"] as? String
+                    )
+                }
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
     override suspend fun getAlbumsByYear(year: Int, size: Int): Result<List<Album>> {
         return runCatching {
             val responseBody = api.getAlbumList2(
