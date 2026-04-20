@@ -166,7 +166,19 @@ class ExploreViewModel @Inject constructor(
             return
         }
 
+        // Don't search if local DB is not ready
         viewModelScope.launch {
+            try {
+                val count = localMusicDataSource.getArtistCount()
+                if (count == 0) {
+                    Log.d(TAG, "Local DB not ready, skipping search")
+                    return@launch
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking local DB", e)
+                return@launch
+            }
+
             _uiState.update { it.copy(isSearching = true) }
 
             try {

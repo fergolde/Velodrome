@@ -85,8 +85,8 @@ fun ExploreScreen(
             searchQuery = uiState.searchQuery,
             searchResults = uiState.searchResults,
             isSearching = uiState.isSearching,
-            onArtistClick = { onArtistClick(it) },
-            onAlbumClick = { onAlbumClick(it) },
+            onArtistClick = { id -> onArtistClick(id) },
+            onAlbumClick = { id -> onAlbumClick(id) },
             onClearSearch = { viewModel.clearSearch() }
         )
         return
@@ -105,7 +105,7 @@ fun ExploreScreen(
             item {
                 SearchBar(
                     query = uiState.searchQuery,
-                    onQueryChange = viewModel::onSearchQueryChange
+                    onQueryChange = { query -> viewModel.onSearchQueryChange(query) }
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }
