@@ -37,4 +37,7 @@ interface NavidromeRepository {
     suspend fun getCacheLimit(): Int
     fun getServerUrl(): String
     fun setServerUrl(url: String)
+
+    // Scrobble
+    suspend fun scrobble(trackId: String, time: Long? = null, submission: Boolean = true): Result<Unit>
 }

@@ -8,7 +8,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -21,6 +20,7 @@ data class SettingsUiState(
     val imageCacheSizeMb: Int = 100,
     val musicCacheSizeGb: Int = 1,
     val accentColor: String = "#B6A0FF",
+    val scrobbleEnabled: Boolean = false,
     val currentImageCacheSize: String = "0 MB",
     val currentMusicCacheSize: String = "0 GB",
     val isClearingCache: Boolean = false
@@ -49,6 +49,7 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.imageCacheSizeMb,
         settingsRepository.musicCacheSizeGb,
         settingsRepository.accentColor,
+        settingsRepository.scrobbleEnabled,
         _currentCacheSizes,
         _isClearingCache
     ) { values ->
@@ -57,9 +58,10 @@ class SettingsViewModel @Inject constructor(
             imageCacheSizeMb = values[0] as Int,
             musicCacheSizeGb = values[1] as Int,
             accentColor = values[2] as String,
-            currentImageCacheSize = (values[3] as Pair<*, *>).first as String,
-            currentMusicCacheSize = (values[3] as Pair<*, *>).second as String,
-            isClearingCache = values[4] as Boolean
+            scrobbleEnabled = values[3] as Boolean,
+            currentImageCacheSize = (values[4] as Pair<*, *>).first as String,
+            currentMusicCacheSize = (values[4] as Pair<*, *>).second as String,
+            isClearingCache = values[5] as Boolean
         )
     }.stateIn(
         scope = viewModelScope,
@@ -115,6 +117,15 @@ class SettingsViewModel @Inject constructor(
     fun setAccentColor(hexColor: String) {
         viewModelScope.launch {
             settingsRepository.setAccentColor(hexColor)
+        }
+    }
+
+    /**
+     * Toggle scrobble enabled/disabled.
+     */
+    fun setScrobbleEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setScrobbleEnabled(enabled)
         }
     }
 

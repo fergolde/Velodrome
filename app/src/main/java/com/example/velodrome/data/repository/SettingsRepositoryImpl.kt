@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -32,6 +33,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val IMAGE_CACHE_SIZE_MB = intPreferencesKey("image_cache_size_mb")
         val MUSIC_CACHE_SIZE_GB = intPreferencesKey("music_cache_size_gb")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
+        val SCROBBLE_ENABLED = booleanPreferencesKey("scrobble_enabled")
     }
 
     // --- Default Values ---
@@ -40,6 +42,7 @@ class SettingsRepositoryImpl @Inject constructor(
         const val DEFAULT_IMAGE_CACHE_SIZE_MB = 100
         const val DEFAULT_MUSIC_CACHE_SIZE_GB = 1
         const val DEFAULT_ACCENT_COLOR = "#B6A0FF"
+        const val DEFAULT_SCROBBLE_ENABLED = false
     }
 
     // --- Cache Settings ---
@@ -61,6 +64,13 @@ class SettingsRepositoryImpl @Inject constructor(
             preferences[PreferencesKeys.ACCENT_COLOR] ?: DEFAULT_ACCENT_COLOR
         }
 
+    // --- Scrobble Settings ---
+
+    override val scrobbleEnabled: Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.SCROBBLE_ENABLED] ?: DEFAULT_SCROBBLE_ENABLED
+        }
+
     // --- Actions ---
 
     override suspend fun setImageCacheSizeMb(sizeMb: Int) {
@@ -78,6 +88,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setAccentColor(hexColor: String) {
         context.settingsDataStore.edit { preferences ->
             preferences[PreferencesKeys.ACCENT_COLOR] = hexColor
+        }
+    }
+
+    override suspend fun setScrobbleEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.SCROBBLE_ENABLED] = enabled
         }
     }
 }
