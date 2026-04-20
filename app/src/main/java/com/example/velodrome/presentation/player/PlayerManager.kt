@@ -63,7 +63,7 @@ object PlayerManager {
      */
     fun appendToPlaylist(tracks: List<Track>) {
         if (tracks.isNotEmpty()) {
-            AudioPlayerManager.setPlaylist(AudioPlayerManager.playlist.value + tracks)
+            AudioPlayerManager.appendToPlaylist(tracks)
             Log.d(TAG, "Appended ${tracks.size} tracks, playlist size: ${AudioPlayerManager.playlist.value.size}")
         }
     }

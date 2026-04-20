@@ -58,6 +58,9 @@ object AudioPlayerManager {
 
     // Scrobble manager reference
     var scrobbleManager: ScrobbleManager? = null
+    
+    // Callback for loading more tracks when playlist runs out
+    private var loadMoreCallback: (() -> Unit)? = null
 
     // Position polling interval in milliseconds
     var positionUpdateIntervalMs: Long = 1000L  // 1 second for progress bar
@@ -230,6 +233,44 @@ object AudioPlayerManager {
     }
 
     /**
+     * Append tracks to the current playlist in MediaController
+     */
+    fun appendToPlaylist(tracks: List<Track>) {
+        if (tracks.isEmpty()) return
+
+        // Add to local playlist
+        _playlist.value = _playlist.value + tracks
+
+        // Build media items for new tracks
+        val startIndex = _playlist.value.size - tracks.size
+        val mediaItems = tracks.mapIndexed { index, t ->
+            val streamUrl = CredentialsManager.getStreamUrl(t.id)
+            val coverUrl = t.coverArtId?.let { CredentialsManager.getCoverArtUrl(it, 400) }
+
+            MediaItem.Builder()
+                .setMediaId((startIndex + index).toString())
+                .setUri(streamUrl)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(t.title)
+                        .setArtist(t.artistName)
+                        .setAlbumTitle(t.albumName)
+                        .apply {
+                            coverUrl?.let { setArtworkUri(Uri.parse(it)) }
+                        }
+                        .build()
+                )
+                .build()
+        }
+
+        // Append to MediaController playlist
+        mediaController?.let { controller ->
+            controller.addMediaItems(mediaItems)
+            Log.d(TAG, "Appended ${tracks.size} tracks to MediaController, total: ${controller.mediaItemCount}")
+        }
+    }
+
+    /**
      * Play the currently loaded track
      */
     fun play() {
@@ -273,8 +314,19 @@ object AudioPlayerManager {
     fun next(): Boolean {
         return if (mediaController?.hasNextMediaItem() == true) {
             mediaController?.seekToNextMediaItem()
+            
+            // Check if we're at the end of playlist - call callback to load more
+            val currentIndex = mediaController?.currentMediaItemIndex ?: 0
+            val totalItems = mediaController?.mediaItemCount ?: 0
+            if (currentIndex >= totalItems - 3) {
+                Log.d(TAG, "Near end of playlist, triggering loadMore callback")
+                loadMoreCallback?.invoke()
+            }
             true
         } else {
+            // No more items - trigger callback to load more
+            Log.d(TAG, "No more items in playlist, triggering loadMore callback")
+            loadMoreCallback?.invoke()
             false
         }
     }
@@ -297,9 +349,17 @@ object AudioPlayerManager {
      */
     private fun handlePlaybackEnded() {
         if (mediaController?.hasNextMediaItem() == true) {
-            // Will auto-advance to next
+            // Will auto-advance to next - check if we need more songs
+            val currentIndex = mediaController?.currentMediaItemIndex ?: 0
+            val totalItems = mediaController?.mediaItemCount ?: 0
+            if (currentIndex >= totalItems - 3) {
+                Log.d(TAG, "Near end during auto-advance, triggering loadMore callback")
+                loadMoreCallback?.invoke()
+            }
         } else {
-            // End of playlist
+            // End of playlist - trigger callback to load more
+            Log.d(TAG, "Playlist ended, triggering loadMore callback")
+            loadMoreCallback?.invoke()
             _isPlaying.value = false
         }
     }
@@ -350,5 +410,13 @@ object AudioPlayerManager {
 
     fun onMediaItemChanged(mediaItem: MediaItem) {
         // MediaController handles this via listener
+    }
+
+    /**
+     * Set callback for loading more tracks when playlist runs out
+     */
+    fun setLoadMoreCallback(callback: () -> Unit) {
+        loadMoreCallback = callback
+        Log.d(TAG, "LoadMoreCallback set")
     }
 }
