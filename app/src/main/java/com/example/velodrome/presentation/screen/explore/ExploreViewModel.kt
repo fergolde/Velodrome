@@ -151,14 +151,15 @@ if (selectedGenres.isEmpty()) {
                     Log.d(TAG, "Loading 10 songs for single genre: $genre using getSongsByGenre")
                     songsResult = navidromeRepository.getSongsByGenre(genre, count = 10, offset = 0)
                 } else {
-                    // Multiple genres - get songs from ALL selected genres and mix them
-                    Log.d(TAG, "Multiple genres selected: $selectedGenres, loading 10 from EACH")
+                    // Multiple genres - get 10 songs total, picking random genre each time
+                    Log.d(TAG, "Multiple genres selected: $selectedGenres, loading 10 songs total with random genre")
                     val allSongs = mutableListOf<Track>()
-                    for (genre in selectedGenres) {
-                        val result = navidromeRepository.getSongsByGenre(genre, count = 10, offset = 0)
+                    for (i in 1..10) {
+                        val randomGenre = selectedGenres.random()
+                        val result = navidromeRepository.getRandomSongsByGenre(randomGenre, size = 1)
                         result.onSuccess { songs ->
                             allSongs.addAll(songs)
-                            Log.d(TAG, "Got ${songs.size} songs for genre: $genre")
+                            Log.d(TAG, "Got ${songs.size} song for genre: $randomGenre (call $i)")
                         }
                     }
                     songsResult = Result.success(allSongs)
@@ -236,11 +237,12 @@ if (selectedGenres.isEmpty()) {
                     Log.d(TAG, "loadMoreTracks: Loading 10 songs for genre: $genre")
                     songsResult = navidromeRepository.getSongsByGenre(genre, count = 10, offset = 0)
                 } else {
-                    // Multiple genres - get from ALL
-                    Log.d(TAG, "loadMoreTracks: Loading 10 songs from ALL genres: $currentGenreFilter")
+                    // Multiple genres - get 10 songs total, picking random genre each time
+                    Log.d(TAG, "loadMoreTracks: Loading 10 songs total with random genre from: $currentGenreFilter")
                     val allSongs = mutableListOf<Track>()
-                    for (genre in currentGenreFilter) {
-                        val result = navidromeRepository.getSongsByGenre(genre, count = 5, offset = 0)
+                    for (i in 1..10) {
+                        val randomGenre = currentGenreFilter.random()
+                        val result = navidromeRepository.getRandomSongsByGenre(randomGenre, size = 1)
                         result.onSuccess { songs ->
                             allSongs.addAll(songs)
                         }
