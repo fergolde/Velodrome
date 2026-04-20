@@ -79,19 +79,6 @@ fun ExploreScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Show search results if query is not blank
-    if (uiState.searchQuery.isNotBlank()) {
-        SearchResultsView(
-            searchQuery = uiState.searchQuery,
-            searchResults = uiState.searchResults,
-            isSearching = uiState.isSearching,
-            onArtistClick = { id -> onArtistClick(id) },
-            onAlbumClick = { id -> onAlbumClick(id) },
-            onClearSearch = { viewModel.clearSearch() }
-        )
-        return
-    }
-
     Scaffold(
         bottomBar = { ExploreBottomNavigationBar(onHomeClick = onHomeClick, onSettingsClick = onSettingsClick) },
         containerColor = MaterialTheme.colorScheme.background
