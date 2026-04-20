@@ -153,11 +153,14 @@ object PlayerManager {
     private var loadMoreCallback: (() -> Unit)? = null
 
     fun setLoadMoreCallback(callback: () -> Unit) {
+        Log.d(TAG, "setLoadMoreCallback called")
         loadMoreCallback = callback
         // Also set it in AudioPlayerManager
         AudioPlayerManager.setLoadMoreCallback {
-            Log.d(TAG, "LoadMoreCallback invoked from AudioPlayerManager")
+            Log.d(TAG, "LoadMoreCallback invoked from AudioPlayerManager, calling inner callback")
+            Log.d(TAG, "loadMoreCallback is null: ${loadMoreCallback == null}")
             callback()
+            Log.d(TAG, "Inner callback executed")
         }
         Log.d(TAG, "LoadMoreCallback set in both PlayerManager and AudioPlayerManager")
     }
