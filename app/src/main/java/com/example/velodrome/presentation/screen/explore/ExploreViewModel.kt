@@ -38,6 +38,7 @@ class ExploreViewModel @Inject constructor(
     private var currentPlaylistPosition = 0
     private var isLoadingMore = false
     private val genresByAlbum = mutableMapOf<String, List<Track>>()
+    private var currentGenreFilter: List<String> = emptyList()  // Tracks which genre(s) to use
 
     init {
         loadContent()
@@ -131,15 +132,24 @@ class ExploreViewModel @Inject constructor(
         currentPlaylistPosition = 0
         genresByAlbum.clear()
         
+        // Determine which genre(s) to use for this session
+        currentGenreFilter = if (selectedGenres.isEmpty()) {
+            emptyList()
+        } else if (selectedGenres.size == 1) {
+            listOf(selectedGenres.first())
+        } else {
+            // Multiple genres - randomly pick ONE
+            listOf(selectedGenres.random())
+        }
+        Log.d(TAG, "Genre filter for this session: $currentGenreFilter")
+        
         viewModelScope.launch {
             try {
                 val allAlbums = mutableListOf<Album>()
-                val genresToPlay: List<String>
                 
                 if (selectedGenres.isEmpty()) {
                     // No genre selected - load random albums (all genres)
                     Log.d(TAG, "Loading random albums (all genres)")
-                    genresToPlay = emptyList()
                     getRandomAlbumsUseCase(size = 50)
                         .onSuccess { albums ->
                             allAlbums.addAll(albums)
@@ -149,7 +159,6 @@ class ExploreViewModel @Inject constructor(
                     // Single genre - only that genre
                     val genre = selectedGenres.first()
                     Log.d(TAG, "Loading albums for single genre: $genre")
-                    genresToPlay = listOf(genre)
                     getAlbumsByGenreUseCase(genre, size = 50)
                         .onSuccess { albums ->
                             allAlbums.addAll(albums)
@@ -159,7 +168,6 @@ class ExploreViewModel @Inject constructor(
                     // Multiple genres - randomly select ONE of the genres
                     val randomGenre = selectedGenres.random()
                     Log.d(TAG, "Multiple genres selected: $selectedGenres, randomly picked: $randomGenre")
-                    genresToPlay = listOf(randomGenre)
                     getAlbumsByGenreUseCase(randomGenre, size = 50)
                         .onSuccess { albums ->
                             allAlbums.addAll(albums)
@@ -222,20 +230,73 @@ class ExploreViewModel @Inject constructor(
      * Called when 5 or fewer tracks remain
      */
     fun loadMoreTracks() {
-        if (isLoadingMore || currentPlaylistPosition >= playlist.size) return
+        if (isLoadingMore) return
 
         isLoadingMore = true
         val remaining = playlist.size - currentPlaylistPosition
 
         viewModelScope.launch {
-            val nextBatch = playlist.drop(currentPlaylistPosition).take(5)
-            currentPlaylistPosition += 5
+            try {
+                // First, use remaining tracks from current playlist
+                if (remaining > 0) {
+                    val nextBatch = playlist.drop(currentPlaylistPosition).take(5)
+                    currentPlaylistPosition += 5
+                    PlayerManager.appendToPlaylist(nextBatch)
+                    Log.d(TAG, "Loaded ${nextBatch.size} more tracks from existing playlist")
+                    
+                    if (remaining > 5) {
+                        isLoadingMore = false
+                        return@launch
+                    }
+                }
 
-            // Update PlayerManager with more tracks
-            PlayerManager.appendToPlaylist(nextBatch)
+                // If playlist is exhausted, load more albums with the same genre filter
+                Log.d(TAG, "Loading more albums with genre filter: $currentGenreFilter")
+                
+                val newAlbums = mutableListOf<Album>()
+                
+                if (currentGenreFilter.isEmpty()) {
+                    // No genre filter - load random
+                    getRandomAlbumsUseCase(size = 30)
+                        .onSuccess { albums ->
+                            newAlbums.addAll(albums)
+                            Log.d(TAG, "Loaded ${albums.size} more random albums")
+                        }
+                } else {
+                    // Use the genre from current filter
+                    val genre = currentGenreFilter.first()
+                    getAlbumsByGenreUseCase(genre, size = 30)
+                        .onSuccess { albums ->
+                            newAlbums.addAll(albums)
+                            Log.d(TAG, "Loaded ${albums.size} more albums for genre: $genre")
+                        }
+                }
 
-            isLoadingMore = false
-            Log.d(TAG, "Loaded ${nextBatch.size} more tracks, total playlist: ${playlist.size}")
+                // Load tracks from new albums
+                for (album in newAlbums) {
+                    val result = getTracksUseCase(album.id)
+                    result.onSuccess { tracks ->
+                        if (tracks.isNotEmpty()) {
+                            playlist.addAll(tracks)
+                            Log.d(TAG, "Added ${tracks.size} tracks from album ${album.title}")
+                        }
+                    }
+                }
+
+                // Shuffle new tracks and add to player
+                val newTracks = playlist.drop(currentPlaylistPosition).take(10)
+                currentPlaylistPosition += newTracks.size
+                
+                if (newTracks.isNotEmpty()) {
+                    PlayerManager.appendToPlaylist(newTracks)
+                    Log.d(TAG, "Added ${newTracks.size} new tracks to playlist")
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading more tracks", e)
+            } finally {
+                isLoadingMore = false
+            }
         }
     }
 
@@ -246,7 +307,10 @@ class ExploreViewModel @Inject constructor(
         if (isLoadingMore) return
         
         val loadedSize = _uiState.value.dynamicPlaylist.size
-        if (loadedSize <= 5 && currentPlaylistPosition < playlist.size) {
+        val remainingInPlaylist = playlist.size - currentPlaylistPosition
+        
+        // Load more if: low on tracks OR playlist is exhausted
+        if (loadedSize <= 5 || remainingInPlaylist <= 5) {
             loadMoreTracks()
         }
     }
