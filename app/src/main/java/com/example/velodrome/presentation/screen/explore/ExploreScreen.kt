@@ -20,14 +20,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Mic
+
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -51,7 +55,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.velodrome.R
+import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
+import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.UiConstants
 import com.example.velodrome.presentation.components.MiniPlayer
 import com.example.velodrome.presentation.player.PlayerManager
@@ -72,7 +78,7 @@ fun ExploreScreen(
     onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
+
     Scaffold(
         bottomBar = { ExploreBottomNavigationBar(onHomeClick = onHomeClick, onSettingsClick = onSettingsClick) },
         containerColor = MaterialTheme.colorScheme.background
@@ -86,7 +92,7 @@ fun ExploreScreen(
             item {
                 SearchBar(
                     query = uiState.searchQuery,
-                    onQueryChange = viewModel::onSearchQueryChange
+                    onQueryChange = { query -> viewModel.onSearchQueryChange(query) }
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }
@@ -377,5 +383,157 @@ fun ExploreBottomNavigationBar(
             onClick = onSettingsClick,
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
+    }
+}
+
+@Composable
+fun SearchResultsView(
+    searchQuery: String,
+    searchResults: SearchResults,
+    isSearching: Boolean,
+    onArtistClick: (String) -> Unit = {},
+    onAlbumClick: (String) -> Unit = {},
+    onClearSearch: () -> Unit = {}
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)
+    ) {
+        // Header
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onClearSearch) {
+                    Icon(Icons.Default.Clear, contentDescription = "Clear", tint = MaterialTheme.colorScheme.onBackground)
+                }
+                Text(
+                    text = "\"$searchQuery\"",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                if (searchResults.totalCount > 0) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "(${searchResults.totalCount})",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        if (isSearching) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        } else if (searchResults.isEmpty) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text("No results found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        } else {
+            // Artists - horizontal carousel
+            if (searchResults.artists.isNotEmpty()) {
+                item {
+                    Column {
+                        Text("Artists", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(12.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(searchResults.artists) { artist ->
+                                ArtistCircleCard(artist = artist, onClick = { onArtistClick(artist.id) })
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Albums - horizontal carousel
+            if (searchResults.albums.isNotEmpty()) {
+                item {
+                    Column {
+                        Text("Albums", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(12.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(searchResults.albums) { album ->
+                                AlbumGridItem(album = album, onClick = { onAlbumClick(album.id) })
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Tracks - vertical list
+            if (searchResults.tracks.isNotEmpty()) {
+                item {
+                    Column {
+                        Text("Songs", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(12.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            searchResults.tracks.forEach { track ->
+                                TrackRow(track = track, onClick = { })
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AlbumGridItem(album: Album, onClick: () -> Unit = {}) {
+    Column(
+        modifier = Modifier
+            .width(120.dp)
+            .clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(album.title?.take(2) ?: "?", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(album.title ?: "Unknown", style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+        Text(album.artistName ?: "Unknown", style = MaterialTheme.typography.bodySmall, maxLines = 1)
+    }
+}
+
+@Composable
+fun TrackRow(track: Track, onClick: () -> Unit = {}) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("♪", color = MaterialTheme.colorScheme.primary)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(track.title ?: "Unknown", style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+            Text(track.artistName ?: "Unknown", style = MaterialTheme.typography.bodySmall, maxLines = 1)
+        }
     }
 }

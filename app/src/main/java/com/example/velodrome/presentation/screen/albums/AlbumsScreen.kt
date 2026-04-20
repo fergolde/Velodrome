@@ -39,16 +39,18 @@ fun AlbumsScreen(
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
     onPlayerClick: () -> Unit = {},
-    onAlbumClick: (Album) -> Unit = {}
+    onAlbumClick: (Album) -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        topBar = { AlbumsTopAppBar(onSearchQueryChange = viewModel::onSearchQueryChange) },
+        //topBar = { AlbumsTopAppBar(onSearchQueryChange = viewModel::onSearchQueryChange) },
         bottomBar = {
             AlbumsBottomNavigationBar(
                 onHomeClick = onHomeClick,
-                onExploreClick = onExploreClick
+                onExploreClick = onExploreClick,
+                onSettingsClick = onSettingsClick
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -234,7 +236,8 @@ fun AlbumCard(album: Album, onClick: () -> Unit = {}) {
 @Composable
 fun AlbumsBottomNavigationBar(
     onHomeClick: () -> Unit = {},
-    onExploreClick: () -> Unit = {}
+    onExploreClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.background,
@@ -258,7 +261,7 @@ fun AlbumsBottomNavigationBar(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
-            onClick = { },
+            onClick = onSettingsClick,
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
     }

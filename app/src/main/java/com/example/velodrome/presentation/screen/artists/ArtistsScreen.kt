@@ -64,16 +64,28 @@ fun ArtistsScreen(
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
     onPlayerClick: () -> Unit = {},
-    onArtistClick: (Artist) -> Unit = {}
+    onArtistClick: (Artist) -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        topBar = { ArtistsTopAppBar(onSearchQueryChange = viewModel::onSearchQueryChange) },
+        //topBar = { ArtistsTopAppBar(onSearchQueryChange = viewModel::onSearchQueryChange) },
+        /*
+        topBar = {
+            Column(
+                modifier = Modifier.padding(top = 32.dp)
+            ) {
+                ArtistsTopAppBar(
+                    onSearchQueryChange = viewModel::onSearchQueryChange
+                )
+            }
+        },*/
         bottomBar = {
             ArtistsBottomNavigationBar(
                 onHomeClick = onHomeClick,
-                onExploreClick = onExploreClick
+                onExploreClick = onExploreClick,
+                onSettingsClick = onSettingsClick
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -147,23 +159,18 @@ fun ArtistsScreen(
 
 @Composable
 fun ArtistsTopAppBar(onSearchQueryChange: (String) -> Unit) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
-        Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onBackground)
-        Text(stringResource(R.string.artists_title), color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface)
-        ) {
-            Icon(Icons.Default.Person, contentDescription = "Profile", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.Center))
-        }
+        Text(
+            text = stringResource(R.string.artists_title),
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp
+        )
     }
 }
 
@@ -258,7 +265,8 @@ fun ArtistCard(artist: Artist, onClick: () -> Unit = {}) {
 @Composable
 fun ArtistsBottomNavigationBar(
     onHomeClick: () -> Unit = {},
-    onExploreClick: () -> Unit = {}
+    onExploreClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.background,
@@ -282,7 +290,7 @@ fun ArtistsBottomNavigationBar(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
-            onClick = { },
+            onClick = onSettingsClick,
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
     }

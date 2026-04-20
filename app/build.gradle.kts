@@ -76,6 +76,11 @@ dependencies {
     implementation(libs.datastore)
     implementation(libs.datastore.preferences)
 
+    // Room
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
     // Security - encrypted-shared-preferences fork (post-deprecation)
     implementation(libs.encryptedprefs.core)
 

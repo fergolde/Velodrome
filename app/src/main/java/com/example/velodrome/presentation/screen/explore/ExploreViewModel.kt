@@ -3,6 +3,10 @@ package com.example.velodrome.presentation.screen.explore
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.velodrome.data.local.datasource.LocalMusicDataSource
+import com.example.velodrome.data.local.entity.AlbumEntity
+import com.example.velodrome.data.local.entity.ArtistEntity
+import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.domain.repository.NavidromeRepository
 import com.example.velodrome.domain.usecase.GetArtistsUseCase
@@ -24,7 +28,8 @@ class ExploreViewModel @Inject constructor(
     private val getArtistsUseCase: GetArtistsUseCase,
     private val getRandomAlbumsUseCase: GetRandomAlbumsUseCase,
     private val getGenresUseCase: GetGenresUseCase,
-    private val navidromeRepository: NavidromeRepository
+    private val navidromeRepository: NavidromeRepository,
+    private val localMusicDataSource: LocalMusicDataSource
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExploreUiState())
@@ -38,6 +43,57 @@ class ExploreViewModel @Inject constructor(
 
     init {
         loadContent()
+        checkAndSyncLocalData()
+    }
+
+    private fun checkAndSyncLocalData() {
+        viewModelScope.launch {
+            val artistCount = localMusicDataSource.getArtistCount()
+            val albumCount = localMusicDataSource.getAlbumCount()
+
+            Log.d(TAG, "Local DB: $artistCount artists, $albumCount albums")
+
+            if (artistCount == 0) {
+                Log.d(TAG, "No artists in local DB, syncing from Explore...")
+                getArtistsUseCase(offset = 0, size = 20)
+                    .onSuccess { artists ->
+                        val entities = artists.map {
+                            com.example.velodrome.data.local.entity.ArtistEntity(
+                                id = it.id,
+                                name = it.name ?: "",
+                                albumCount = it.albumCount,
+                                coverUrl = it.coverUrl
+                            )
+                        }
+                        viewModelScope.launch {
+                            localMusicDataSource.insertArtists(entities)
+                            Log.d(TAG, "Synced ${entities.size} artists to local DB")
+                        }
+                    }
+            }
+
+            if (albumCount == 0) {
+                Log.d(TAG, "No albums in local DB, syncing from Explore...")
+                getRandomAlbumsUseCase(size = 20)
+                    .onSuccess { albums ->
+                        val entities = albums.map {
+                            com.example.velodrome.data.local.entity.AlbumEntity(
+                                id = it.id,
+                                artistId = it.artistId,
+                                artistName = it.artistName ?: "",
+                                title = it.title ?: "",
+                                year = it.year,
+                                genre = it.genre,
+                                coverUrl = it.coverUrl
+                            )
+                        }
+                        viewModelScope.launch {
+                            localMusicDataSource.insertAlbums(entities)
+                            Log.d(TAG, "Synced ${entities.size} albums to local DB")
+                        }
+                    }
+            }
+        }
     }
 
     fun loadContent() {
@@ -103,7 +159,12 @@ class ExploreViewModel @Inject constructor(
     }
 
     fun onSearchQueryChange(query: String) {
+        // Just save the query, don't search yet
         _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun clearSearch() {
+        _uiState.update { it.copy(searchQuery = "", isSearching = false, searchResults = SearchResults()) }
     }
 
     fun onGenreToggle(genre: String) {

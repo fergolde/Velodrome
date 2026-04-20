@@ -3,6 +3,9 @@ package com.example.velodrome.presentation.screen.homescreen
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.velodrome.data.local.datasource.LocalMusicDataSource
+import com.example.velodrome.data.local.entity.AlbumEntity
+import com.example.velodrome.data.local.entity.ArtistEntity
 import com.example.velodrome.domain.repository.NavidromeRepository
 import com.example.velodrome.domain.usecase.GetAlbumsByGenreUseCase
 import com.example.velodrome.domain.usecase.GetAlbumsByYearUseCase
@@ -28,6 +31,7 @@ import javax.inject.Inject
  * - Most played albums
  * - Genre and year filtering
  * - Playback state (synced with PlayerManager)
+ * - Initial sync to local DB for search
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -39,7 +43,8 @@ class HomeViewModel @Inject constructor(
     private val getAlbumsByGenreUseCase: GetAlbumsByGenreUseCase,
     private val getGenresUseCase: GetGenresUseCase,
     private val getTracksUseCase: GetTracksUseCase,
-    private val navidromeRepository: NavidromeRepository
+    private val navidromeRepository: NavidromeRepository,
+    private val localMusicDataSource: LocalMusicDataSource
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -48,6 +53,79 @@ class HomeViewModel @Inject constructor(
     init {
         loadInitialData()
         syncWithPlayerManager()
+        syncDataToLocal()
+    }
+
+    /**
+     * Sync all artists and albums to local DB on first load
+     * This enables offline search in Explore screen
+     */
+    private fun syncDataToLocal() {
+        viewModelScope.launch {
+            try {
+                val artistCount = localMusicDataSource.getArtistCount()
+                val albumCount = localMusicDataSource.getAlbumCount()
+
+                Log.d("HomeViewModel", "Local DB: $artistCount artists, $albumCount albums")
+
+                // Load and sync all artists
+                if (artistCount == 0) {
+                    Log.d("HomeViewModel", "Syncing artists to local DB...")
+                    var offset = 0
+                    while (offset < 10000) {
+                        val result = navidromeRepository.getArtists(offset = offset, size = 500)
+                        val artists = result.getOrNull() ?: break
+                        if (artists.isEmpty()) break
+
+                        val entities = artists.map { artist ->
+                            ArtistEntity(
+                                id = artist.id,
+                                name = artist.name ?: "",
+                                albumCount = artist.albumCount,
+                                coverUrl = artist.coverUrl
+                            )
+                        }
+                        localMusicDataSource.insertArtists(entities)
+                        Log.d("HomeViewModel", "Synced ${entities.size} artists")
+                        if (artists.size < 500) break
+                        offset += 500
+                    }
+                    Log.d("HomeViewModel", "Artist sync complete")
+                }
+
+                // Load and sync all albums (using alphabetical to get more)
+                if (albumCount == 0) {
+                    Log.d("HomeViewModel", "Syncing albums to local DB...")
+                    var offset = 0
+                    while (offset < 10000) {
+                        val result = navidromeRepository.getAllAlbumsFromServer(offset = offset, size = 500)
+                        val albums = result.getOrNull() ?: break
+                        if (albums.isEmpty()) break
+
+                        val entities = albums.map { album ->
+                            AlbumEntity(
+                                id = album.id,
+                                artistId = album.artistId,
+                                artistName = album.artistName ?: "",
+                                title = album.title ?: "",
+                                year = album.year,
+                                genre = album.genre,
+                                coverUrl = album.coverUrl
+                            )
+                        }
+                        localMusicDataSource.insertAlbums(entities)
+                        Log.d("HomeViewModel", "Synced ${entities.size} albums")
+                        if (entities.size < 500) break
+                        offset += 500
+                    }
+                    Log.d("HomeViewModel", "Album sync complete")
+                }
+
+                Log.d("HomeViewModel", "Initial sync complete!")
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error syncing data", e)
+            }
+        }
     }
 
     /**
