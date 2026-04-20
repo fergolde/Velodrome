@@ -1,65 +1,52 @@
 package com.example.velodrome.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import com.example.velodrome.domain.repository.SettingsRepository
 
-private val DarkColorScheme = darkColorScheme(
-    primary = AccentPurple,
-    secondary = PrimaryColor,
-    tertiary = Pink80,
-    background = BackgroundDark,
-    surface = SurfaceDark,
-    onPrimary = BackgroundDark,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
-)
-
+/**
+ * Velodrome theme composable.
+ * Always uses dark theme with accent color from SettingsRepository.
+ * 
+ * This composable will automatically update when the user changes the accent color.
+ * 
+ * @param settingsRepository Repository to get accent color from (injected by Hilt).
+ *                              Can be null for previews.
+ * @param content Composable content
+ */
 @Composable
 fun VelodromeTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    settingsRepository: SettingsRepository? = null,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    // Always dark theme - no light mode in Velodrome
+    
+    // Get accent color from settings or use default
+    val accentHex = settingsRepository?.accentColor?.collectAsState(initial = "#B6A0FF")?.value ?: "#B6A0FF"
+    val accentComposeColor = accentHex.toComposeColor()
+    
+    // Build dynamic dark color scheme with custom accent
+    val DarkColorScheme = darkColorScheme(
+        primary = accentComposeColor,
+        secondary = accentComposeColor.copy(alpha = 0.7f),
+        tertiary = Pink80,
+        background = VelodromeColors.BackgroundDark,
+        surface = VelodromeColors.SurfaceDark,
+        onPrimary = VelodromeColors.BackgroundDark,
+        onSecondary = Color.White,
+        onTertiary = Color.White,
+        onBackground = VelodromeColors.TextPrimary,
+        onSurface = VelodromeColors.TextPrimary,
+        surfaceVariant = VelodromeColors.SurfaceContainer,
+        onSurfaceVariant = VelodromeColors.TextSecondary
+    )
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = DarkColorScheme,
         typography = Typography,
         content = content
     )

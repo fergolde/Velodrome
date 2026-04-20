@@ -21,21 +21,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
@@ -69,24 +67,14 @@ import coil.compose.AsyncImage
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.UiConstants
-import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.util.CredentialsManager
 import kotlinx.coroutines.launch
-
-// --- Theme Tokens ---
-private val PrimaryColor = Color(0xFF7C4DFF)
-private val BackgroundDark = Color(0xFF0C0E17)
-private val SurfaceDark = Color(0xFF171924)
-private val SurfaceContainer = Color(0xFF222532)
-private val TextPrimary = Color(0xFFF0F0FD)
-private val TextSecondary = Color(0xFFAAAAB7)
-private val AccentPurple = Color(0xFFB6A0FF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumDetailScreen(
-    albumId: String,
     onBackClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
     onPlayerClick: () -> Unit = {},
@@ -109,7 +97,7 @@ fun AlbumDetailScreen(
                 title = {
                     Text(
                         text = uiState.album?.title ?: stringResource(R.string.album_detail_title),
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -120,12 +108,12 @@ fun AlbumDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.nav_back),
-                            tint = TextPrimary
+                            tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BackgroundDark
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
@@ -135,7 +123,7 @@ fun AlbumDetailScreen(
                 onExploreClick = onExploreClick
             )
         },
-        containerColor = BackgroundDark
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -148,7 +136,7 @@ fun AlbumDetailScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = AccentPurple)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 uiState.error != null -> {
@@ -158,7 +146,7 @@ fun AlbumDetailScreen(
                     ) {
                         Text(
                             text = uiState.error ?: stringResource(R.string.error_loading),
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -201,7 +189,7 @@ fun AlbumDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showTrackOptions = false },
             sheetState = sheetState,
-            containerColor = SurfaceDark
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             TrackOptionsSheet(
                 track = selectedTrack!!,
@@ -248,7 +236,7 @@ private fun AlbumContent(
         item {
             Text(
                 text = stringResource(R.string.album_detail_tracks),
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
@@ -285,7 +273,7 @@ private fun AlbumHeader(
                 .fillMaxWidth()
                 .height(200.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(SurfaceContainer)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             if (!album?.coverUrl.isNullOrBlank()) {
                 AsyncImage(
@@ -303,7 +291,7 @@ private fun AlbumHeader(
                     .align(Alignment.BottomCenter)
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, BackgroundDark)
+                            colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background)
                         )
                     )
             )
@@ -314,7 +302,7 @@ private fun AlbumHeader(
         // Album info
         Text(
             text = album?.title ?: "",
-            color = TextPrimary,
+            color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp,
             maxLines = 2,
@@ -325,14 +313,14 @@ private fun AlbumHeader(
 
         Text(
             text = album?.artistName ?: "",
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 16.sp
         )
 
         album?.year?.let { year ->
             Text(
                 text = year.toString(),
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp
             )
         }
@@ -341,7 +329,7 @@ private fun AlbumHeader(
 
         Text(
             text = "$trackCount ${stringResource(R.string.album_detail_tracks).lowercase()}",
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp
         )
 
@@ -355,7 +343,7 @@ private fun AlbumHeader(
             Button(
                 onClick = onPlayAllClick,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryColor
+                    containerColor = MaterialTheme.colorScheme.primary
                 ),
                 modifier = Modifier.weight(1f)
             ) {
@@ -373,12 +361,12 @@ private fun AlbumHeader(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(SurfaceContainer)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Icon(
                     imageVector = Icons.Default.Shuffle,
                     contentDescription = stringResource(R.string.album_detail_shuffle),
-                    tint = TextPrimary
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
 
@@ -387,12 +375,12 @@ private fun AlbumHeader(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(SurfaceContainer)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                     contentDescription = stringResource(R.string.album_detail_add_to_queue),
-                    tint = TextPrimary
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         }
@@ -415,7 +403,7 @@ private fun TrackItem(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .background(if (isPlaying) SurfaceContainer.copy(alpha = 0.3f) else Color.Transparent)
+            .background(if (isPlaying) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) else Color.Transparent)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -428,13 +416,13 @@ private fun TrackItem(
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = null,
-                    tint = AccentPurple,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
             } else {
                 Text(
                     text = track.trackNumber.toString(),
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
             }
@@ -446,7 +434,7 @@ private fun TrackItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = track.title,
-                color = if (isPlaying) AccentPurple else TextPrimary,
+                color = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
                 fontWeight = if (isPlaying) FontWeight.Bold else FontWeight.Normal,
                 fontSize = 16.sp,
                 maxLines = 1,
@@ -459,7 +447,7 @@ private fun TrackItem(
         // Duration
         Text(
             text = trackDuration,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp
         )
     }
@@ -479,7 +467,7 @@ private fun TrackOptionsSheet(
         // Track title
         Text(
             text = track.title,
-            color = TextPrimary,
+            color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
             maxLines = 2,
@@ -487,7 +475,7 @@ private fun TrackOptionsSheet(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
         )
 
-        HorizontalDivider(color = SurfaceContainer, modifier = Modifier.padding(horizontal = 16.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.padding(horizontal = 16.dp))
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -503,20 +491,20 @@ private fun TrackOptionsSheet(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(PrimaryColor.copy(alpha = 0.2f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = null,
-                    tint = PrimaryColor,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = stringResource(R.string.track_options_play_next),
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -534,20 +522,20 @@ private fun TrackOptionsSheet(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(AccentPurple.copy(alpha = 0.2f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                     contentDescription = null,
-                    tint = AccentPurple,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = stringResource(R.string.track_options_add_to_queue),
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -568,8 +556,8 @@ fun AlbumDetailBottomNavigationBar(
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {}
 ) {
-    NavigationBar(
-        containerColor = SurfaceDark.copy(alpha = 0.9f),
+NavigationBar(
+        containerColor = MaterialTheme.colorScheme.background,
         tonalElevation = 0.dp
     ) {
         NavigationBarItem(
@@ -577,21 +565,21 @@ fun AlbumDetailBottomNavigationBar(
             label = { Text(stringResource(R.string.nav_home)) },
             selected = false,
             onClick = onHomeClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Explore, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_explore)) },
             selected = false,
             onClick = onExploreClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
             onClick = { },
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
     }
 }

@@ -23,19 +23,26 @@ import com.example.velodrome.presentation.screen.artists.ArtistsScreen
 import com.example.velodrome.presentation.screen.albums.AlbumsScreen
 import com.example.velodrome.presentation.screen.artistdetail.ArtistDetailScreen
 import com.example.velodrome.presentation.screen.albumdetail.AlbumDetailScreen
+import com.example.velodrome.presentation.screen.settings.SettingsScreen
 import com.example.velodrome.presentation.player.PlayerScreen
+import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.ui.theme.VelodromeTheme
 import com.example.velodrome.util.CredentialsManager
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
         setContent {
-            VelodromeTheme {
+            VelodromeTheme(settingsRepository = settingsRepository) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -82,6 +89,9 @@ fun MainApp() {
                 },
                 onPlayerClick = {
                     navController.navigate("player")
+                },
+                onSettingsClick = {
+                    navController.navigate("settings")
                 }
             )
         }
@@ -163,6 +173,13 @@ fun MainApp() {
                 },
                 onQueueClick = {
                     // TODO: Navigate to queue screen
+                }
+            )
+        }
+        composable("settings") {
+            SettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

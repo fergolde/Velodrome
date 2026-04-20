@@ -45,12 +45,13 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onAlbumClick: (String) -> Unit = {},
     onExploreClick: () -> Unit = {},
-    onPlayerClick: () -> Unit = {}
+    onPlayerClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
     Scaffold(
-        bottomBar = { BottomNavigationBar(onExploreClick = onExploreClick) },
+        bottomBar = { BottomNavigationBar(onExploreClick = onExploreClick, onSettingsClick = onSettingsClick) },
         containerColor = BackgroundDark
     ) { paddingValues ->
         LazyColumn(
@@ -223,7 +224,10 @@ fun RecentAlbumsRow(
 
 
 @Composable
-fun BottomNavigationBar(onExploreClick: () -> Unit = {}) {
+fun BottomNavigationBar(
+    onExploreClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
+) {
     NavigationBar(
         containerColor = SurfaceDark.copy(alpha = 0.9f),
         tonalElevation = 0.dp
@@ -246,7 +250,7 @@ fun BottomNavigationBar(onExploreClick: () -> Unit = {}) {
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
-            onClick = { },
+            onClick = onSettingsClick,
             colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
         )
     }

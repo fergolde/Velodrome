@@ -16,30 +16,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import com.example.velodrome.presentation.UiConstants
-import com.example.velodrome.presentation.components.MiniPlayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.example.velodrome.domain.model.Album
-import com.example.velodrome.presentation.player.PlayerManager
-import com.example.velodrome.presentation.player.PlayerManager.currentTrack
-import com.example.velodrome.util.CredentialsManager
-import androidx.compose.ui.res.stringResource
 import com.example.velodrome.R
+import com.example.velodrome.domain.model.Album
+import com.example.velodrome.presentation.UiConstants
+import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.player.PlayerManager
+import com.example.velodrome.util.CredentialsManager
 
-// --- Theme Tokens (Velvet Echo) ---
-val PrimaryColor = Color(0xFF7C4DFF)
-val BackgroundDark = Color(0xFF0C0E17)
-val SurfaceDark = Color(0xFF171924)
-val SurfaceContainer = Color(0xFF222532)
-val TextPrimary = Color(0xFFF0F0FD)
-val TextSecondary = Color(0xFFAAAAB7)
-val AccentPurple = Color(0xFFB6A0FF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +50,7 @@ fun AlbumsScreen(
                 onExploreClick = onExploreClick
             )
         },
-        containerColor = BackgroundDark
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -77,7 +67,7 @@ fun AlbumsScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(color = AccentPurple)
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 } else if (uiState.error != null) {
                     Box(
@@ -86,7 +76,7 @@ fun AlbumsScreen(
                     ) {
                         Text(
                             text = uiState.error!!,
-                            color = TextSecondary
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 } else {
@@ -138,15 +128,15 @@ fun AlbumsTopAppBar(onSearchQueryChange: (String) -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Default.Search, contentDescription = "Search", tint = TextPrimary)
-        Text(stringResource(R.string.albums_title), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+        Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onBackground)
+        Text(stringResource(R.string.albums_title), color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold, fontSize = 20.sp)
         Box(
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(SurfaceDark)
+                .background(color = MaterialTheme.colorScheme.surface)
         ) {
-            Icon(Icons.Default.Person, contentDescription = "Profile", tint = TextSecondary, modifier = Modifier.align(Alignment.Center))
+            Icon(Icons.Default.Person, contentDescription = "Profile", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.Center))
         }
     }
 }
@@ -163,8 +153,8 @@ fun AlbumsSearchBar(
             .fillMaxWidth()
             .height(56.dp)
             .clip(RoundedCornerShape(12.dp)),
-        placeholder = { Text(stringResource(R.string.albums_search_hint), color = TextSecondary) },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
+        placeholder = { Text(stringResource(R.string.albums_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
         shape = RoundedCornerShape(12.dp)
     )
 }
@@ -195,7 +185,7 @@ fun AlbumCard(album: Album, onClick: () -> Unit = {}) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .clickable(onClick = onClick),
-        color = SurfaceDark
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier
@@ -207,7 +197,7 @@ fun AlbumCard(album: Album, onClick: () -> Unit = {}) {
                 modifier = Modifier
                     .size(64.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(SurfaceContainer)
+                    .background(color = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 if (!album.coverUrl.isNullOrBlank()) {
                     AsyncImage(
@@ -222,13 +212,13 @@ fun AlbumCard(album: Album, onClick: () -> Unit = {}) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = album.title ?: "Unknown Album",
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
                 Text(
                     text = album.artistName ?: "Unknown Artist",
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -236,7 +226,7 @@ fun AlbumCard(album: Album, onClick: () -> Unit = {}) {
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = TextSecondary
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -248,7 +238,7 @@ fun AlbumsBottomNavigationBar(
     onExploreClick: () -> Unit = {}
 ) {
     NavigationBar(
-        containerColor = SurfaceDark.copy(alpha = 0.9f),
+        containerColor = MaterialTheme.colorScheme.background,
         tonalElevation = 0.dp
     ) {
         NavigationBarItem(
@@ -256,21 +246,21 @@ fun AlbumsBottomNavigationBar(
             label = { Text(stringResource(R.string.nav_home)) },
             selected = false,
             onClick = onHomeClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Explore, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_explore)) },
             selected = false,
             onClick = onExploreClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
             onClick = { },
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
     }
 }
