@@ -564,4 +564,146 @@ class NavidromeRepositoryImpl @Inject constructor(
             Log.d("NavidromeRepository", "Scrobbled track: $trackId, submission: $submission")
         }
     }
+
+    override suspend fun getSongsByGenre(genre: String, count: Int, offset: Int): Result<List<Track>> {
+        return runCatching {
+            Log.d("NavidromeRepository", "getSongsByGenre: genre=$genre, count=$count, offset=$offset")
+            val responseBody = api.getSongsByGenre(genre, count, offset)
+            val xmlString = responseBody.string()
+            Log.d("NavidromeRepository", "getSongsByGenre XML (first 1000): ${xmlString.take(1000)}")
+            
+            // Parse songs directly using regex
+            val songs = parseSongsFromXml(xmlString)
+            Log.d("NavidromeRepository", "Parsed ${songs.size} songs from genre $genre")
+            songs
+        }
+    }
+
+    override suspend fun getRandomSongsByGenre(genre: String, size: Int): Result<List<Track>> {
+        return runCatching {
+            Log.d("NavidromeRepository", "getRandomSongsByGenre: genre=$genre, size=$size")
+            val responseBody = api.getRandomSongs(size, genre)
+            val xmlString = responseBody.string()
+            Log.d("NavidromeRepository", "getRandomSongsByGenre XML (first 1000): ${xmlString.take(1000)}")
+            
+            // Parse songs directly using regex
+            val songs = parseSongsFromXml(xmlString)
+            Log.d("NavidromeRepository", "Parsed ${songs.size} random songs from genre $genre")
+            songs
+        }
+    }
+
+    override suspend fun getRandomSongs(size: Int): Result<List<Track>> {
+        return runCatching {
+            Log.d("NavidromeRepository", "getRandomSongs: size=$size")
+            val responseBody = api.getRandomSongs(size, null)
+            val xmlString = responseBody.string()
+            Log.d("NavidromeRepository", "getRandomSongs XML (first 1000): ${xmlString.take(1000)}")
+            
+            // Parse songs directly using regex
+            val songs = parseSongsFromXml(xmlString)
+            Log.d("NavidromeRepository", "Parsed ${songs.size} random songs")
+            songs
+        }
+    }
+
+    /**
+     * Parse song elements directly from XML using regex
+     */
+    private fun parseSongsFromXml(xmlString: String): List<Track> {
+        val songs = mutableListOf<Track>()
+        
+        // Match all <song> elements with their attributes
+        val songRegex = """<song\s+([^>]*)>""".toRegex()
+        val matches = songRegex.findAll(xmlString)
+        
+        for (match in matches) {
+            val attrs = match.groupValues[1]
+            val songMap = mutableMapOf<String, Any>()
+            
+            // Extract common attributes using regex
+            putAttr(songMap, attrs, "id", """\bid="([^"]+)""")
+            putAttr(songMap, attrs, "parent", """\bparent="([^"]+)""")
+            putAttr(songMap, attrs, "title", """\btitle="([^"]+)""")
+            putAttr(songMap, attrs, "album", """\balbum="([^"]+)""")
+            putAttr(songMap, attrs, "artist", """\bartist="([^"]+)""")
+            putAttr(songMap, attrs, "track", """\btrack="([^"]+)""")
+            putAttr(songMap, attrs, "year", """\byear="([^"]+)""")
+            putAttr(songMap, attrs, "genre", """\bgenre="([^"]+)""")
+            putAttr(songMap, attrs, "coverArt", """\bcoverArt="([^"]+)""")
+            putAttr(songMap, attrs, "size", """\bsize="([^"]+)""")
+            putAttr(songMap, attrs, "contentType", """\bcontentType="([^"]+)""")
+            putAttr(songMap, attrs, "suffix", """\bsuffix="([^"]+)""")
+            putAttr(songMap, attrs, "duration", """\bduration="([^"]+)""")
+            putAttr(songMap, attrs, "bitRate", """\bbitRate="([^"]+)""")
+            
+            if (songMap.isNotEmpty()) {
+                try {
+                    songs.add(parseTrackFromSongMap(songMap))
+                } catch (e: Exception) {
+                    Log.w("NavidromeRepository", "Error parsing song: ${e.message}")
+                }
+            }
+        }
+        
+        return songs
+    }
+
+    /**
+     * Helper to put attribute from regex match
+     */
+    private fun putAttr(map: MutableMap<String, Any>, attrs: String, key: String, regex: String) {
+        val match = Regex(regex).find(attrs)
+        if (match != null) {
+            map[key] = match.groupValues[1]
+        }
+    }
+
+    /**
+     * Helper to parse a Track from a song map (common parsing logic)
+     */
+    private fun parseTrackFromSongMap(sm: Map<String, Any>): Track {
+        val albumId = sm["albumId"] as? String ?: sm["album"] as? String ?: ""
+        val durationValue = sm["duration"]
+        val durationSec = when (durationValue) {
+            is Number -> durationValue.toInt()
+            is String -> durationValue.toIntOrNull() ?: 0
+            else -> 0
+        }
+        val sizeValue = sm["size"]
+        val sizeBytes = when (sizeValue) {
+            is Number -> sizeValue.toLong()
+            is String -> sizeValue.toLongOrNull() ?: 0L
+            else -> 0L
+        }
+        val bitrateValue = sm["bitRate"]
+        val bitrate = when (bitrateValue) {
+            is Number -> bitrateValue.toInt()
+            is String -> bitrateValue.toIntOrNull() ?: 0
+            else -> 0
+        }
+        val trackValue = sm["track"]
+        val trackNumber = when (trackValue) {
+            is Number -> trackValue.toInt()
+            is String -> trackValue.toIntOrNull() ?: 0
+            else -> 0
+        }
+        val coverArtValue = sm["coverArt"] as? String
+        val albumNameValue = sm["album"] as? String ?: albumId
+        val effectiveCoverArtId = coverArtValue ?: "al-$albumId"
+
+        return Track(
+            id = sm["id"] as? String ?: "",
+            albumId = albumId,
+            title = sm["title"] as? String ?: "",
+            artistName = sm["artist"] as? String ?: "",
+            albumName = albumNameValue,
+            durationSec = durationSec,
+            sizeBytes = sizeBytes,
+            bitrate = bitrate,
+            trackNumber = trackNumber,
+            isCached = false,
+            coverArtId = effectiveCoverArtId
+        )
+    }
 }

@@ -58,6 +58,10 @@ object AudioPlayerManager {
 
     // Scrobble manager reference
     var scrobbleManager: ScrobbleManager? = null
+    var isLoadingMoreCallbackInvoked = false  // Prevent multiple calls
+    
+    // Callback for loading more tracks when playlist runs out
+    private var loadMoreCallback: (() -> Unit)? = null
 
     // Position polling interval in milliseconds
     var positionUpdateIntervalMs: Long = 1000L  // 1 second for progress bar
@@ -176,9 +180,20 @@ object AudioPlayerManager {
             _currentIndex.value = index
             _currentTrack.value = playlist[index]
             _currentTrackId.value = newTrackId
+            
+            // Check if we're at the end of playlist - load more if needed
+            val currentIndex = index
+            val totalItems = mediaController?.mediaItemCount ?: 0
+            Log.d(TAG, "Track selected: index=$currentIndex, totalItems=$totalItems")
+            if (currentIndex >= totalItems - 3 && !isLoadingMoreCallbackInvoked) {
+                isLoadingMoreCallbackInvoked = true  // Prevent multiple calls
+                Log.d(TAG, "Selected track near end (${totalItems - currentIndex} remaining), loading more")
+                loadMoreCallback?.invoke()
+            }
 
             // Only reset scrobble state if track actually changed
             if (previousTrackId != newTrackId) {
+                isLoadingMoreCallbackInvoked = false  // Reset flag for new track
                 scrobbleManager?.onTrackChanged(newTrackId)
                 // Send "now playing" notification when track changes
                 scrobbleManager?.sendNowPlaying(newTrackId)
@@ -200,6 +215,9 @@ object AudioPlayerManager {
         scrobbleManager?.onTrackChanged(track.id)
         scrobbleManager?.sendNowPlaying(track.id)
         lastScrobbleCheckTime = 0  // Reset scrobble timer
+        
+        // Also reset the loading flag for new play session
+        isLoadingMoreCallbackInvoked = false
 
         // Build media items with proper IDs for tracking
         val mediaItems = playlist.mapIndexed { index, t ->
@@ -226,6 +244,54 @@ object AudioPlayerManager {
             controller.setMediaItems(mediaItems, startIndex, 0L)
             controller.prepare()
             controller.play()
+        }
+    }
+
+    /**
+     * Append tracks to the current playlist in MediaController
+     */
+    fun appendToPlaylist(tracks: List<Track>) {
+        Log.d(TAG, "appendToPlaylist() called with ${tracks.size} tracks")
+        if (tracks.isEmpty()) {
+            Log.d(TAG, "appendToPlaylist() - tracks is empty, returning")
+            return
+        }
+
+        // Add to local playlist
+        _playlist.value = _playlist.value + tracks
+        val newTotal = _playlist.value.size
+        Log.d(TAG, "appendToPlaylist() - local playlist size: $newTotal")
+
+        // Build media items for new tracks
+        val startIndex = _playlist.value.size - tracks.size
+        val mediaItems = tracks.mapIndexed { index, t ->
+            val streamUrl = CredentialsManager.getStreamUrl(t.id)
+            val coverUrl = t.coverArtId?.let { CredentialsManager.getCoverArtUrl(it, 400) }
+
+            MediaItem.Builder()
+                .setMediaId((startIndex + index).toString())
+                .setUri(streamUrl)
+                .setMediaMetadata(
+                    MediaMetadata.Builder()
+                        .setTitle(t.title)
+                        .setArtist(t.artistName)
+                        .setAlbumTitle(t.albumName)
+                        .apply {
+                            coverUrl?.let { setArtworkUri(Uri.parse(it)) }
+                        }
+                        .build()
+                )
+                .build()
+        }
+
+        // Append to MediaController playlist
+        mediaController?.let { controller ->
+            controller.addMediaItems(mediaItems)
+            val controllerTotal = controller.mediaItemCount
+            Log.d(TAG, "Appended ${tracks.size} tracks to MediaController, total in controller: $controllerTotal")
+            
+            // Reset the flag so more can be loaded if needed
+            isLoadingMoreCallbackInvoked = false
         }
     }
 
@@ -271,10 +337,27 @@ object AudioPlayerManager {
      * Skip to next track
      */
     fun next(): Boolean {
+        Log.d(TAG, "next() called")
         return if (mediaController?.hasNextMediaItem() == true) {
             mediaController?.seekToNextMediaItem()
+            
+            // Check if we're at the end of playlist - call callback to load more
+            val currentIndex = mediaController?.currentMediaItemIndex ?: 0
+            val totalItems = mediaController?.mediaItemCount ?: 0
+            Log.d(TAG, "next() - currentIndex: $currentIndex, totalItems: $totalItems")
+            if (currentIndex >= totalItems - 3 && !isLoadingMoreCallbackInvoked) {
+                isLoadingMoreCallbackInvoked = true  // Prevent multiple calls
+                Log.d(TAG, "Near end of playlist (${totalItems - currentIndex} remaining), triggering loadMore callback")
+                loadMoreCallback?.invoke()
+            }
             true
         } else {
+            // No more items - trigger callback to load more
+            if (!isLoadingMoreCallbackInvoked) {
+                isLoadingMoreCallbackInvoked = true
+                Log.d(TAG, "No more items in playlist (hasNext=false), triggering loadMore callback")
+                loadMoreCallback?.invoke()
+            }
             false
         }
     }
@@ -296,10 +379,24 @@ object AudioPlayerManager {
      * Handle playback ended - move to next or stop
      */
     private fun handlePlaybackEnded() {
+        Log.d(TAG, "handlePlaybackEnded() called")
         if (mediaController?.hasNextMediaItem() == true) {
-            // Will auto-advance to next
+            // Will auto-advance to next - check if we need more songs
+            val currentIndex = mediaController?.currentMediaItemIndex ?: 0
+            val totalItems = mediaController?.mediaItemCount ?: 0
+            Log.d(TAG, "handlePlaybackEnded() - hasNext=true, currentIndex: $currentIndex, totalItems: $totalItems")
+            if (currentIndex >= totalItems - 3 && !isLoadingMoreCallbackInvoked) {
+                isLoadingMoreCallbackInvoked = true
+                Log.d(TAG, "Near end during auto-advance, triggering loadMore callback")
+                loadMoreCallback?.invoke()
+            }
         } else {
-            // End of playlist
+            // End of playlist - trigger callback to load more
+            if (!isLoadingMoreCallbackInvoked) {
+                isLoadingMoreCallbackInvoked = true
+                Log.d(TAG, "handlePlaybackEnded() - playlist ended, triggering loadMore callback")
+                loadMoreCallback?.invoke()
+            }
             _isPlaying.value = false
         }
     }
@@ -350,5 +447,13 @@ object AudioPlayerManager {
 
     fun onMediaItemChanged(mediaItem: MediaItem) {
         // MediaController handles this via listener
+    }
+
+    /**
+     * Set callback for loading more tracks when playlist runs out
+     */
+    fun setLoadMoreCallback(callback: () -> Unit) {
+        loadMoreCallback = callback
+        Log.d(TAG, "LoadMoreCallback set")
     }
 }

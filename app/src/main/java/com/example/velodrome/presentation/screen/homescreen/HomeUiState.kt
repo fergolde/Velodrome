@@ -44,20 +44,4 @@ data class HomeUiState(
 
     // Refresh state
     val isRefreshing: Boolean = false
-) {
-    /**
-     * Returns the albums to display in the grid section.
-     * Uses filteredAlbums if a filter is active, otherwise latestAlbums.
-     */
-    val gridAlbums: List<Album>
-        get() = when {
-            selectedGenre != null || selectedYear != null -> filteredAlbums
-            else -> latestAlbums
-        }
-
-    /**
-     * Whether any filter is currently active.
-     */
-    val hasActiveFilter: Boolean
-        get() = selectedGenre != null || selectedYear != null
-}
+)

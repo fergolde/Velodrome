@@ -3,6 +3,7 @@ package com.example.velodrome.presentation.screen.homescreen
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.velodrome.domain.repository.NavidromeRepository
 import com.example.velodrome.domain.usecase.GetAlbumsByGenreUseCase
 import com.example.velodrome.domain.usecase.GetAlbumsByYearUseCase
 import com.example.velodrome.domain.usecase.GetGenresUseCase
@@ -37,7 +38,8 @@ class HomeViewModel @Inject constructor(
     private val getAlbumsByYearUseCase: GetAlbumsByYearUseCase,
     private val getAlbumsByGenreUseCase: GetAlbumsByGenreUseCase,
     private val getGenresUseCase: GetGenresUseCase,
-    private val getTracksUseCase: GetTracksUseCase
+    private val getTracksUseCase: GetTracksUseCase,
+    private val navidromeRepository: NavidromeRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -75,14 +77,6 @@ class HomeViewModel @Inject constructor(
         loadRandomAlbums()
         loadGenres()
         loadAvailableYears()
-    }
-
-    /**
-     * Refreshes all data.
-     */
-    fun refresh() {
-        _uiState.update { it.copy(isRefreshing = true) }
-        loadInitialData()
     }
 
     /**
@@ -190,44 +184,6 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Filters albums by year.
-     * Clears genre filter when year is selected.
-     * @param year The year to filter by, or null to clear filter
-     */
-    fun onYearSelected(year: Int?) {
-        _uiState.update {
-            it.copy(
-                selectedYear = year,
-                selectedGenre = null,
-                filteredAlbums = emptyList()
-            )
-        }
-
-        if (year != null) {
-            loadAlbumsByYear(year)
-        }
-    }
-
-    /**
-     * Filters albums by genre.
-     * Clears year filter when genre is selected.
-     * @param genre The genre to filter by, or null to clear filter
-     */
-    fun onGenreSelected(genre: String?) {
-        _uiState.update {
-            it.copy(
-                selectedGenre = genre,
-                selectedYear = null,
-                filteredAlbums = emptyList()
-            )
-        }
-
-        if (genre != null) {
-            loadAlbumsByGenre(genre)
-        }
-    }
-
-    /**
      * Loads albums filtered by year.
      * @param year The year to filter by
      */
@@ -282,44 +238,10 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Clears all active filters.
-     */
-    fun clearFilters() {
-        _uiState.update {
-            it.copy(
-                selectedYear = null,
-                selectedGenre = null,
-                filteredAlbums = emptyList()
-            )
-        }
-    }
-
-    /**
      * Retries loading all data after an error.
      */
     fun retry() {
         loadInitialData()
-    }
-
-    /**
-     * Clears the current error.
-     */
-    fun clearError() {
-        _uiState.update { it.copy(error = null) }
-    }
-
-    /**
-     * Updates the playback state.
-     * @param trackId The ID of the track being played
-     * @param isPlaying Whether the track is currently playing
-     */
-    fun updatePlaybackState(trackId: String?, isPlaying: Boolean) {
-        _uiState.update {
-            it.copy(
-                currentTrackId = trackId,
-                isPlaying = isPlaying
-            )
-        }
     }
 
     /**
@@ -331,44 +253,38 @@ class HomeViewModel @Inject constructor(
 
     /**
      * Plays a random playlist from all available albums.
-     * Similar to ExploreScreen genre selection but for all albums.
+     * Uses API to get random songs directly with infinite scroll.
      */
     fun playShuffle() {
-        val allAlbums = _uiState.value.latestAlbums + _uiState.value.topAlbums
-        if (allAlbums.isEmpty()) {
-            return
-        }
-
         _uiState.update { it.copy(isLoading = true) }
 
         viewModelScope.launch {
             try {
-                val playlist = mutableListOf<com.example.velodrome.domain.model.Track>()
-
-                // Load tracks from all albums
-                for (album in allAlbums) {
-                    val result = getTracksUseCase(album.id)
-                    result.onSuccess { tracks ->
-                        if (tracks.isNotEmpty()) {
-                            playlist.addAll(tracks)
+                // Load 10 random songs directly from API
+                val songsResult = navidromeRepository.getRandomSongs(size = 10)
+                
+                songsResult.onSuccess { songs ->
+                    Log.d("HomeViewModel", "Loaded ${songs.size} random songs")
+                    
+                    if (songs.isNotEmpty()) {
+                        // Shuffle and play first 10
+                        val shuffledSongs = songs.shuffled().take(10)
+                        
+                        // Set up callback for infinite scroll
+                        PlayerManager.setLoadMoreCallback {
+                            Log.d("HomeViewModel", "Home shuffle: loading more songs")
+                            loadMoreRandomSongs()
                         }
+                        
+                        // Start playback
+                        PlayerManager.setPlaylist(shuffledSongs, startPlaying = true)
+                        Log.d("HomeViewModel", "Started shuffle playback with ${shuffledSongs.size} songs")
                     }
-                }
-
-                 Log.d("HomeViewModel", "Total tracks loaded for shuffle: ${playlist.size}")
-
-                // Shuffle the full playlist
-                playlist.shuffle()
-
-                // Start playback with first 10 tracks
-                val initialTracks = playlist.take(10)
-                Log.d("HomeViewModel", "Shuffle playlist (first 10): ${initialTracks.map { it.title }}")
-
-                _uiState.update { it.copy(isLoading = false, isPlaying = true) }
-
-                // Set playlist in PlayerManager to start playback
-                if (initialTracks.isNotEmpty()) {
-                    PlayerManager.setPlaylist(initialTracks, startPlaying = true)
+                    
+                    _uiState.update { it.copy(isLoading = false, isPlaying = true) }
+                }.onFailure { error ->
+                    Log.e("HomeViewModel", "Error loading random songs: ${error.message}")
+                    _uiState.update { it.copy(isLoading = false) }
                 }
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error in playShuffle", e)
@@ -378,7 +294,21 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Get current track from PlayerManager for MiniPlayer display
+     * Load more random songs for infinite scroll
      */
-    fun getCurrentTrack() = PlayerManager.currentTrack.value
+    private fun loadMoreRandomSongs() {
+        viewModelScope.launch {
+            try {
+                val songsResult = navidromeRepository.getRandomSongs(size = 10)
+                songsResult.onSuccess { songs ->
+                    if (songs.isNotEmpty()) {
+                        PlayerManager.appendToPlaylist(songs)
+                        Log.d("HomeViewModel", "Appended ${songs.size} more random songs")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error loading more random songs", e)
+            }
+        }
+    }
 }

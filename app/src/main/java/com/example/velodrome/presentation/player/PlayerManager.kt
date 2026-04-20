@@ -5,7 +5,6 @@ import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.audio.AudioPlayerManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Singleton player state manager - delegates to AudioPlayerManager for real playback.
@@ -26,7 +25,6 @@ object PlayerManager {
 
     // Keep local state for duration (not exposed by AudioPlayerManager in same way)
     private val _duration = MutableStateFlow(0L)
-    val duration: StateFlow<Long> = _duration.asStateFlow()
 
     /**
      * Set a new playlist and start playing from index 0
@@ -65,20 +63,11 @@ object PlayerManager {
      */
     fun appendToPlaylist(tracks: List<Track>) {
         if (tracks.isNotEmpty()) {
-            AudioPlayerManager.setPlaylist(AudioPlayerManager.playlist.value + tracks)
+            AudioPlayerManager.appendToPlaylist(tracks)
             Log.d(TAG, "Appended ${tracks.size} tracks, playlist size: ${AudioPlayerManager.playlist.value.size}")
         }
     }
 
-    /**
-     * Replace entire playlist with new tracks
-     */
-    fun replacePlaylist(tracks: List<Track>) {
-        AudioPlayerManager.setPlaylist(tracks)
-        if (tracks.isNotEmpty()) {
-            AudioPlayerManager.playTrack(tracks[0], tracks, 0)
-        }
-    }
 
     /**
      * Set current index directly (for queue navigation)
@@ -107,13 +96,6 @@ object PlayerManager {
     }
 
     /**
-     * Pause playback
-     */
-    fun pause() {
-        AudioPlayerManager.pause()
-    }
-
-    /**
      * Start/resume playback
      */
     fun play() {
@@ -139,20 +121,6 @@ object PlayerManager {
      */
     fun seekTo(positionMs: Long) {
         AudioPlayerManager.seekTo(positionMs)
-    }
-
-    /**
-     * Get current position in milliseconds directly from MediaController
-     */
-    fun getCurrentPositionMs(): Long {
-        return AudioPlayerManager.getCurrentPositionMs()
-    }
-
-    /**
-     * Clear the playlist
-     */
-    fun clearPlaylist() {
-        AudioPlayerManager.clearPlaylist()
     }
 
     /**
@@ -185,13 +153,15 @@ object PlayerManager {
     private var loadMoreCallback: (() -> Unit)? = null
 
     fun setLoadMoreCallback(callback: () -> Unit) {
+        Log.d(TAG, "setLoadMoreCallback called")
         loadMoreCallback = callback
-    }
-
-    /**
-     * Notify that more tracks are needed
-     */
-    fun requestLoadMore() {
-        loadMoreCallback?.invoke()
+        // Also set it in AudioPlayerManager
+        AudioPlayerManager.setLoadMoreCallback {
+            Log.d(TAG, "LoadMoreCallback invoked from AudioPlayerManager, calling inner callback")
+            Log.d(TAG, "loadMoreCallback is null: ${loadMoreCallback == null}")
+            callback()
+            Log.d(TAG, "Inner callback executed")
+        }
+        Log.d(TAG, "LoadMoreCallback set in both PlayerManager and AudioPlayerManager")
     }
 }

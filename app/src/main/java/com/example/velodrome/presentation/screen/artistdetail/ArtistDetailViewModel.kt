@@ -67,8 +67,4 @@ class ArtistDetailViewModel @Inject constructor(
                 }
         }
     }
-
-    fun retry() {
-        loadArtistData()
-    }
 }

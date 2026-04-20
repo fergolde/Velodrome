@@ -116,7 +116,11 @@ fun MainApp() {
                 },
                 onAlbumClick = { albumId ->
                     navController.navigate("album/$albumId")
-                }
+                },
+                onSettingsClick = {
+                    navController.navigate("settings")
+                },
+
             )
         }
         composable("artists") {
@@ -180,7 +184,13 @@ fun MainApp() {
             SettingsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
-                }
+                },
+                onExploreClick = {
+                    navController.navigate("explore")
+                },
+                onHomeClick = {
+                    navController.navigate("home")
+                },
             )
         }
         composable("artist/{artistId}") { backStackEntry ->
@@ -198,9 +208,7 @@ fun MainApp() {
             )
         }
         composable("album/{albumId}") { backStackEntry ->
-            val albumId = backStackEntry.arguments?.getString("albumId") ?: return@composable
             AlbumDetailScreen(
-                albumId = albumId,
                 onBackClick = { navController.popBackStack() },
                 onExploreClick = { navController.navigate("explore") },
                 onPlayerClick = {
