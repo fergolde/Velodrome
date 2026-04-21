@@ -20,13 +20,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shuffle
 import com.example.velodrome.presentation.screen.homescreen.AlbumCover
 import com.example.velodrome.presentation.screen.homescreen.ArtistAvatar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -195,13 +199,36 @@ private fun ArtistAlbumsList(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = artist?.name ?: "",
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp
-                    )
+
+                    // 🔥 Botones
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilledIconButton(
+                            onClick = {}//onPlayAllClick
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Play")
+                        }
+
+                        FilledIconButton(
+                            onClick = {}//onShuffleClick
+                        ) {
+                            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle")
+                        }
+
+                        FilledIconButton(
+                            onClick = {}//onAddToQueueClick
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.PlaylistAdd,
+                                contentDescription = "Add to queue"
+                            )
+                        }
+                    }
+
                 }
             }
         }

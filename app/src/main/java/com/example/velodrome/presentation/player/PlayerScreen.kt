@@ -69,7 +69,7 @@ fun PlayerScreen(
     val density = LocalDensity.current.density
     Scaffold(
         bottomBar = {
-            PlayerBottomNavigationBar(
+            BottomNavigationBar(
                 onHomeClick = onHomeClick,
                 onExploreClick = onExploreClick,
                 onSettingsClick = onSettingsClick
@@ -145,7 +145,7 @@ fun PlayerScreen(
                     duration = uiState.currentTrack?.durationSec ?: 0,
                     onSeek = viewModel::onSeek
                 )
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 PlaybackControls(
                     isPlaying = uiState.isPlaying,
                     onPlayPauseClick = viewModel::onPlayPauseClick,
@@ -192,35 +192,34 @@ fun PlayerScreen(
 
 @Composable
 fun PlayerTopBar(onMinimizeClick: () -> Unit = {}) {
-    Row(
+    Box(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
-        IconButton(onClick = onMinimizeClick) {
-            Icon(
-                Icons.Default.KeyboardArrowDown,
-                contentDescription = stringResource(R.string.player_minimize),
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(28.dp)
-            )
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = stringResource(R.string.player_now_playing).uppercase(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp
-            )
-        }
-        IconButton(onClick = {}) {
-            Icon(
-                Icons.Default.MoreVert,
-                contentDescription = stringResource(R.string.player_menu),
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(22.dp)
-            )
+        // Texto centrado REAL
+        Text(
+            text = stringResource(R.string.player_now_playing).uppercase(),
+            color = MaterialTheme.colorScheme.primary,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 2.sp
+        )
+
+        // Botón alineado a la izquierda
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.CenterStart),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onMinimizeClick) {
+                Icon(
+                    Icons.Default.KeyboardArrowDown,
+                    contentDescription = stringResource(R.string.player_minimize),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
         }
     }
 }
@@ -231,7 +230,6 @@ fun PlayerTopBar(onMinimizeClick: () -> Unit = {}) {
 fun AlbumArt(
     coverArtId: String? = null,
 ) {
-
     Surface(
         modifier = Modifier
             .aspectRatio(1f)
@@ -314,9 +312,9 @@ fun SeekBar(
                 .fillMaxWidth()
                 .height(20.dp),
             colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.onBackground,
-                activeTrackColor = MaterialTheme.colorScheme.onBackground,
-                inactiveTrackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
             )
         )
         Row(
@@ -358,7 +356,7 @@ fun PlaybackControls(
             Icon(
                 Icons.Outlined.Shuffle,
                 contentDescription = stringResource(R.string.player_shuffle),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -371,7 +369,7 @@ fun PlaybackControls(
             Icon(
                 Icons.Default.SkipPrevious,
                 contentDescription = stringResource(R.string.player_previous),
-                tint = MaterialTheme.colorScheme.onBackground,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
                 modifier = Modifier.size(36.dp)
             )
         }
@@ -390,7 +388,7 @@ fun PlaybackControls(
             Icon(
                 Icons.Default.SkipNext,
                 contentDescription = stringResource(R.string.player_next),
-                tint = MaterialTheme.colorScheme.onBackground,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
                 modifier = Modifier.size(36.dp)
             )
         }
@@ -400,7 +398,7 @@ fun PlaybackControls(
             Icon(
                 Icons.Outlined.Repeat,
                 contentDescription = stringResource(R.string.player_repeat),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -423,7 +421,7 @@ fun PlayPauseButton(
             .size(72.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.onBackground)
+            .background(MaterialTheme.colorScheme.primary)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -474,49 +472,36 @@ fun QueueChip(onClick: () -> Unit) {
 }
 
 // ─── Bottom Nav ────────────────────────────────────────────────────────────────
-
 @Composable
-fun PlayerBottomNavigationBar(
-    onHomeClick: () -> Unit = {},
+fun BottomNavigationBar(
+    onHomeClick: () -> Unit,
     onExploreClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {}
 ) {
     NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
         tonalElevation = 0.dp
     ) {
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = null, modifier = Modifier.size(22.dp)) },
-            label = { Text(stringResource(R.string.nav_home), fontSize = 10.sp) },
+            icon = { Icon(Icons.Default.Home, contentDescription = null) },
+            label = { Text(stringResource(R.string.nav_home)) },
             selected = false,
             onClick = onHomeClick,
-            colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                indicatorColor = Color.Transparent
-            )
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Explore, contentDescription = null, modifier = Modifier.size(22.dp)) },
-            label = { Text(stringResource(R.string.nav_explore), fontSize = 10.sp) },
+            icon = { Icon(Icons.Default.Explore, contentDescription = null) },
+            label = { Text(stringResource(R.string.nav_explore)) },
             selected = false,
             onClick = onExploreClick,
-            colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                indicatorColor = Color.Transparent
-            )
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = null, modifier = Modifier.size(22.dp)) },
-            label = { Text(stringResource(R.string.nav_settings), fontSize = 10.sp) },
+            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+            label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
             onClick = onSettingsClick,
-            colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                indicatorColor = Color.Transparent
-            )
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
     }
 }
@@ -544,25 +529,18 @@ fun QueueContent(
                 Text(
                     text = stringResource(R.string.player_next_up).uppercase(),
                     color = MaterialTheme.colorScheme.primary,
-                    fontSize = 10.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = stringResource(R.string.player_next_up),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
                 )
             }
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant
+                color = MaterialTheme.colorScheme.primary
             ) {
                 Text(
                     text = "${playlist.size}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onPrimaryFixed,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)

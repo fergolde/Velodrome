@@ -40,7 +40,7 @@
     <string name="player_previous">Anterior</string>
     <string name="player_next">Siguiente</string>
     <string name="player_repeat">Repetir</string>
-    <string name="player_next_up">COLA</string>
+    <string name="player_next_up">Playlist</string>
     <string name="player_progress">Progreso</string>
     <string name="player_pause">Pausar</string>
 

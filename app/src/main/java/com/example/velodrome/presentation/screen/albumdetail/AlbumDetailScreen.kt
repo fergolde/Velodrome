@@ -31,6 +31,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -258,7 +259,7 @@ private fun AlbumHeader(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = null,
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 )
             }
         }
@@ -300,22 +301,14 @@ private fun AlbumHeader(
                     Text("Play")
                 }
 
-                IconButton(
-                    onClick = onShuffleClick,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                FilledIconButton(
+                    onClick = onShuffleClick
                 ) {
                     Icon(Icons.Default.Shuffle, contentDescription = null)
                 }
 
-                IconButton(
-                    onClick = onAddToQueueClick,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                FilledIconButton(
+                    onClick = onAddToQueueClick
                 ) {
                     Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
                 }

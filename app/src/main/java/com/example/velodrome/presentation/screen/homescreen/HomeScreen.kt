@@ -269,16 +269,3 @@ fun BottomNavigationBar(
         )
     }
 }
-
-@Suppress("UNUSED_PARAMETER")
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    VelodromeTheme {
-        // Preview without ViewModel - state will be empty/default
-        HomeScreen(
-            viewModel = hiltViewModel(),
-            onAlbumClick = {}
-        )
-    }
-}

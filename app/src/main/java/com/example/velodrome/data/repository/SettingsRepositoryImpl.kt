@@ -39,8 +39,8 @@ class SettingsRepositoryImpl @Inject constructor(
     // --- Default Values ---
 
     companion object {
-        const val DEFAULT_IMAGE_CACHE_SIZE_MB = 100
-        const val DEFAULT_MUSIC_CACHE_SIZE_GB = 1
+        const val DEFAULT_IMAGE_CACHE_SIZE_MB = 200
+        const val DEFAULT_MUSIC_CACHE_SIZE_GB = 2
         const val DEFAULT_ACCENT_COLOR = "#B6A0FF"
         const val DEFAULT_SCROBBLE_ENABLED = false
     }

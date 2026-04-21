@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,28 +19,23 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.screen.homescreen.AlbumCover
-import com.example.velodrome.util.CredentialsManager
 
 // Theme tokens needed for MiniPlayer
 private val SurfaceContainer = androidx.compose.ui.graphics.Color(0xFF222532)
-private val AccentPurple = androidx.compose.ui.graphics.Color(0xFFB6A0FF)
+//private val AccentPurple = androidx.compose.ui.graphics.Color(0xFFB6A0FF)
 private val TextPrimary = androidx.compose.ui.graphics.Color(0xFFF0F0FD)
 private val TextSecondary = androidx.compose.ui.graphics.Color(0xFFAAAAB7)
 private val BackgroundDark = androidx.compose.ui.graphics.Color(0xFF0C0E17)
@@ -77,7 +71,7 @@ fun MiniPlayer(
                 modifier = Modifier
                     .fillMaxWidth(progress)
                     .fillMaxHeight()
-                    .background(AccentPurple)
+                    .background(MaterialTheme.colorScheme.primary)
             )
         }
 
@@ -125,7 +119,7 @@ fun MiniPlayer(
             Icon(
                 Icons.Default.SkipPrevious,
                 contentDescription = stringResource(R.string.player_previous),
-                tint = TextPrimary,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                 modifier = Modifier.clickable { onPreviousClick() }
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -133,7 +127,7 @@ fun MiniPlayer(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(AccentPurple)
+                    .background(MaterialTheme.colorScheme.primary)
                     .clickable { onPlayPauseClick() }
             ) {
                 Icon(
@@ -147,7 +141,7 @@ fun MiniPlayer(
             Icon(
                 Icons.Default.SkipNext,
                 contentDescription = stringResource(R.string.player_next),
-                tint = TextPrimary,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                 modifier = Modifier.clickable { onNextClick() }
             )
         }
