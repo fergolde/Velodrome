@@ -53,14 +53,14 @@ import com.example.velodrome.presentation.screen.homescreen.BottomNavigationBar
 import com.example.velodrome.presentation.components.MiniPlayer
 import com.example.velodrome.util.CredentialsManager
 
-// --- Theme Tokens (Velvet Echo) ---
-val PrimaryColor = Color(0xFF7C4DFF)
-val BackgroundDark = Color(0xFF0C0E17)
-val SurfaceDark = Color(0xFF171924)
-val SurfaceContainer = Color(0xFF222532)
-val TextPrimary = Color(0xFFF0F0FD)
-val TextSecondary = Color(0xFFAAAAB7)
-val AccentPurple = Color(0xFFB6A0FF)
+// Note: All colors are accessed via MaterialTheme.colorScheme directly in composables
+// See HomeScreen for the pattern:
+// - background = MaterialTheme.colorScheme.background
+// - surface = MaterialTheme.colorScheme.surface
+// - surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
+// - onBackground = MaterialTheme.colorScheme.onBackground
+// - onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+// - primary (accent) = MaterialTheme.colorScheme.primary (already configured from settings)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,7 +81,7 @@ fun PlayerScreen(
 
     Scaffold(
         bottomBar = { PlayerBottomNavigationBar(onHomeClick = onHomeClick, onExploreClick = onExploreClick, onSettingsClick = onSettingsClick) },
-        containerColor = BackgroundDark
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -131,7 +131,7 @@ fun PlayerScreen(
         ModalBottomSheet(
             onDismissRequest = { showQueue = false },
             sheetState = sheetState,
-            containerColor = SurfaceDark
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             QueueContent(
                 playlist = uiState.playlist,
@@ -157,14 +157,14 @@ fun PlayerTopAppBar(onMinimizeClick: () -> Unit = {}) {
         Icon(
             Icons.Default.KeyboardArrowDown, 
             contentDescription = stringResource(R.string.player_minimize), 
-            tint = TextPrimary,
+            tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.clickable(onClick = onMinimizeClick)
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.app_name), color = AccentPurple, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(stringResource(R.string.player_now_playing), color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            Text(stringResource(R.string.app_name), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(stringResource(R.string.player_now_playing), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         }
-        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.player_menu), tint = TextPrimary)
+        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.player_menu), tint = MaterialTheme.colorScheme.onBackground)
     }
 }
 
@@ -175,7 +175,7 @@ fun AlbumArtCard(coverArtId: String? = null) {
             .aspectRatio(1f)
             .fillMaxWidth()
             .clip(RoundedCornerShape(32.dp)),
-        color = SurfaceDark,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 20.dp
     ) {
         AlbumCover(
@@ -201,7 +201,7 @@ fun SongInfoSection(
         // 🎵 Título (marquee correcto)
         MarqueeText(
             text = title,
-            color = TextPrimary,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 32.sp,
             fontWeight = FontWeight.ExtraBold,
             modifier = Modifier.fillMaxWidth()
@@ -215,19 +215,19 @@ fun SongInfoSection(
             // 👤 Artista (NO se mueve)
             Text(
                 text = artist,
-                color = AccentPurple,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
 
-            Text(" • ", color = TextSecondary)
+            Text(" • ", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             // 💿 Álbum (solo este hace marquee)
             MarqueeText(
                 text = album,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp,
                 modifier = Modifier.weight(1f)
             )
@@ -276,7 +276,7 @@ fun PlaybackControlsPanel(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp)),
-        color = SurfaceDark.copy(alpha = 0.5f)
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
     ) {
         Column(
             modifier = Modifier.padding(vertical = 24.dp, horizontal = 16.dp),
@@ -288,8 +288,8 @@ fun PlaybackControlsPanel(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(formatTime(currentPosition), color = TextSecondary, fontSize = 12.sp)
-                    Text(formatTime(duration), color = TextSecondary, fontSize = 12.sp)
+                    Text(formatTime(currentPosition), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text(formatTime(duration), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
@@ -298,8 +298,8 @@ fun PlaybackControlsPanel(
                         .fillMaxWidth()
                         .height(4.dp)
                         .clip(RoundedCornerShape(2.dp)),
-                    color = AccentPurple,
-                    trackColor = SurfaceContainer
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
 
@@ -312,34 +312,34 @@ fun PlaybackControlsPanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { }) {
-                    Icon(Icons.Outlined.Shuffle, contentDescription = stringResource(R.string.player_shuffle), tint = TextSecondary, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Outlined.Shuffle, contentDescription = stringResource(R.string.player_shuffle), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
                 }
 
                 IconButton(onClick = onPreviousClick) {
-                    Icon(Icons.Default.SkipPrevious, contentDescription = stringResource(R.string.player_previous), tint = TextPrimary, modifier = Modifier.size(32.dp))
+                    Icon(Icons.Default.SkipPrevious, contentDescription = stringResource(R.string.player_previous), tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(32.dp))
                 }
 
                 Box(
                     modifier = Modifier
                         .size(72.dp)
                         .clip(CircleShape)
-                        .background(AccentPurple)
+                        .background(MaterialTheme.colorScheme.primary)
                         .clickable(onClick = onPlayPauseClick)
                 ) {
                     Icon(
                         if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = if (isPlaying) stringResource(R.string.player_pause) else stringResource(R.string.play),
-                        tint = BackgroundDark,
+                        tint = MaterialTheme.colorScheme.background,
                         modifier = Modifier.size(36.dp).align(Alignment.Center)
                     )
                 }
 
                 IconButton(onClick = onNextClick) {
-                    Icon(Icons.Default.SkipNext, contentDescription = stringResource(R.string.player_next), tint = TextPrimary, modifier = Modifier.size(32.dp))
+                    Icon(Icons.Default.SkipNext, contentDescription = stringResource(R.string.player_next), tint = MaterialTheme.colorScheme.onBackground, modifier = Modifier.size(32.dp))
                 }
 
                 IconButton(onClick = { }) {
-                    Icon(Icons.Outlined.Repeat, contentDescription = stringResource(R.string.player_repeat), tint = TextSecondary, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Outlined.Repeat, contentDescription = stringResource(R.string.player_repeat), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
                 }
             }
         }
@@ -350,13 +350,13 @@ fun PlaybackControlsPanel(
 fun NextUpButton(onClick: () -> Unit = {}) {
     Button(
         onClick = onClick,
-        colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark),
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(20.dp),
         modifier = Modifier.height(48.dp).padding(horizontal = 16.dp)
     ) {
-        Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = stringResource(R.string.player_next_up), tint = TextSecondary)
+        Icon(Icons.AutoMirrored.Filled.QueueMusic, contentDescription = stringResource(R.string.player_next_up), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.width(12.dp))
-        Text(stringResource(R.string.player_next_up), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp)
+        Text(stringResource(R.string.player_next_up), color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp)
     }
 }
 
@@ -367,7 +367,7 @@ fun PlayerBottomNavigationBar(
     onSettingsClick: () -> Unit = {}
 ) {
     NavigationBar(
-        containerColor = SurfaceDark.copy(alpha = 0.9f),
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
         tonalElevation = 0.dp
     ) {
         NavigationBarItem(
@@ -375,21 +375,21 @@ fun PlayerBottomNavigationBar(
             label = { Text(stringResource(R.string.nav_home)) },
             selected = false,
             onClick = onHomeClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Explore, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_explore)) },
             selected = false,
             onClick = onExploreClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Settings, contentDescription = null) },
             label = { Text(stringResource(R.string.nav_settings)) },
             selected = false,
             onClick = onSettingsClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = TextSecondary)
+            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
         )
     }
 }
@@ -407,13 +407,13 @@ fun QueueContent(
     ) {
         Text(
             text = stringResource(R.string.player_next_up),
-            color = TextPrimary,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
         Text(
             text = "${playlist.size} tracks",
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 14.sp
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -447,12 +447,12 @@ fun QueueTrackItem(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(if (isCurrentTrack) AccentPurple.copy(alpha = 0.2f) else SurfaceContainer)
+                .background(if (isCurrentTrack) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Icon(
                 if (isCurrentTrack) Icons.Default.PlayArrow else Icons.Default.MusicNote,
                 contentDescription = null,
-                tint = if (isCurrentTrack) AccentPurple else TextSecondary,
+                tint = if (isCurrentTrack) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.Center)
             )
         }
@@ -460,18 +460,18 @@ fun QueueTrackItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = track.title,
-                color = if (isCurrentTrack) AccentPurple else TextPrimary,
+                color = if (isCurrentTrack) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
                 fontWeight = if (isCurrentTrack) FontWeight.Bold else FontWeight.Normal
             )
             Text(
                 text = track.artistName,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp
             )
         }
         Text(
             text = formatTime(track.durationSec),
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp
         )
     }
