@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -83,38 +84,13 @@ fun AlbumDetailScreen(
     val isPlaying by PlayerManager.isPlaying.collectAsState()
     val currentPosition by PlayerManager.currentPosition.collectAsState()
 
-    // Track options bottom sheet
     var showTrackOptions by remember { mutableStateOf(false) }
     var selectedTrack by remember { mutableStateOf<Track?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = uiState.album?.title ?: stringResource(R.string.album_detail_title),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back),
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
+        topBar = {}, // ❌ eliminado (ahora está dentro del header)
         bottomBar = {
             AlbumDetailBottomNavigationBar(
                 onHomeClick = onPlayerClick,
@@ -123,50 +99,48 @@ fun AlbumDetailScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+
             when {
                 uiState.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
                     }
                 }
+
                 uiState.error != null -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = uiState.error ?: stringResource(R.string.error_loading),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(uiState.error ?: "Error")
                     }
                 }
+
                 else -> {
                     AlbumContent(
                         album = uiState.album,
                         tracks = uiState.tracks,
-                        onTrackClick = { track -> viewModel.playTrack(track) },
-                        onTrackLongClick = { track ->
-                            selectedTrack = track
+                        onTrackClick = { viewModel.playTrack(it) },
+                        onTrackLongClick = {
+                            selectedTrack = it
                             showTrackOptions = true
                         },
                         onPlayAllClick = { viewModel.playAll() },
                         onShuffleClick = { viewModel.shuffleAll() },
-                        onAddToQueueClick = { viewModel.addAllToQueue() }
+                        onAddToQueueClick = { viewModel.addAllToQueue() },
+                        onBackClick = onBackClick // 👈 IMPORTANTE
                     )
                 }
             }
-            
-            // MiniPlayer overlay - shown when music is playing
+
             if (currentTrack != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
                     MiniPlayer(
                         modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMargin),
                         currentTrack = currentTrack,
@@ -181,27 +155,6 @@ fun AlbumDetailScreen(
             }
         }
     }
-
-    // Track options bottom sheet
-    if (showTrackOptions && selectedTrack != null) {
-        ModalBottomSheet(
-            onDismissRequest = { showTrackOptions = false },
-            sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surface
-        ) {
-            TrackOptionsSheet(
-                track = selectedTrack!!,
-                onPlayNext = {
-                    viewModel.playNext(selectedTrack!!)
-                    scope.launch { sheetState.hide() }.invokeOnCompletion { showTrackOptions = false }
-                },
-                onAddToQueue = {
-                    viewModel.addToQueue(selectedTrack!!)
-                    scope.launch { sheetState.hide() }.invokeOnCompletion { showTrackOptions = false }
-                }
-            )
-        }
-    }
 }
 
 @Composable
@@ -212,32 +165,31 @@ private fun AlbumContent(
     onTrackLongClick: (Track) -> Unit,
     onPlayAllClick: () -> Unit,
     onShuffleClick: () -> Unit,
-    onAddToQueueClick: () -> Unit
+    onAddToQueueClick: () -> Unit,
+    onBackClick: () -> Unit
 ) {
     val currentTrackId by PlayerManager.currentTrackId.collectAsState()
 
     LazyColumn(
         contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        // Album Header with cover image
         item {
             AlbumHeader(
                 album = album,
                 trackCount = tracks.size,
                 onPlayAllClick = onPlayAllClick,
                 onShuffleClick = onShuffleClick,
-                onAddToQueueClick = onAddToQueueClick
+                onAddToQueueClick = onAddToQueueClick,
+                onBackClick = onBackClick
             )
         }
 
-        // Track list
         item {
             Text(
-                text = stringResource(R.string.album_detail_tracks),
-                color = MaterialTheme.colorScheme.onBackground,
+                text = "Tracks",
+                modifier = Modifier.padding(16.dp),
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
+                fontSize = 18.sp
             )
         }
 
@@ -258,127 +210,115 @@ private fun AlbumHeader(
     trackCount: Int,
     onPlayAllClick: () -> Unit,
     onShuffleClick: () -> Unit,
-    onAddToQueueClick: () -> Unit
+    onAddToQueueClick: () -> Unit,
+    onBackClick: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        // Album Cover
+    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+    val headerHeight = screenHeight / 3
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+
+        // 🔥 HERO IMAGE
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .height(headerHeight)
         ) {
+
             AlbumCover(
                 coverArtId = album?.coverUrl,
                 contentDescription = album?.title,
-                size = 200.dp,
-                cornerRadius = 16.dp,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                cornerRadius = 0.dp
             )
-            // Gradient overlay at bottom
+
+            // Gradient
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .align(Alignment.BottomCenter)
+                    .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background)
+                            listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.background
+                            )
                         )
                     )
             )
+
+            // 🔙 BACK BUTTON
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .align(Alignment.TopStart)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // INFO
+        Column(modifier = Modifier.padding(16.dp)) {
 
-        // Album info
-        Text(
-            text = album?.title ?: "",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold,
-            fontSize = 24.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = album?.artistName ?: "",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 16.sp
-        )
-
-        album?.year?.let { year ->
             Text(
-                text = year.toString(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = album?.title ?: "",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = album?.artistName ?: "",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            album?.year?.let {
+                Text(it.toString())
+            }
+
+            Text(
+                "$trackCount tracks",
                 fontSize = 14.sp
             )
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
 
-        Text(
-            text = "$trackCount ${stringResource(R.string.album_detail_tracks).lowercase()}",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 14.sp
-        )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
 
-        Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onPlayAllClick,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Play")
+                }
 
-        // Action buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(
-                onClick = onPlayAllClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(R.string.album_detail_play_all))
-            }
+                IconButton(
+                    onClick = onShuffleClick,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Icon(Icons.Default.Shuffle, contentDescription = null)
+                }
 
-            IconButton(
-                onClick = onShuffleClick,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Shuffle,
-                    contentDescription = stringResource(R.string.album_detail_shuffle),
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            IconButton(
-                onClick = onAddToQueueClick,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
-                    contentDescription = stringResource(R.string.album_detail_add_to_queue),
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
+                IconButton(
+                    onClick = onAddToQueueClick,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
+                }
             }
         }
     }
