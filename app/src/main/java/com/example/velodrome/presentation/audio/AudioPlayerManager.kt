@@ -308,7 +308,7 @@ object AudioPlayerManager {
         }
 
         // Add to local playlist
-        _playlist.value = _playlist.value + tracks
+        _playlist.value += tracks
         val newTotal = _playlist.value.size
         Log.d(TAG, "appendToPlaylist() - local playlist size: $newTotal")
 

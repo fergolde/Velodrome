@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Velodrome</string>
-    
+
     <!-- Login -->
     <string name="login_subtitle">Navidrome Music Player</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
-    <string name="login_button">Sign In</string>
+    <string name="login_button">Log In</string>
     <string name="show_password">Show password</string>
     <string name="hide_password">Hide password</string>
     <string name="server_url">Server URL</string>
-    <string name="login_error">Login failed. Please check your credentials.</string>
+    <string name="login_error">Login error. Check your credentials.</string>
     <string name="loading">Loading…</string>
 
     <!-- Navigation -->
@@ -21,7 +21,7 @@
     <!-- Home -->
     <string name="home_shuffle">Shuffle</string>
     <string name="home_recently_added">Recently Added</string>
-    <string name="home_new_arrivals">NEW ARRIVALS</string>
+    <string name="home_new_arrivals">NEW</string>
     <string name="home_most_played">Most Played</string>
     <string name="home_your_favorites">YOUR FAVORITES</string>
     <string name="home_recently_played">Recently Played</string>
@@ -49,33 +49,72 @@
     <string name="explore_artists">Artists</string>
     <string name="explore_artists_discover">DISCOVER</string>
     <string name="explore_curated_albums">Curated Albums</string>
-    <string name="explore_based_on_activity">BASED ON YOUR NOCTURNAL ACTIVITY</string>
+    <string name="explore_based_on_activity">BASED ON YOUR NIGHT ACTIVITY</string>
     <string name="explore_random_albums">Random Albums</string>
     <string name="explore_rising_artists">Rising Artists</string>
     <string name="explore_trending">TRENDING IN YOUR LIBRARY</string>
     <string name="explore_genres">Genres</string>
     <string name="explore_all_genres">ALL GENRES</string>
     <string name="explore_discover">DISCOVER</string>
-    <string name="explore_search_hint">Artists, albums, or tracks</string>
+    <string name="explore_search_hint">Artists, albums or tracks</string>
     <string name="explore_loading">Loading…</string>
     <string name="explore_artist_of_month">ARTIST OF THE MONTH</string>
-    <string name="explore_monthly_listeners">Monthly Listeners</string>
+    <string name="explore_monthly_listeners">monthly listeners</string>
 
     <!-- Artists -->
     <string name="artists_title">Artists</string>
-    <string name="artists_search_hint">Search your library…</string>
+    <string name="artists_search_hint">Search your artists library…</string>
     <string name="artists_albums_count">ALBUMS</string>
     <string name="artists_unknown">Unknown Artist</string>
 
     <!-- Albums -->
     <string name="albums_title">Albums</string>
-    <string name="albums_search_hint">Search your library…</string>
+    <string name="albums_search_hint">Search your albums library…</string>
     <string name="albums_unknown_title">Unknown Album</string>
     <string name="albums_unknown_artist">Unknown Artist</string>
 
+    <!-- Artist Detail -->
+    <string name="artist_detail_title">Artist</string>
+    <string name="artist_detail_albums">Albums</string>
+    <string name="artist_detail_albums_count">%d albums</string>
+    <string name="artist_detail_tracks">Tracks</string>
+
+    <!-- Album Detail -->
+    <string name="album_detail_title">Album</string>
+    <string name="album_detail_tracks">Tracks</string>
+    <string name="album_detail_play_all">Play All</string>
+    <string name="album_detail_shuffle">Shuffle</string>
+    <string name="album_detail_add_to_queue">Add to Queue</string>
+
+    <!-- Track Options -->
+    <string name="track_options_play_next">Play Next</string>
+    <string name="track_options_add_to_queue">Add to Queue</string>
+    <string name="track_options_add_to_favorites">Add to Favorites</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_back">Back</string>
+    <string name="settings_cache">Storage</string>
+    <string name="settings_image_cache">Image Cache</string>
+    <string name="settings_image_cache_desc">Storage for album covers</string>
+    <string name="settings_music_cache">Music Cache</string>
+    <string name="settings_music_cache_desc">Storage for songs</string>
+    <string name="settings_clear_cache">Clear Cache</string>
+    <string name="settings_current">Current</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_accent_color">Accent Color</string>
+    <string name="settings_scrobble">Integrations</string>
+    <string name="settings_scrobble_enabled">Scrobbling</string>
+    <string name="settings_scrobble_desc">Send playback to server</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_version_desc">App version</string>
+
     <!-- Common -->
+    <string name="nav_back">Back</string>
     <string name="view_all">View All</string>
     <string name="play">Play</string>
     <string name="search">Search</string>
     <string name="error_occurred">An error occurred</string>
+    <string name="error_loading">Error loading</string>
 </resources>

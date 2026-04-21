@@ -58,9 +58,9 @@ class ExploreViewModel @Inject constructor(
                 getArtistsUseCase(offset = 0, size = 20)
                     .onSuccess { artists ->
                         val entities = artists.map {
-                            com.example.velodrome.data.local.entity.ArtistEntity(
+                            ArtistEntity(
                                 id = it.id,
-                                name = it.name ?: "",
+                                name = it.name,
                                 albumCount = it.albumCount,
                                 coverUrl = it.coverUrl
                             )
@@ -77,11 +77,11 @@ class ExploreViewModel @Inject constructor(
                 getRandomAlbumsUseCase(size = 20)
                     .onSuccess { albums ->
                         val entities = albums.map {
-                            com.example.velodrome.data.local.entity.AlbumEntity(
+                            AlbumEntity(
                                 id = it.id,
                                 artistId = it.artistId,
-                                artistName = it.artistName ?: "",
-                                title = it.title ?: "",
+                                artistName = it.artistName,
+                                title = it.title,
                                 year = it.year,
                                 genre = it.genre,
                                 coverUrl = it.coverUrl
@@ -180,8 +180,7 @@ class ExploreViewModel @Inject constructor(
 
     fun onPlayGenres() {
         val selectedGenres = _uiState.value.selectedGenres
-        
-        Log.d(TAG, "Playing: ${if (selectedGenres.isEmpty()) "all genres" else selectedGenres}")
+
         _uiState.update { it.copy(isLoading = true) }
         
         // Clear and rebuild playlist
