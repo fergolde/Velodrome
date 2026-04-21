@@ -302,6 +302,7 @@ Log.d("XmlParser", "Total artists found: ${artistList.size}")
     /**
      * Decode common HTML entities that may appear in XML attributes
      * Navidrome encodes & as &amp; in XML
+     * Also handles character references like &#39; (decimal) and &#x27; (hex)
      */
     private fun decodeHtmlEntities(text: String): String {
         return text
@@ -310,5 +311,8 @@ Log.d("XmlParser", "Total artists found: ${artistList.size}")
             .replace("&gt;", ">")
             .replace("&quot;", "\"")
             .replace("&apos;", "'")
+            .replace("&#39;", "'")
+            .replace("&#x27;", "'")
+            .replace("&#27;", "'")
     }
 }

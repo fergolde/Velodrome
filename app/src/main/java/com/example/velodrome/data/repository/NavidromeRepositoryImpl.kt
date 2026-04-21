@@ -743,6 +743,7 @@ class NavidromeRepositoryImpl @Inject constructor(
     /**
      * Decode common HTML entities that may appear in XML attributes
      * Navidrome encodes & as &amp; in XML
+     * Also handles character references like &#39; (decimal) and &#x27; (hex)
      */
     private fun decodeHtmlEntities(text: String): String {
         return text
@@ -751,5 +752,8 @@ class NavidromeRepositoryImpl @Inject constructor(
             .replace("&gt;", ">")
             .replace("&quot;", "\"")
             .replace("&apos;", "'")
+            .replace("&#39;", "'")
+            .replace("&#x27;", "'")
+            .replace("&#27;", "'")
     }
 }
