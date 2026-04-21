@@ -1,6 +1,7 @@
 package com.example.velodrome.presentation.player
 
 import android.util.Log
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,10 +21,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -175,29 +180,104 @@ fun AlbumArtCard(coverArtId: String? = null) {
 @Composable
 fun SongInfoSection(title: String, artist: String, album: String) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
+        // Title with marquee effect (scrolling text)
+        MarqueeText(
             text = title,
             color = TextPrimary,
             fontSize = 32.sp,
             fontWeight = FontWeight.ExtraBold,
-            maxLines = 1
+            modifier = Modifier.fillMaxWidth()
         )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            MarqueeText(
                 text = artist,
                 color = AccentPurple,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 1
+                modifier = Modifier.weight(1f, fill = false)
             )
             Text(" • ", color = TextSecondary)
             Text(
                 text = album,
                 color = TextSecondary,
                 fontSize = 14.sp,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
             )
         }
+    }
+}
+
+/**
+ * Text that scrolls horizontally when it overflows the container.
+ * Scrolls from right to left in an infinite loop.
+ */
+@Composable
+fun MarqueeText(
+    text: String,
+    color: Color,
+    fontSize: TextUnit,
+    fontWeight: FontWeight = FontWeight.Normal,
+    modifier: Modifier = Modifier
+) {
+    var textWidth by remember { mutableFloatStateOf(0f) }
+    var containerWidth by remember { mutableFloatStateOf(0f) }
+    var shouldScroll by remember { mutableStateOf(false) }
+
+    // Infinite scroll animation
+    val infiniteTransition = rememberInfiniteTransition(label = "marquee")
+    val targetOffset = if (shouldScroll) -(textWidth - containerWidth) else 0f
+    val scrollDuration = if (shouldScroll) ((textWidth - containerWidth) / 50 * 1000).toInt().coerceAtLeast(3000) else 3000
+    val scrollOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = targetOffset,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = scrollDuration,
+                easing = LinearEasing
+            ),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "scroll"
+    )
+
+    // Delay before starting scroll
+    var startScrolling by remember { mutableStateOf(false) }
+
+    LaunchedEffect(text) {
+        // Wait for layout to measure
+        kotlinx.coroutines.delay(500)
+        startScrolling = true
+    }
+
+    LaunchedEffect(textWidth, containerWidth) {
+        shouldScroll = containerWidth > 0 && textWidth > containerWidth
+    }
+
+    Box(
+        modifier = modifier
+            .onSizeChanged { size ->
+                containerWidth = size.width.toFloat()
+            }
+    ) {
+        Text(
+            text = text,
+            color = color,
+            fontSize = fontSize,
+            fontWeight = fontWeight,
+            maxLines = 1,
+            onTextLayout = { textLayoutResult ->
+                textWidth = textLayoutResult.size.width.toFloat()
+            },
+            modifier = Modifier
+                .graphicsLayer {
+                    translationX = if (shouldScroll && startScrolling) scrollOffset else 0f
+                }
+        )
     }
 }
 
