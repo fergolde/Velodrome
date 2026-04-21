@@ -2,11 +2,16 @@ package com.example.velodrome.presentation.player
 
 import android.util.Log
 import androidx.compose.animation.core.*
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -26,11 +32,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -178,9 +189,16 @@ fun AlbumArtCard(coverArtId: String? = null) {
 }
 
 @Composable
-fun SongInfoSection(title: String, artist: String, album: String) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // Title with marquee effect (scrolling text)
+fun SongInfoSection(
+    title: String,
+    artist: String,
+    album: String
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+
+        // 🎵 Título (marquee correcto)
         MarqueeText(
             text = title,
             color = TextPrimary,
@@ -188,34 +206,35 @@ fun SongInfoSection(title: String, artist: String, album: String) {
             fontWeight = FontWeight.ExtraBold,
             modifier = Modifier.fillMaxWidth()
         )
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            MarqueeText(
+
+            // 👤 Artista (NO se mueve)
+            Text(
                 text = artist,
                 color = AccentPurple,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.weight(1f, fill = false)
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
+
             Text(" • ", color = TextSecondary)
-            Text(
+
+            // 💿 Álbum (solo este hace marquee)
+            MarqueeText(
                 text = album,
                 color = TextSecondary,
                 fontSize = 14.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
         }
     }
 }
 
-/**
- * Text that scrolls horizontally when it overflows the container.
- * Scrolls from right to left in an infinite loop.
- */
 @Composable
 fun MarqueeText(
     text: String,
@@ -224,61 +243,21 @@ fun MarqueeText(
     fontWeight: FontWeight = FontWeight.Normal,
     modifier: Modifier = Modifier
 ) {
-    var textWidth by remember { mutableFloatStateOf(0f) }
-    var containerWidth by remember { mutableFloatStateOf(0f) }
-    var shouldScroll by remember { mutableStateOf(false) }
-
-    // Infinite scroll animation
-    val infiniteTransition = rememberInfiniteTransition(label = "marquee")
-    val targetOffset = if (shouldScroll) -(textWidth - containerWidth) else 0f
-    val scrollDuration = if (shouldScroll) ((textWidth - containerWidth) / 50 * 1000).toInt().coerceAtLeast(3000) else 3000
-    val scrollOffset by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = targetOffset,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = scrollDuration,
-                easing = LinearEasing
-            ),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "scroll"
-    )
-
-    // Delay before starting scroll
-    var startScrolling by remember { mutableStateOf(false) }
-
-    LaunchedEffect(text) {
-        // Wait for layout to measure
-        kotlinx.coroutines.delay(500)
-        startScrolling = true
-    }
-
-    LaunchedEffect(textWidth, containerWidth) {
-        shouldScroll = containerWidth > 0 && textWidth > containerWidth
-    }
-
-    Box(
-        modifier = modifier
-            .onSizeChanged { size ->
-                containerWidth = size.width.toFloat()
-            }
-    ) {
-        Text(
-            text = text,
-            color = color,
-            fontSize = fontSize,
-            fontWeight = fontWeight,
-            maxLines = 1,
-            onTextLayout = { textLayoutResult ->
-                textWidth = textLayoutResult.size.width.toFloat()
-            },
-            modifier = Modifier
-                .graphicsLayer {
-                    translationX = if (shouldScroll && startScrolling) scrollOffset else 0f
-                }
+    Text(
+        text = text,
+        color = color,
+        fontSize = fontSize,
+        fontWeight = fontWeight,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier.basicMarquee(
+            iterations = Int.MAX_VALUE,
+            repeatDelayMillis = 2000,
+            initialDelayMillis = 1000,
+            velocity = 50.dp,
+            spacing = MarqueeSpacing(100.dp)
         )
-    }
+    )
 }
 
 @Composable
