@@ -101,7 +101,7 @@ fun ArtistAvatar(
                 // Load from local cache
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(File(cachedImagePath))
+                        .data(File(cachedImagePath!!))
                         .crossfade(true)
                         .build(),
                     contentDescription = contentDescription,

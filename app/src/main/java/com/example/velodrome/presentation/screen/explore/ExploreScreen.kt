@@ -262,7 +262,7 @@ fun ArtistCircleCard(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = artist.name ?: "Unknown",
+            text = artist.name,
 color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
             fontSize = 12.sp,
@@ -502,11 +502,11 @@ fun AlbumGridItem(album: Album, onClick: () -> Unit = {}) {
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            Text(album.title?.take(2) ?: "?", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(album.title.take(2), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.height(8.dp))
-        Text(album.title ?: "Unknown", style = MaterialTheme.typography.bodyMedium, maxLines = 1)
-        Text(album.artistName ?: "Unknown", style = MaterialTheme.typography.bodySmall, maxLines = 1)
+        Text(album.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+        Text(album.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1)
     }
 }
 
@@ -532,8 +532,8 @@ fun TrackRow(track: Track, onClick: () -> Unit = {}) {
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(track.title ?: "Unknown", style = MaterialTheme.typography.bodyMedium, maxLines = 1)
-            Text(track.artistName ?: "Unknown", style = MaterialTheme.typography.bodySmall, maxLines = 1)
+            Text(track.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
+            Text(track.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1)
         }
     }
 }
