@@ -290,12 +290,25 @@ Log.d("XmlParser", "Total artists found: ${artistList.size}")
     }
 
     /**
-     * Helper to put attribute into map
+     * Helper to put attribute into map with HTML entity decoding
      */
     private fun putAttr(map: MutableMap<String, Any>, attrs: String, key: String, regex: String) {
         val match = Regex(regex).find(attrs)
         if (match != null) {
-            map[key] = match.groupValues[1]
+            map[key] = decodeHtmlEntities(match.groupValues[1])
         }
+    }
+
+    /**
+     * Decode common HTML entities that may appear in XML attributes
+     * Navidrome encodes & as &amp; in XML
+     */
+    private fun decodeHtmlEntities(text: String): String {
+        return text
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+            .replace("&apos;", "'")
     }
 }

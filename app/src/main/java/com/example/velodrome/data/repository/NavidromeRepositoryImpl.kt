@@ -108,7 +108,7 @@ class NavidromeRepositoryImpl @Inject constructor(
                 (artistMap as? Map<String, Any>)?.let { am ->
                     val artist = Artist(
                         id = am["id"] as? String ?: "",
-                        name = am["name"] as? String ?: "",
+                        name = decodeHtmlEntities(am["name"] as? String ?: ""),
                         albumCount = (am["albumCount"] as? Number)?.toInt() ?: 0,
                         coverUrl = am["coverArt"] as? String
                     )
@@ -133,8 +133,8 @@ class NavidromeRepositoryImpl @Inject constructor(
             val albumMatch = albumIdRegex.find(xmlString)
             
             val extractedAlbumId = albumMatch?.groupValues?.get(1) ?: albumId
-            val title = albumMatch?.groupValues?.get(2) ?: ""
-            val artist = albumMatch?.groupValues?.get(3) ?: ""
+            val title = decodeHtmlEntities(albumMatch?.groupValues?.get(2) ?: "")
+            val artist = decodeHtmlEntities(albumMatch?.groupValues?.get(3) ?: "")
             val artistId = albumMatch?.groupValues?.get(4) ?: ""
             
             // Extract coverArt
@@ -535,7 +535,7 @@ class NavidromeRepositoryImpl @Inject constructor(
             // Extract artist ID and name from <artist> tag
             val artistIdRegex = """<artist\s+id="([^"]+)"\s+name="([^"]+)"""".toRegex()
             val artistMatch = artistIdRegex.find(xmlString)
-            val artistName = artistMatch?.groupValues?.get(2) ?: ""
+            val artistName = decodeHtmlEntities(artistMatch?.groupValues?.get(2) ?: "")
             val extractedArtistId = artistMatch?.groupValues?.get(1) ?: artistId
             
             // Extract coverArt and albumCount
@@ -555,8 +555,8 @@ class NavidromeRepositoryImpl @Inject constructor(
             
             val albums = albumMatches.map { match ->
                 val albumId = match.groupValues[1]
-                val title = match.groupValues[2]
-                val artist = match.groupValues[3]
+                val title = decodeHtmlEntities(match.groupValues[2])
+                val artist = decodeHtmlEntities(match.groupValues[3])
                 val artistId = match.groupValues[4]
                 val coverArt = match.groupValues[5]
                 
@@ -683,12 +683,12 @@ class NavidromeRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Helper to put attribute from regex match
+     * Helper to put attribute from regex match with HTML entity decoding
      */
     private fun putAttr(map: MutableMap<String, Any>, attrs: String, key: String, regex: String) {
         val match = Regex(regex).find(attrs)
         if (match != null) {
-            map[key] = match.groupValues[1]
+            map[key] = decodeHtmlEntities(match.groupValues[1])
         }
     }
 
@@ -728,8 +728,8 @@ class NavidromeRepositoryImpl @Inject constructor(
         return Track(
             id = sm["id"] as? String ?: "",
             albumId = albumId,
-            title = sm["title"] as? String ?: "",
-            artistName = sm["artist"] as? String ?: "",
+            title = decodeHtmlEntities(sm["title"] as? String ?: ""),
+            artistName = decodeHtmlEntities(sm["artist"] as? String ?: ""),
             albumName = albumNameValue,
             durationSec = durationSec,
             sizeBytes = sizeBytes,
@@ -738,5 +738,18 @@ class NavidromeRepositoryImpl @Inject constructor(
             isCached = false,
             coverArtId = effectiveCoverArtId
         )
+    }
+
+    /**
+     * Decode common HTML entities that may appear in XML attributes
+     * Navidrome encodes & as &amp; in XML
+     */
+    private fun decodeHtmlEntities(text: String): String {
+        return text
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+            .replace("&apos;", "'")
     }
 }
