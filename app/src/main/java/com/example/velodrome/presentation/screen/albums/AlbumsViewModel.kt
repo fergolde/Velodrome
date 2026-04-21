@@ -100,8 +100,8 @@ class AlbumsViewModel @Inject constructor(
         val lowerQuery = query.lowercase()
         Log.d(TAG, "Filtering by query: '$lowerQuery'")
         val filtered = albums.filter { album ->
-            val titleMatch = album.title?.lowercase()?.contains(lowerQuery) == true
-            val artistMatch = album.artistName?.lowercase()?.contains(lowerQuery) == true
+            val titleMatch = album.title.lowercase().contains(lowerQuery)
+            val artistMatch = album.artistName.lowercase().contains(lowerQuery)
             if (titleMatch || artistMatch) {
                 Log.d(TAG, "Match: ${album.title} by ${album.artistName}")
             }

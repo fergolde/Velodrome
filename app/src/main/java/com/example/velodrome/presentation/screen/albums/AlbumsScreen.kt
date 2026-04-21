@@ -212,13 +212,13 @@ fun AlbumCard(album: Album, onClick: () -> Unit = {}) {
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = album.title ?: "Unknown Album",
+                    text = album.title,
                     color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
                 Text(
-                    text = album.artistName ?: "Unknown Artist",
+                    text = album.artistName,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium

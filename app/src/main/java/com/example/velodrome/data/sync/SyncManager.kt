@@ -121,7 +121,7 @@ class SyncManager @Inject constructor(
 
     private fun Artist.toEntity() = ArtistEntity(
         id = id,
-        name = name ?: "",
+        name = name,
         albumCount = albumCount,
         coverUrl = coverUrl
     )
@@ -129,8 +129,8 @@ class SyncManager @Inject constructor(
     private fun Album.toEntity() = AlbumEntity(
         id = id,
         artistId = artistId,
-        artistName = artistName ?: "",
-        title = title ?: "",
+        artistName = artistName,
+        title = title,
         year = year,
         genre = genre,
         coverUrl = coverUrl
@@ -139,9 +139,9 @@ class SyncManager @Inject constructor(
     private fun Track.toEntity() = TrackEntity(
         id = id,
         albumId = albumId,
-        artistName = artistName ?: "",
-        albumName = albumName ?: "",
-        title = title ?: "",
+        artistName = artistName,
+        albumName = albumName,
+        title = title,
         durationSec = durationSec,
         trackNumber = trackNumber,
         coverArtId = coverArtId

@@ -80,7 +80,7 @@ class HomeViewModel @Inject constructor(
                         val entities = artists.map { artist ->
                             ArtistEntity(
                                 id = artist.id,
-                                name = artist.name ?: "",
+                                name = artist.name,
                                 albumCount = artist.albumCount,
                                 coverUrl = artist.coverUrl
                             )
@@ -106,8 +106,8 @@ class HomeViewModel @Inject constructor(
                             AlbumEntity(
                                 id = album.id,
                                 artistId = album.artistId,
-                                artistName = album.artistName ?: "",
-                                title = album.title ?: "",
+                                artistName = album.artistName,
+                                title = album.title,
                                 year = album.year,
                                 genre = album.genre,
                                 coverUrl = album.coverUrl

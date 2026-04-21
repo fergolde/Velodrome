@@ -99,7 +99,7 @@ class ArtistsViewModel @Inject constructor(
         }
         val lowerQuery = query.lowercase()
         return artists.filter { artist ->
-            artist.name?.lowercase()?.contains(lowerQuery) == true
+            artist.name.lowercase().contains(lowerQuery)
         }
     }
 }
