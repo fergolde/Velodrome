@@ -325,7 +325,7 @@ class NavidromeRepositoryImpl @Inject constructor(
             val response = api.getGenres()
             val genres = response.response.genres?.genres ?: emptyList()
             Log.d("Velodrome", "Found ${genres.size} genres")
-            genres.map { it.name }
+            genres.mapNotNull { it.value ?: it.name }
         }
     }
 
@@ -382,7 +382,7 @@ class NavidromeRepositoryImpl @Inject constructor(
         return runCatching {
             Log.d("NavidromeRepository", "getSongsByGenre: genre=$genre, count=$count, offset=$offset")
             val response = api.getSongsByGenre(genre, count, offset)
-            val songDtos = response.response.songs ?: emptyList()
+            val songDtos = response.response.songsByGenre?.song ?: emptyList()
             Log.d("NavidromeRepository", "Found ${songDtos.size} songs from genre $genre")
             songDtos.map { mapSongDto(it, it.albumId ?: genre) }
         }
@@ -392,7 +392,7 @@ class NavidromeRepositoryImpl @Inject constructor(
         return runCatching {
             Log.d("NavidromeRepository", "getRandomSongsByGenre: genre=$genre, size=$size")
             val response = api.getRandomSongs(size, genre)
-            val songDtos = response.response.songs ?: emptyList()
+            val songDtos = response.response.randomSongs?.song ?: emptyList()
             Log.d("NavidromeRepository", "Found ${songDtos.size} random songs from genre $genre")
             songDtos.map { mapSongDto(it, it.albumId ?: genre) }
         }
@@ -402,7 +402,8 @@ class NavidromeRepositoryImpl @Inject constructor(
         return runCatching {
             Log.d("NavidromeRepository", "getRandomSongs: size=$size")
             val response = api.getRandomSongs(size, null)
-            val songDtos = response.response.songs ?: emptyList()
+            Log.d("NavidromeRepository", "getRandomSongs: response=$response")
+            val songDtos = response.response.randomSongs?.song ?: emptyList()
             Log.d("NavidromeRepository", "Found ${songDtos.size} random songs")
             songDtos.map { mapSongDto(it, it.albumId ?: "") }
         }

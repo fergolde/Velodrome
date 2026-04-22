@@ -19,7 +19,7 @@ class PlayerManager @Inject constructor(
 ) {
     companion object {
         private val instanceRef = AtomicReference<PlayerManager?>(null)
-        
+
         val playlist: StateFlow<List<Track>>
             get() = instanceRef.get()?.playlist ?: MutableStateFlow(emptyList())
         val currentIndex: StateFlow<Int>
@@ -35,11 +35,11 @@ class PlayerManager @Inject constructor(
         val isBuffering: StateFlow<Boolean>
             get() = instanceRef.get()?.isBuffering ?: MutableStateFlow(false)
 
-        fun setPlaylist(tracks: List<Track>, startPlaying: Boolean = true) = 
+        fun setPlaylist(tracks: List<Track>, startPlaying: Boolean = true) =
             instanceRef.get()?.setPlaylist(tracks, startPlaying)
-        fun setPlaylist(tracks: List<Track>, startIndex: Int, startPlaying: Boolean = true) = 
+        fun setPlaylist(tracks: List<Track>, startIndex: Int, startPlaying: Boolean = true) =
             instanceRef.get()?.setPlaylist(tracks, startIndex, startPlaying)
-        fun playTrack(track: Track, playlist: List<Track> = listOf(track)) = 
+        fun playTrack(track: Track, playlist: List<Track> = listOf(track)) =
             instanceRef.get()?.playTrack(track, playlist)
         fun appendToPlaylist(tracks: List<Track>) = instanceRef.get()?.appendToPlaylist(tracks)
         fun setCurrentIndex(index: Int) = instanceRef.get()?.setCurrentIndex(index)
@@ -53,7 +53,7 @@ class PlayerManager @Inject constructor(
         fun addToQueue(track: Track) = instanceRef.get()?.addToQueue(track)
         fun setLoadMoreCallback(callback: () -> Unit) = instanceRef.get()?.setLoadMoreCallback(callback)
     }
-    
+
     init {
         instanceRef.set(this)
     }
@@ -67,9 +67,9 @@ class PlayerManager @Inject constructor(
     val isBuffering: StateFlow<Boolean> = audioPlayerManager.isBuffering
 
     fun setPlaylist(tracks: List<Track>, startPlaying: Boolean = true) {
+        Log.d("PlayerManager", "setPlaylist: ${tracks.size} tracks, startPlaying=$startPlaying")
         if (tracks.isNotEmpty()) {
-            val startIndex = if (startPlaying) 0 else -1
-            audioPlayerManager.playTrack(tracks[0], tracks, startIndex)
+            audioPlayerManager.playTrack(tracks[0], tracks, if (startPlaying) 0 else -1)
         }
     }
 
@@ -86,10 +86,12 @@ class PlayerManager @Inject constructor(
         audioPlayerManager.playTrack(track, playlist, index)
     }
 
+    fun setLoadMoreCallback(callback: () -> Unit) {
+        audioPlayerManager.setLoadMoreCallback(callback)
+    }
+
     fun appendToPlaylist(tracks: List<Track>) {
-        if (tracks.isNotEmpty()) {
-            audioPlayerManager.appendToPlaylist(tracks)
-        }
+        audioPlayerManager.appendToPlaylist(tracks)
     }
 
     fun setCurrentIndex(index: Int) {
@@ -135,13 +137,5 @@ class PlayerManager @Inject constructor(
         val currentList = audioPlayerManager.playlist.value.toMutableList()
         currentList.add(track)
         audioPlayerManager.setPlaylist(currentList)
-    }
-
-    private var loadMoreCallback: (() -> Unit)? = null
-
-    fun setLoadMoreCallback(callback: () -> Unit) {
-        audioPlayerManager.setLoadMoreCallback {
-            callback()
-        }
     }
 }

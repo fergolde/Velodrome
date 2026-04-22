@@ -339,27 +339,23 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                // Load 10 random songs directly from API
                 val songsResult = navidromeRepository.getRandomSongs(size = 10)
-                
+
                 songsResult.onSuccess { songs ->
                     Log.d("HomeViewModel", "Loaded ${songs.size} random songs")
-                    
+
                     if (songs.isNotEmpty()) {
-                        // Shuffle and play first 10
                         val shuffledSongs = songs.shuffled().take(10)
-                        
-                        // Set up callback for infinite scroll
+
                         playerManager.setLoadMoreCallback {
                             Log.d("HomeViewModel", "Home shuffle: loading more songs")
                             loadMoreRandomSongs()
                         }
-                        
-                        // Start playback
+
                         playerManager.setPlaylist(shuffledSongs, startPlaying = true)
                         Log.d("HomeViewModel", "Started shuffle playback with ${shuffledSongs.size} songs")
                     }
-                    
+
                     _uiState.update { it.copy(isLoading = false, isPlaying = true) }
                 }.onFailure { error ->
                     Log.e("HomeViewModel", "Error loading random songs: ${error.message}")

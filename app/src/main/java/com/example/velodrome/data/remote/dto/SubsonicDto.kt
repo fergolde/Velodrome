@@ -28,8 +28,20 @@ data class SubsonicResponseDto(
     @Json(name = "album") val album: AlbumDetailDto? = null,
     @Json(name = "searchResult2") val searchResult2: SearchResultDto? = null,
     @Json(name = "genres") val genres: GenresDto? = null,
-    @Json(name = "song") val songs: List<SongDto>? = null,
+    @Json(name = "songs") val songs: List<SongDto>? = null,
+    @Json(name = "randomSongs") val randomSongs: RandomSongsDto? = null,
+    @Json(name = "songsByGenre") val songsByGenre: SongsByGenreDto? = null,
     val error: ErrorDto? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RandomSongsDto(
+    @Json(name = "song") val song: List<SongDto>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SongsByGenreDto(
+    @Json(name = "song") val song: List<SongDto>? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -102,7 +114,7 @@ data class AlbumDetailDto(
     @Json(name = "coverArt") val coverArt: String? = null,
     @Json(name = "year") val year: Int? = null,
     @Json(name = "genre") val genre: String? = null,
-    @Json(name = "song") val songs: List<SongDto>? = null,
+    @Json(name = "songs") val songs: List<SongDto>? = null,
     @Json(name = "songCount") val songCount: Int? = null,
     @Json(name = "duration") val duration: Int? = null
 )
@@ -135,7 +147,7 @@ data class SongDto(
 data class SearchResultDto(
     @Json(name = "artist") val artists: List<ArtistDto>? = null,
     @Json(name = "album") val albums: List<AlbumDto>? = null,
-    @Json(name = "song") val songs: List<SongDto>? = null
+    @Json(name = "songs") val songs: List<SongDto>? = null
 )
 
 // ============ Genres ============
@@ -147,7 +159,8 @@ data class GenresDto(
 
 @JsonClass(generateAdapter = true)
 data class GenreDto(
-    val name: String,
+    @Json(name = "name") val name: String? = null,
+    @Json(name = "value") val value: String? = null,
     @Json(name = "songCount") val songCount: Int? = null,
     @Json(name = "albumCount") val albumCount: Int? = null
 )

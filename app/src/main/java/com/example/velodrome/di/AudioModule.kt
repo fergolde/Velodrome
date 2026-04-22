@@ -1,9 +1,11 @@
 package com.example.velodrome.di
 
 import android.content.Context
+import com.example.velodrome.data.datasource.CachedMusicDataSourceFactory
 import com.example.velodrome.data.datasource.MusicCacheDataSource
 import com.example.velodrome.presentation.audio.AudioPlayerManager
 import com.example.velodrome.presentation.audio.ScrobbleManager
+import com.example.velodrome.util.CacheManager
 import com.example.velodrome.util.CredentialsManager
 import dagger.Module
 import dagger.Provides
@@ -22,8 +24,10 @@ object AudioModule {
         @ApplicationContext context: Context,
         scrobbleManager: ScrobbleManager,
         musicCacheDataSource: MusicCacheDataSource?,
-        credentialsManager: CredentialsManager
+        credentialsManager: CredentialsManager,
+        cacheManager: CacheManager
     ): AudioPlayerManager {
-        return AudioPlayerManager(context, scrobbleManager, musicCacheDataSource, credentialsManager)
+        val cachedFactory = CachedMusicDataSourceFactory(context, cacheManager)
+        return AudioPlayerManager(context, scrobbleManager, musicCacheDataSource, credentialsManager, cachedFactory)
     }
 }
