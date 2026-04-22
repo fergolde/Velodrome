@@ -5,6 +5,8 @@ import com.example.velodrome.data.remote.NavidromeApi
 import okhttp3.Interceptor
 import okhttp3.Response
 import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * OkHttp Interceptor that automatically adds authentication parameters to ALL requests.
@@ -19,7 +21,10 @@ import java.io.IOException
  * This generates NEW salt and token for EACH request (per requirements).
  * NO token persistence - always regenerated.
  */
-object AuthInterceptor : Interceptor {
+@Singleton
+class AuthInterceptor @Inject constructor(
+    private val credentialsManager: CredentialsManager
+) : Interceptor {
 
     private const val TAG = "AuthInterceptor"
 
@@ -28,7 +33,7 @@ object AuthInterceptor : Interceptor {
         val originalUrl = originalRequest.url
 
         // Generate fresh auth params for each request
-        val authParams = CredentialsManager.generateAuthParams()
+        val authParams = credentialsManager.generateAuthParams()
 
         if (authParams == null) {
             Log.w(TAG, "No credentials available - request without auth")
@@ -59,7 +64,7 @@ object AuthInterceptor : Interceptor {
             // Check for auth errors - if 401/403, clear credentials
             if (response.code == 401 || response.code == 403) {
                 Log.w(TAG, "Auth error - clearing credentials")
-                CredentialsManager.clearCredentials()
+                credentialsManager.clearCredentials()
             }
             
             response
