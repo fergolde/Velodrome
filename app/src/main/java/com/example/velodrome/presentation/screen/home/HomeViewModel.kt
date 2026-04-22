@@ -1,4 +1,4 @@
-package com.example.velodrome.presentation.screen.homescreen
+package com.example.velodrome.presentation.screen.home
 
 import android.util.Log
 import androidx.lifecycle.ViewModel

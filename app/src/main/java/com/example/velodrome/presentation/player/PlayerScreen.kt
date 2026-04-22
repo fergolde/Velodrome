@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
-import com.example.velodrome.presentation.screen.homescreen.AlbumCover
+import com.example.velodrome.presentation.screen.home.AlbumCover
 import androidx.compose.animation.core.RepeatMode
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,13 +87,14 @@ fun PlayerScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 // ── Gesto vertical ──────────────────────────────────────────
-                .pointerInput(Unit) {
+                .pointerInput(showQueue) {  // ← key vinculada a showQueue
+                    if (showQueue) return@pointerInput  // ← bloquear gestos cuando el sheet está abierto
                     detectVerticalDragGestures(
                         onDragEnd = {
                             android.util.Log.d("SWIPE", "accumulatedFraction = $accumulatedFraction, threshold = $dismissThreshold")
                             val completed = accumulatedFraction >= dismissThreshold
-                            onDragEnd(completed)  // ← primero notifica con el valor real
-                            accumulatedFraction = 0f  // ← luego resetea
+                            onDragEnd(completed)
+                            accumulatedFraction = 0f
                         },
                         onDragCancel = {
                             onDragEnd(false)
@@ -184,6 +185,7 @@ fun PlayerScreen(
             QueueContent(
                 playlist = uiState.playlist,
                 currentIndex = uiState.currentIndex,
+                uiState.isPlaying,
                 onTrackClick = { index ->
                     viewModel.onTrackSelected(index)
                     showQueue = false
@@ -482,7 +484,9 @@ fun QueueChip(onClick: () -> Unit) {
 fun QueueContent(
     playlist: List<Track>,
     currentIndex: Int,
+    isPlaying: Boolean,
     onTrackClick: (Int) -> Unit
+
 ) {
     Column(
         modifier = Modifier
@@ -526,6 +530,7 @@ fun QueueContent(
                     track = track,
                     index = index,
                     isCurrentTrack = index == currentIndex,
+                    isPlaying,
                     onClick = { onTrackClick(index) }
                 )
             }
@@ -538,7 +543,8 @@ fun QueueTrackItem(
     track: Track,
     index: Int,
     isCurrentTrack: Boolean,
-    onClick: () -> Unit
+    isPlaying: Boolean,
+    onClick: () -> Unit,
 ) {
     val bgColor by animateColorAsState(
         targetValue = if (isCurrentTrack)
@@ -577,8 +583,8 @@ fun QueueTrackItem(
                         .background(Color.Black.copy(alpha = 0.45f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Equalizer animado — 3 barras
-                    EqualizerBars()
+                    // Equalizer animado
+                    EqualizerBars(isPlaying)
                 }
             }
         }
@@ -625,42 +631,52 @@ fun QueueTrackItem(
 
 // Barras de ecualizador animadas para la pista en reproducción
 @Composable
-fun EqualizerBars() {
-    val infiniteTransition = rememberInfiniteTransition(label = "eq")
+fun EqualizerBars(isPlaying: Boolean) {
+    if(isPlaying) {
+        val infiniteTransition = rememberInfiniteTransition(label = "eq")
 
-    val bar1 by infiniteTransition.animateFloat(
-        initialValue = 0.3f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            tween(400, easing = EaseInOutSine), RepeatMode.Reverse
-        ), label = "b1"
-    )
-    val bar2 by infiniteTransition.animateFloat(
-        initialValue = 1f, targetValue = 0.4f,
-        animationSpec = infiniteRepeatable(
-            tween(300, easing = EaseInOutSine), RepeatMode.Reverse
-        ), label = "b2"
-    )
-    val bar3 by infiniteTransition.animateFloat(
-        initialValue = 0.5f, targetValue = 0.9f,
-        animationSpec = infiniteRepeatable(
-            tween(500, easing = EaseInOutSine), RepeatMode.Reverse
-        ), label = "b3"
-    )
+        val bar1 by infiniteTransition.animateFloat(
+            initialValue = 0.3f, targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                tween(400, easing = EaseInOutSine), RepeatMode.Reverse
+            ), label = "b1"
+        )
+        val bar2 by infiniteTransition.animateFloat(
+            initialValue = 1f, targetValue = 0.4f,
+            animationSpec = infiniteRepeatable(
+                tween(300, easing = EaseInOutSine), RepeatMode.Reverse
+            ), label = "b2"
+        )
+        val bar3 by infiniteTransition.animateFloat(
+            initialValue = 0.5f, targetValue = 0.9f,
+            animationSpec = infiniteRepeatable(
+                tween(500, easing = EaseInOutSine), RepeatMode.Reverse
+            ), label = "b3"
+        )
 
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-        verticalAlignment = Alignment.Bottom,
-        modifier = Modifier.height(18.dp)
-    ) {
-        listOf(bar1, bar2, bar3).forEach { fraction ->
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .fillMaxHeight(fraction)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(Color.White)
-            )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.height(18.dp)
+        ) {
+            listOf(bar1, bar2, bar3).forEach { fraction ->
+                Box(
+                    modifier = Modifier
+                        .width(3.dp)
+                        .fillMaxHeight(fraction)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color.White)
+                )
+            }
         }
+    }
+    else{
+        Icon(
+            imageVector = Icons.Default.Pause,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }
 

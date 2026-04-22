@@ -18,17 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -36,14 +31,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -66,12 +55,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
-import com.example.velodrome.presentation.UiConstants
-import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.components.MiniPlayerOverlay
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.player.PlayerManager
-import com.example.velodrome.presentation.screen.homescreen.AlbumCover
-import kotlinx.coroutines.launch
+import com.example.velodrome.presentation.screen.home.AlbumCover
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +72,6 @@ fun AlbumDetailScreen(
     viewModel: AlbumDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentTrack by PlayerManager.currentTrack.collectAsState()
     val isPlaying by PlayerManager.isPlaying.collectAsState()
     val currentPosition by PlayerManager.currentPosition.collectAsState()
 
@@ -95,14 +81,17 @@ fun AlbumDetailScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        topBar = {}, // ❌ eliminado (ahora está dentro del header)
         bottomBar = {
-            SharedBottomNavigationBar(
-                currentRoute = "albumdetail",
-                onHomeClick = onHomeClick,
-                onExploreClick = onExploreClick,
-                onSettingsClick = onSettingsClick
-            )
+            Column {
+                MiniPlayerOverlay(onPlayerClick = onPlayerClick)
+
+                SharedBottomNavigationBar(
+                    currentRoute = "albumdetail",
+                    onHomeClick = onHomeClick,
+                    onExploreClick = onExploreClick,
+                    onSettingsClick = onSettingsClick
+                )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
@@ -139,24 +128,6 @@ fun AlbumDetailScreen(
                         onShuffleClick = { viewModel.shuffleAll() },
                         onAddToQueueClick = { viewModel.addAllToQueue() },
                         onBackClick = onBackClick // 👈 IMPORTANTE
-                    )
-                }
-            }
-
-            if (currentTrack != null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    MiniPlayer(
-                        modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMargin),
-                        currentTrack = currentTrack,
-                        isPlaying = isPlaying,
-                        currentPosition = currentPosition,
-                        onPlayPauseClick = { PlayerManager.togglePlayPause() },
-                        onClick = onPlayerClick,
-                        onNextClick = { PlayerManager.next() },
-                        onPreviousClick = { PlayerManager.previous() }
                     )
                 }
             }

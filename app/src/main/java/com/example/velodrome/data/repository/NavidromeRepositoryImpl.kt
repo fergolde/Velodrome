@@ -43,11 +43,13 @@ class NavidromeRepositoryImpl @Inject constructor(
             try {
                 // Save credentials securely (username + password, NO token)
                 credentialsManager.saveCredentials(username, password, serverUrl)
-                Log.d("Velodrome", "Credentials saved for user: $username")
+                Log.d("NavidromeRepository", "Credentials saved for user: $username, server: $serverUrl")
 
                 // Try ping - auth interceptor will add u, t, s params automatically
+                Log.d("NavidromeRepository", "Calling api.ping()...")
                 val response = api.ping()
-                Log.d("Velodrome", "Ping response status: ${response.response.status}")
+                Log.d("NavidromeRepository", "Ping response: $response")
+                Log.d("NavidromeRepository", "Ping response status: ${response.response.status}")
 
                 if (response.response.status == "ok") {
                     Log.d("Velodrome", "Login successful!")
