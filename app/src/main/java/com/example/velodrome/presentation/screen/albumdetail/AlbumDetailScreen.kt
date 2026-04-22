@@ -68,6 +68,7 @@ import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.UiConstants
 import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.screen.homescreen.AlbumCover
 import kotlinx.coroutines.launch
@@ -75,8 +76,11 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumDetailScreen(
+    albumId: String? = null,
     onBackClick: () -> Unit = {},
+    onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     onPlayerClick: () -> Unit = {},
     viewModel: AlbumDetailViewModel = hiltViewModel()
 ) {
@@ -93,9 +97,11 @@ fun AlbumDetailScreen(
     Scaffold(
         topBar = {}, // ❌ eliminado (ahora está dentro del header)
         bottomBar = {
-            AlbumDetailBottomNavigationBar(
-                onHomeClick = onPlayerClick,
-                onExploreClick = onExploreClick
+            SharedBottomNavigationBar(
+                currentRoute = "albumdetail",
+                onHomeClick = onHomeClick,
+                onExploreClick = onExploreClick,
+                onSettingsClick = onSettingsClick
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -479,37 +485,4 @@ private fun formatDuration(seconds: Int): String {
     val mins = seconds / 60
     val secs = seconds % 60
     return "$mins:${secs.toString().padStart(2, '0')}"
-}
-
-@Composable
-fun AlbumDetailBottomNavigationBar(
-    onHomeClick: () -> Unit = {},
-    onExploreClick: () -> Unit = {}
-) {
-NavigationBar(
-        containerColor = MaterialTheme.colorScheme.background,
-        tonalElevation = 0.dp
-    ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text(stringResource(R.string.nav_home)) },
-            selected = false,
-            onClick = onHomeClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Explore, contentDescription = null) },
-            label = { Text(stringResource(R.string.nav_explore)) },
-            selected = false,
-            onClick = onExploreClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-            label = { Text(stringResource(R.string.nav_settings)) },
-            selected = false,
-            onClick = { },
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
-        )
-    }
 }

@@ -31,7 +31,8 @@ class MusicCacheDataSource @Inject constructor(
     @ApplicationContext private val context: Context,
     private val okHttpClient: OkHttpClient,
     private val cacheManager: CacheManager,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val credentialsManager: CredentialsManager
 ) {
     companion object {
         private const val TAG = "MusicCacheDataSource"
@@ -64,7 +65,7 @@ class MusicCacheDataSource @Inject constructor(
             }
 
             // Step 2: Get stream URL and download
-            val streamUrl = CredentialsManager.getStreamUrl(trackId, 320) // 320kbps default
+            val streamUrl = credentialsManager.getStreamUrl(trackId, 320) // 320kbps default
             if (streamUrl.isBlank()) {
                 Log.w(TAG, "Could not get stream URL for track: $trackId")
                 return@withContext null

@@ -30,6 +30,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.velodrome.presentation.navigation.Screen
 import com.example.velodrome.presentation.screen.homescreen.HomeScreen
 import com.example.velodrome.presentation.screen.login.LoginScreen
 import com.example.velodrome.presentation.screen.explore.ExploreScreen
@@ -41,7 +42,6 @@ import com.example.velodrome.presentation.screen.settings.SettingsScreen
 import com.example.velodrome.presentation.player.PlayerScreen
 import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.ui.theme.VelodromeTheme
-import com.example.velodrome.util.CredentialsManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -76,8 +76,8 @@ object PlayerState {
 @Composable
 fun MainApp() {
     val navController = rememberNavController()
-    var isLoggedIn by remember { mutableStateOf(CredentialsManager.hasCredentials()) }
-    val startDestination = if (isLoggedIn) "home" else "login"
+    var isLoggedIn by remember { mutableStateOf(com.example.velodrome.util.CredentialsManager.hasCredentials()) }
+    val startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -86,74 +86,78 @@ fun MainApp() {
             navController = navController,
             startDestination = startDestination
         ) {
-            composable("login") {
+            composable(Screen.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
                         isLoggedIn = true
-                        navController.navigate("home") {
-                            popUpTo("login") { inclusive = true }
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
                         }
                     }
                 )
             }
-            composable("home") {
+            composable(Screen.Home.route) {
                 HomeScreen(
-                    onAlbumClick = { albumId -> navController.navigate("album/$albumId") },
-                    onExploreClick = { navController.navigate("explore") },
-                    onPlayerClick = { PlayerState.isVisible = true },  // ← solo mostrar overlay
-                    onSettingsClick = { navController.navigate("settings") }
+                    onAlbumClick = { albumId -> navController.navigate(Screen.AlbumDetail.createRoute(albumId)) },
+                    onExploreClick = { navController.navigate(Screen.Explore.route) },
+                    onPlayerClick = { PlayerState.isVisible = true },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) }
                 )
             }
-            composable("explore") {
+            composable(Screen.Explore.route) {
                 ExploreScreen(
-                    onHomeClick = { navController.navigate("home") { popUpTo("home") { inclusive = true } } },
-                    onArtistsViewAllClick = { navController.navigate("artists") },
-                    onAlbumsViewAllClick = { navController.navigate("albums") },
+                    onHomeClick = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = true } } },
+                    onArtistsViewAllClick = { navController.navigate(Screen.Artists.route) },
+                    onAlbumsViewAllClick = { navController.navigate(Screen.Albums.route) },
                     onPlayerClick = { PlayerState.isVisible = true },
-                    onArtistClick = { artistId -> navController.navigate("artist/$artistId") },
-                    onAlbumClick = { albumId -> navController.navigate("album/$albumId") },
-                    onSettingsClick = { navController.navigate("settings") }
+                    onArtistClick = { artistId -> navController.navigate(Screen.ArtistDetail.createRoute(artistId)) },
+                    onAlbumClick = { albumId -> navController.navigate(Screen.AlbumDetail.createRoute(albumId)) },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) }
                 )
             }
-            composable("artists") {
+            composable(Screen.Artists.route) {
                 ArtistsScreen(
-                    onHomeClick = { navController.navigate("home") { popUpTo("home") { inclusive = true } } },
-                    onExploreClick = { navController.navigate("explore") },
+                    onHomeClick = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = true } } },
+                    onExploreClick = { navController.navigate(Screen.Explore.route) },
                     onPlayerClick = { PlayerState.isVisible = true },
-                    onArtistClick = { artist -> navController.navigate("artist/${artist.id}") },
-                    onSettingsClick = { navController.navigate("settings") }
+                    onArtistClick = { artist -> navController.navigate(Screen.ArtistDetail.createRoute(artist.id)) },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) }
                 )
             }
-            composable("albums") {
+            composable(Screen.Albums.route) {
                 AlbumsScreen(
-                    onHomeClick = { navController.navigate("home") { popUpTo("home") { inclusive = true } } },
-                    onExploreClick = { navController.navigate("explore") },
+                    onHomeClick = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = true } } },
+                    onExploreClick = { navController.navigate(Screen.Explore.route) },
                     onPlayerClick = { PlayerState.isVisible = true },
-                    onAlbumClick = { album -> navController.navigate("album/${album.id}") },
-                    onSettingsClick = { navController.navigate("settings") }
+                    onAlbumClick = { album -> navController.navigate(Screen.AlbumDetail.createRoute(album.id)) },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) }
                 )
             }
-            composable("settings") {
+            composable(Screen.Settings.route) {
                 SettingsScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    onExploreClick = { navController.navigate("explore") },
-                    onHomeClick = { navController.navigate("home") }
+                    onExploreClick = { navController.navigate(Screen.Explore.route) },
+                    onHomeClick = { navController.navigate(Screen.Home.route) }
                 )
             }
-            composable("artist/{artistId}") { backStackEntry ->
+            composable(Screen.ArtistDetail.route) { backStackEntry ->
                 val artistId = backStackEntry.arguments?.getString("artistId") ?: return@composable
                 ArtistDetailScreen(
                     artistId = artistId,
                     onBackClick = { navController.popBackStack() },
-                    onAlbumClick = { albumId -> navController.navigate("album/$albumId") },
-                    onExploreClick = { navController.navigate("explore") },
+                    onAlbumClick = { albumId -> navController.navigate(Screen.AlbumDetail.createRoute(albumId)) },
+                    onExploreClick = { navController.navigate(Screen.Explore.route) },
                     onPlayerClick = { PlayerState.isVisible = true }
                 )
             }
-            composable("album/{albumId}") {
+            composable(Screen.AlbumDetail.route) { backStackEntry ->
+                val albumId = backStackEntry.arguments?.getString("albumId") ?: return@composable
                 AlbumDetailScreen(
+                    albumId = albumId,
                     onBackClick = { navController.popBackStack() },
-                    onExploreClick = { navController.navigate("explore") },
+                    onHomeClick = { navController.navigate(Screen.Home.route) },
+                    onExploreClick = { navController.navigate(Screen.Explore.route) },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
                     onPlayerClick = { PlayerState.isVisible = true }
                 )
             }
@@ -229,15 +233,15 @@ fun PlayerOverlay(
                 onMinimizeClick = onDismiss,
                 onHomeClick = {
                     onDismiss()
-                    navController.navigate("home") { popUpTo("home") { inclusive = true } }
+                    navController.navigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = true } }
                 },
                 onExploreClick = {
                     onDismiss()
-                    navController.navigate("explore")
+                    navController.navigate(Screen.Explore.route)
                 },
                 onSettingsClick = {
                     onDismiss()
-                    navController.navigate("settings")
+                    navController.navigate(Screen.Settings.route)
                 },
                 onQueueClick = { }
             )

@@ -42,30 +42,21 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        // First add the auth interceptor (adds u, t, s, v, c to all requests)
-        val authInterceptor = AuthInterceptor
-
-        // Logging interceptor for debugging
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
-
-        // URL rewriting interceptor - uses stored server URL from CredentialsManager
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor,
+        credentialsManager: CredentialsManager
+    ): OkHttpClient {
         val urlRewriterInterceptor = okhttp3.Interceptor { chain ->
             val originalRequest = chain.request()
-            var serverUrl = CredentialsManager.getServerUrl() ?: DEFAULT_URL
-            
+            var serverUrl = credentialsManager.getServerUrl() ?: DEFAULT_URL
+
             val originalUrl = originalRequest.url.toString()
-            
-            // Ensure serverUrl ends with /
+
             if (!serverUrl.endsWith("/")) {
                 serverUrl = "$serverUrl/"
             }
-            
-            // Rewrite if using placeholder - need to handle path properly
+
             val newUrl = if (originalUrl.contains("your-navidrome-server.com")) {
-                // Replace the base URL + path prefix
                 originalUrl
                     .replace("https://your-navidrome-server.com/rest/", serverUrl + "rest/")
                     .replace("http://your-navidrome-server.com/rest/", serverUrl + "rest/")
@@ -84,10 +75,32 @@ object AppModule {
             chain.proceed(newRequest)
         }
 
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+
+        val rawJsonInterceptor = okhttp3.Interceptor { chain ->
+            val request = chain.request()
+            val response = chain.proceed(request)
+
+            if (request.url.toString().contains("getRandomSongs")) {
+                val body = response.peekBody(1024 * 1024)?.string()
+                Log.d("AppModule", "RAW getRandomSongs response: $body")
+                response
+            } else if (request.url.toString().contains("getSongsByGenre")) {
+                val body = response.peekBody(1024 * 1024)?.string()
+                Log.d("AppModule", "RAW getSongsByGenre response: $body")
+                response
+            } else {
+                response
+            }
+        }
+
         return OkHttpClient.Builder()
             .addInterceptor(urlRewriterInterceptor)
-            .addInterceptor(authInterceptor)  // Adds auth params to ALL requests
+            .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
+            .addInterceptor(rawJsonInterceptor)
             .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(TIMEOUT, TimeUnit.SECONDS)
@@ -97,7 +110,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
-        // Use default URL - actual URL comes from CredentialsManager via interceptor
         return Retrofit.Builder()
             .baseUrl(DEFAULT_URL)
             .client(okHttpClient)

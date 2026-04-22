@@ -12,10 +12,11 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.example.velodrome.MainActivity
+import com.example.velodrome.util.CacheManager
 
 /**
  * Foreground service for real audio playback using Media3 ExoPlayer.
- * Handles streaming audio from Navidrome server.
+ * Handles streaming audio from Navidrome server with progressive caching.
  */
 class AudioPlayerService : MediaSessionService() {
 

@@ -29,7 +29,8 @@ class ExploreViewModel @Inject constructor(
     private val getRandomAlbumsUseCase: GetRandomAlbumsUseCase,
     private val getGenresUseCase: GetGenresUseCase,
     private val navidromeRepository: NavidromeRepository,
-    private val localMusicDataSource: LocalMusicDataSource
+    private val localMusicDataSource: LocalMusicDataSource,
+    private val playerManager: PlayerManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExploreUiState())
@@ -249,14 +250,14 @@ if (selectedGenres.isEmpty()) {
                 ) }
                 
                 // Set up callback for PlayerManager to request more tracks
-                PlayerManager.setLoadMoreCallback {
+                playerManager.setLoadMoreCallback {
                     Log.d(TAG, "=== PlayerManager callback triggered! ===")
                     checkAndLoadMore()
                 }
 
                 // Set playlist in PlayerManager to start playback
                 if (initialTracks.isNotEmpty()) {
-                    PlayerManager.setPlaylist(initialTracks, startPlaying = true)
+                    playerManager.setPlaylist(initialTracks, startPlaying = true)
                     Log.d(TAG, "Started playback with PlayerManager")
                 }
                 
@@ -312,7 +313,7 @@ if (selectedGenres.isEmpty()) {
 
                 songsResult.onSuccess { newSongs ->
                     if (newSongs.isNotEmpty()) {
-                        PlayerManager.appendToPlaylist(newSongs)
+                        playerManager.appendToPlaylist(newSongs)
                         Log.d(TAG, "loadMoreTracks: Appended ${newSongs.size} new songs to PlayerManager")
                     } else {
                         Log.w(TAG, "loadMoreTracks: No new songs received")

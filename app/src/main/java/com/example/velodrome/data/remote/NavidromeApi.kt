@@ -1,6 +1,6 @@
 package com.example.velodrome.data.remote
 
-import okhttp3.ResponseBody
+import com.example.velodrome.data.remote.dto.SubsonicResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -11,66 +11,59 @@ interface NavidromeApi {
         const val CLIENT_NAME = "Velodrome"
     }
 
-    // Auth params (u, t, s, v, c) are added automatically by AuthInterceptor
-    // No need to include them in method parameters
+    // Auth params (u, t, s, v, c, f=json) are added automatically by AuthInterceptor
 
     @GET("rest/ping.view")
-    suspend fun ping(): ResponseBody
+    suspend fun ping(): SubsonicResponse
 
     @GET("rest/getArtists.view")
     suspend fun getArtists(
         @Query("size") size: Int = 50,
         @Query("offset") offset: Int = 0
-    ): ResponseBody
+    ): SubsonicResponse
 
     @GET("rest/getAlbum.view")
     suspend fun getAlbum(
         @Query("id") albumId: String
-    ): ResponseBody
-
-    @GET("rest/stream.view")
-    suspend fun getStreamUrl(
-        @Query("id") trackId: String,
-        @Query("maxBitRate") maxBitRate: Int = 320
-    ): String
+    ): SubsonicResponse
 
     @GET("rest/search2.view")
     suspend fun search(
         @Query("query") query: String,
         @Query("size") size: Int = 20
-    ): ResponseBody
+    ): SubsonicResponse
 
     // Home screen APIs
     @GET("rest/getIndexes.view")
     suspend fun getIndexes(
         @Query("musicFolderId") musicFolderId: String? = null,
         @Query("ifModifiedSince") ifModifiedSince: Long? = null
-    ): ResponseBody
+    ): SubsonicResponse
 
     @GET("rest/getAlbumList2.view")
     suspend fun getAlbumList2(
-        @Query("type") type: String, // "newest", "random", "alphabeticalByName", "alphabeticalByArtist", "starred", "frequent", "recent"
+        @Query("type") type: String,
         @Query("size") size: Int = 20,
         @Query("offset") offset: Int = 0,
         @Query("fromYear") fromYear: Int? = null,
         @Query("toYear") toYear: Int? = null,
         @Query("genre") genre: String? = null
-    ): ResponseBody
+    ): SubsonicResponse
 
     @GET("rest/getGenres.view")
-    suspend fun getGenres(): ResponseBody
+    suspend fun getGenres(): SubsonicResponse
 
     @GET("rest/getArtist.view")
     suspend fun getArtist(
         @Query("id") artistId: String
-    ): ResponseBody
+    ): SubsonicResponse
 
     @GET("rest/scrobble.view")
     suspend fun scrobble(
         @Query("id") trackId: String,
         @Query("time") time: Long? = null,
         @Query("submission") submission: Boolean = true
-    ): ResponseBody
+    ): SubsonicResponse
 
     // Genre-based song retrieval
     @GET("rest/getSongsByGenre.view")
@@ -78,11 +71,11 @@ interface NavidromeApi {
         @Query("genre") genre: String,
         @Query("count") count: Int = 50,
         @Query("offset") offset: Int = 0
-    ): ResponseBody
+    ): SubsonicResponse
 
     @GET("rest/getRandomSongs.view")
     suspend fun getRandomSongs(
         @Query("size") size: Int = 50,
         @Query("genre") genre: String? = null
-    ): ResponseBody
+    ): SubsonicResponse
 }
