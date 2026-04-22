@@ -47,6 +47,7 @@ import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.presentation.UiConstants
 import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.player.PlayerManagerHolder
 import com.example.velodrome.ui.theme.VelodromeTheme
@@ -63,7 +64,13 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsState()
 
     Scaffold(
-        bottomBar = { BottomNavigationBar(onExploreClick = onExploreClick, onSettingsClick = onSettingsClick) },
+        bottomBar = {
+            SharedBottomNavigationBar(
+                currentRoute = "home",
+                onExploreClick = onExploreClick,
+                onSettingsClick = onSettingsClick
+            )
+        },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
@@ -233,40 +240,5 @@ fun RecentAlbumsRow(
                 onClick = { onAlbumClick(album.id) }
             )
         }
-    }
-}
-
-
-
-@Composable
-fun BottomNavigationBar(
-    onExploreClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
-) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-        tonalElevation = 0.dp
-    ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text(stringResource(R.string.nav_home)) },
-            selected = true,
-            onClick = { },
-            colors = NavigationBarItemDefaults.colors(selectedIconColor = MaterialTheme.colorScheme.primary, selectedTextColor = MaterialTheme.colorScheme.primary, unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Explore, contentDescription = null) },
-            label = { Text(stringResource(R.string.nav_explore)) },
-            selected = false,
-            onClick = onExploreClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-            label = { Text(stringResource(R.string.nav_settings)) },
-            selected = false,
-            onClick = onSettingsClick,
-            colors = NavigationBarItemDefaults.colors(unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant)
-        )
     }
 }

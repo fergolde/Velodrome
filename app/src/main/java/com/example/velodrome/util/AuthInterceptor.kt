@@ -43,13 +43,14 @@ class AuthInterceptor @Inject constructor(
 
         val (username, token, salt) = authParams
 
-        // Build new URL with auth params
+        // Build new URL with auth params and force JSON response
         val newUrl = originalUrl.newBuilder()
             .addQueryParameter("u", username)
             .addQueryParameter("t", token)
             .addQueryParameter("s", salt)
             .addQueryParameter("v", NavidromeApi.API_VERSION)
             .addQueryParameter("c", NavidromeApi.CLIENT_NAME)
+            .addQueryParameter("f", "json")  // Force JSON response
             .build()
 
         val newRequest = originalRequest.newBuilder()
