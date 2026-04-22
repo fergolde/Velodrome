@@ -3,8 +3,10 @@ package com.example.velodrome.util
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.spght.encryptedprefs.EncryptedSharedPreferences
 import dev.spght.encryptedprefs.MasterKey
+import javax.inject.Singleton
 import com.example.velodrome.util.NavidromeAuth.calculateToken
 import com.example.velodrome.util.NavidromeAuth.generateSalt
 
@@ -12,34 +14,30 @@ import com.example.velodrome.util.NavidromeAuth.generateSalt
  * Secure credential storage using EncryptedSharedPreferences (fork post-deprecation)
  * Stores username and password securely. NO token storage (per requirements).
  */
-object CredentialsManager {
+@Singleton
+class CredentialsManager @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
 
     private const val PREFS_NAME = "velodrome_secure_prefs"
     private const val KEY_USERNAME = "username"
     private const val KEY_PASSWORD = "password"
     private const val KEY_SERVER_URL = "server_url"
 
-    private var encryptedPrefs: SharedPreferences? = null
+    private val encryptedPrefs: SharedPreferences by lazy {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
 
-    /**
-     * Initialize EncryptedSharedPreferences
-     * Must be called from Application context
-     */
-    fun init(context: Context) {
-        if (encryptedPrefs == null) {
-            val masterKey = MasterKey.Builder(context)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build()
-
-            encryptedPrefs = EncryptedSharedPreferences.create(
-                context,
-                PREFS_NAME,
-                masterKey,
-                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            )
-            Log.d("CredentialsManager", "EncryptedSharedPreferences initialized (fork)")
-        }
+        val prefs = EncryptedSharedPreferences.create(
+            context,
+            PREFS_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+        Log.d("CredentialsManager", "EncryptedSharedPreferences initialized (fork)")
+        prefs
     }
 
     /**
@@ -47,35 +45,33 @@ object CredentialsManager {
      * NO token storage - only username and password
      */
     fun saveCredentials(username: String, password: String, serverUrl: String) {
-        encryptedPrefs?.let { prefs ->
-            prefs.edit()
-                .putString(KEY_USERNAME, username)
-                .putString(KEY_PASSWORD, password)
-                .putString(KEY_SERVER_URL, serverUrl)
-                .apply()
-            Log.d("CredentialsManager", "Credentials saved for user: $username")
-        } ?: Log.e("CredentialsManager", "EncryptedSharedPreferences not initialized")
+        encryptedPrefs.edit()
+            .putString(KEY_USERNAME, username)
+            .putString(KEY_PASSWORD, password)
+            .putString(KEY_SERVER_URL, serverUrl)
+            .apply()
+        Log.d("CredentialsManager", "Credentials saved for user: $username")
     }
 
     /**
      * Get stored username
      */
     fun getUsername(): String? {
-        return encryptedPrefs?.getString(KEY_USERNAME, null)
+        return encryptedPrefs.getString(KEY_USERNAME, null)
     }
 
     /**
      * Get stored password
      */
     fun getPassword(): String? {
-        return encryptedPrefs?.getString(KEY_PASSWORD, null)
+        return encryptedPrefs.getString(KEY_PASSWORD, null)
     }
 
     /**
      * Get stored server URL
      */
     fun getServerUrl(): String? {
-        return encryptedPrefs?.getString(KEY_SERVER_URL, null)
+        return encryptedPrefs.getString(KEY_SERVER_URL, null)
     }
 
     /**
@@ -89,7 +85,7 @@ object CredentialsManager {
      * Clear all credentials (for logout or auth failure)
      */
     fun clearCredentials() {
-        encryptedPrefs?.edit()?.clear()?.apply()
+        encryptedPrefs.edit().clear().apply()
         Log.d("CredentialsManager", "Credentials cleared")
     }
 
