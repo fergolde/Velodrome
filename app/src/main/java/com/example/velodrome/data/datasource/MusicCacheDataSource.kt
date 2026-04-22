@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.util.CacheManager
+import com.example.velodrome.util.CredentialsManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

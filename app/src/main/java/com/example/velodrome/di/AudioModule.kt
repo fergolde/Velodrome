@@ -1,8 +1,10 @@
 package com.example.velodrome.di
 
+import android.content.Context
 import com.example.velodrome.data.datasource.MusicCacheDataSource
 import com.example.velodrome.presentation.audio.AudioPlayerManager
 import com.example.velodrome.presentation.audio.ScrobbleManager
+import com.example.velodrome.util.CredentialsManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,8 +21,9 @@ object AudioModule {
     fun provideAudioPlayerManager(
         @ApplicationContext context: Context,
         scrobbleManager: ScrobbleManager,
-        musicCacheDataSource: MusicCacheDataSource?
+        musicCacheDataSource: MusicCacheDataSource?,
+        credentialsManager: CredentialsManager
     ): AudioPlayerManager {
-        return AudioPlayerManager(context, scrobbleManager, musicCacheDataSource)
+        return AudioPlayerManager(context, scrobbleManager, musicCacheDataSource, credentialsManager)
     }
 }

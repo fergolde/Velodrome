@@ -48,6 +48,7 @@ import com.example.velodrome.domain.model.Album
 import com.example.velodrome.presentation.UiConstants
 import com.example.velodrome.presentation.components.MiniPlayer
 import com.example.velodrome.presentation.player.PlayerManager
+import com.example.velodrome.presentation.player.PlayerManagerHolder
 import com.example.velodrome.ui.theme.VelodromeTheme
 
 @OptIn(ExperimentalMaterial3Api::class)

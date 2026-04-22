@@ -50,9 +50,6 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
-    
-    @Inject
-    lateinit var credentialsManager: CredentialsManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,7 +75,7 @@ object PlayerState {
 @Composable
 fun MainApp() {
     val navController = rememberNavController()
-    var isLoggedIn by remember { mutableStateOf(credentialsManager.hasCredentials()) }
+    var isLoggedIn by remember { mutableStateOf(com.example.velodrome.util.CredentialsManager.hasCredentials()) }
     val startDestination = if (isLoggedIn) "home" else "login"
 
     Box(modifier = Modifier.fillMaxSize()) {
