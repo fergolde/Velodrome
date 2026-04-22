@@ -21,23 +21,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Mic
-
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import com.example.velodrome.presentation.screen.homescreen.ArtistAvatar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,24 +39,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.domain.model.Track
-import com.example.velodrome.presentation.UiConstants
-import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.components.MiniPlayerOverlay
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
-import com.example.velodrome.presentation.player.PlayerManager
-import com.example.velodrome.presentation.screen.homescreen.RecentAlbumsRow
-import com.example.velodrome.presentation.screen.homescreen.SectionHeader
-import com.example.velodrome.util.CredentialsManager
+import com.example.velodrome.presentation.screen.home.ArtistAvatar
+import com.example.velodrome.presentation.screen.home.RecentAlbumsRow
+import com.example.velodrome.presentation.screen.home.SectionHeader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,7 +69,18 @@ fun ExploreScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        bottomBar = { SharedBottomNavigationBar(currentRoute = "explore", onHomeClick = onHomeClick, onSettingsClick = onSettingsClick) },
+        bottomBar = {
+            Column {
+                MiniPlayerOverlay(onPlayerClick = onPlayerClick)
+
+                SharedBottomNavigationBar(
+                    currentRoute = "explore",
+                    onHomeClick = onHomeClick,
+                    onSettingsClick = onSettingsClick
+                )
+            }
+        },
+
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         LazyColumn(
@@ -148,26 +147,6 @@ fun ExploreScreen(
 
             item {
                 Spacer(modifier = Modifier.height(100.dp)) // Padding for mini player
-            }
-        }
-
-        // Mini Player - only show if there's a track to play
-        val currentTrack by PlayerManager.currentTrack.collectAsState()
-        val currentPosition by PlayerManager.currentPosition.collectAsState()
-        val isPlaying by PlayerManager.isPlaying.collectAsState()
-        
-        if (currentTrack != null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                MiniPlayer(
-                    modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMarginInScaffold),
-                    currentTrack = currentTrack,
-                    isPlaying = isPlaying,
-                    currentPosition = currentPosition,
-                    onPlayPauseClick = { PlayerManager.togglePlayPause() },
-                    onClick = onPlayerClick,
-                    onNextClick = { PlayerManager.next() },
-                    onPreviousClick = { PlayerManager.previous() }
-                )
             }
         }
     }

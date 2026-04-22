@@ -21,22 +21,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
-import com.example.velodrome.presentation.screen.homescreen.AlbumCover
-import com.example.velodrome.presentation.screen.homescreen.ArtistAvatar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -47,20 +39,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
-import com.example.velodrome.presentation.UiConstants
-import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.components.MiniPlayerOverlay
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
-import com.example.velodrome.presentation.player.PlayerManager
-import com.example.velodrome.util.CredentialsManager
+import com.example.velodrome.presentation.screen.home.AlbumCover
+import com.example.velodrome.presentation.screen.home.ArtistAvatar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,12 +59,10 @@ fun ArtistDetailScreen(
     onAlbumClick: (String) -> Unit = {},
     onExploreClick: () -> Unit = {},
     onPlayerClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     viewModel: ArtistDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentTrack by PlayerManager.currentTrack.collectAsState()
-    val isPlaying by PlayerManager.isPlaying.collectAsState()
-    val currentPosition by PlayerManager.currentPosition.collectAsState()
 
     Scaffold(
         topBar = {
@@ -83,7 +70,7 @@ fun ArtistDetailScreen(
                 title = {
                     Text(
                         text = uiState.artist?.name ?: stringResource(R.string.artist_detail_title),
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -92,7 +79,7 @@ fun ArtistDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.nav_back),
-                            tint = MaterialTheme.colorScheme.onBackground
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                         )
                     }
                 },
@@ -102,14 +89,17 @@ fun ArtistDetailScreen(
             )
         },
         bottomBar = {
-            SharedBottomNavigationBar(
-                currentRoute = "artist",
-                showHome = true,
-                showExplore = true,
-                showSettings = false,
-                onHomeClick = onPlayerClick,
-                onExploreClick = onExploreClick
-            )
+            Column {
+                MiniPlayerOverlay(onPlayerClick = onPlayerClick)
+
+                SharedBottomNavigationBar(
+                    currentRoute = "artist",
+                    onHomeClick = onPlayerClick,
+                    onExploreClick = onExploreClick,
+                    onSettingsClick = onSettingsClick
+                )
+            }
+
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
@@ -145,22 +135,6 @@ fun ArtistDetailScreen(
                         artist = uiState.artist,
                         albums = uiState.albums,
                         onAlbumClick = onAlbumClick
-                    )
-                }
-            }
-            
-            // MiniPlayer - shown when music is playing
-            if (currentTrack != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                    MiniPlayer(
-                        modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMargin),
-                        currentTrack = currentTrack,
-                        isPlaying = isPlaying,
-                        currentPosition = currentPosition,
-                        onPlayPauseClick = { PlayerManager.togglePlayPause() },
-                        onClick = onPlayerClick,
-                        onNextClick = { PlayerManager.next() },
-                        onPreviousClick = { PlayerManager.previous() }
                     )
                 }
             }
@@ -201,7 +175,7 @@ private fun ArtistAlbumsList(
                 Column {
                     Text(
                         text = stringResource(R.string.artist_detail_albums_count, artist?.albumCount ?: 0),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                         fontSize = 14.sp
                     )
 
@@ -242,7 +216,7 @@ private fun ArtistAlbumsList(
         item {
             Text(
                 text = stringResource(R.string.artist_detail_albums),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -268,11 +242,6 @@ private fun ArtistAlbumsList(
                     Spacer(modifier = Modifier.weight(1f))
                 }
             }
-        }
-
-        // Bottom padding for mini player
-        item {
-            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
@@ -304,7 +273,7 @@ private fun ArtistAlbumCard(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = album.title,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             fontSize = 14.sp
@@ -312,7 +281,7 @@ private fun ArtistAlbumCard(
         album.year?.let { year ->
             Text(
                 text = year.toString(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                 fontSize = 12.sp
             )
         }

@@ -1,4 +1,4 @@
-package com.example.velodrome.presentation.screen.homescreen
+package com.example.velodrome.presentation.screen.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column

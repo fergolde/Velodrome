@@ -10,7 +10,7 @@ object UiConstants {
     val MiniPlayerBottomMargin = 8.dp
 
     /** Margin when inside Scaffold with bottomBar (accounts for nav bar height) */
-    val MiniPlayerBottomMarginInScaffold = 112.dp
+    val miniPlayerMargintoNavigationBar = 0.dp
 
     /** Height of the MiniPlayer */
     val MiniPlayerHeight = 72.dp

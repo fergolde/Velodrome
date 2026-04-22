@@ -1,4 +1,4 @@
-package com.example.velodrome.presentation.screen.homescreen
+package com.example.velodrome.presentation.screen.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,19 +17,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,18 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
-import com.example.velodrome.presentation.UiConstants
-import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.components.MiniPlayerOverlay
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
-import com.example.velodrome.presentation.player.PlayerManager
-import com.example.velodrome.presentation.player.PlayerManagerHolder
-import com.example.velodrome.ui.theme.VelodromeTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,11 +53,15 @@ fun HomeScreen(
 
     Scaffold(
         bottomBar = {
-            SharedBottomNavigationBar(
-                currentRoute = "home",
-                onExploreClick = onExploreClick,
-                onSettingsClick = onSettingsClick
-            )
+            Column {
+                MiniPlayerOverlay(onPlayerClick = onPlayerClick)
+
+                SharedBottomNavigationBar(
+                    currentRoute = "home",
+                    onExploreClick = onExploreClick,
+                    onSettingsClick = onSettingsClick
+                )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
@@ -129,38 +121,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
-
-        // Mini Player - only show if there's a track to play
-        val currentTrack by PlayerManager.currentTrack.collectAsState()
-        val currentPosition by PlayerManager.currentPosition.collectAsState()
-        val isPlaying by PlayerManager.isPlaying.collectAsState()
-        
-        if (currentTrack != null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                MiniPlayer(
-                    modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMarginInScaffold),
-                    currentTrack = currentTrack,
-                    isPlaying = isPlaying,
-                    currentPosition = currentPosition,
-                    onPlayPauseClick = { PlayerManager.togglePlayPause() },
-                    onClick = onPlayerClick,
-                    onNextClick = { PlayerManager.next() },
-                    onPreviousClick = { PlayerManager.previous() }
-                )
-            }
-        }
     }
-
-    // Loading state
-    if (state.isLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-        }
-    }
-
     // Error state
     state.error?.let { error ->
         Box(

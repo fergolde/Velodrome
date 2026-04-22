@@ -20,19 +20,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import com.example.velodrome.presentation.screen.homescreen.ArtistAvatar
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -43,20 +35,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Artist
-import com.example.velodrome.presentation.UiConstants
-import com.example.velodrome.presentation.components.MiniPlayer
+import com.example.velodrome.presentation.components.MiniPlayerOverlay
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
-import com.example.velodrome.presentation.player.PlayerManager
-import com.example.velodrome.util.CredentialsManager
+import com.example.velodrome.presentation.screen.home.ArtistAvatar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,24 +59,17 @@ fun ArtistsScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        //topBar = { ArtistsTopAppBar(onSearchQueryChange = viewModel::onSearchQueryChange) },
-        /*
-        topBar = {
-            Column(
-                modifier = Modifier.padding(top = 32.dp)
-            ) {
-                ArtistsTopAppBar(
-                    onSearchQueryChange = viewModel::onSearchQueryChange
+        bottomBar = {
+            Column {
+                MiniPlayerOverlay(onPlayerClick = onPlayerClick)
+
+                SharedBottomNavigationBar(
+                    currentRoute = "artists",
+                    onHomeClick = onHomeClick,
+                    onExploreClick = onExploreClick,
+                    onSettingsClick = onSettingsClick
                 )
             }
-        },*/
-        bottomBar = {
-            SharedBottomNavigationBar(
-                currentRoute = "artists",
-                onHomeClick = onHomeClick,
-                onExploreClick = onExploreClick,
-                onSettingsClick = onSettingsClick
-            )
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
@@ -135,24 +116,6 @@ fun ArtistsScreen(
                             onArtistClick = onArtistClick
                         )
                     }
-                }
-            }
-
-            // Mini Player - only show if there's a track to play
-            val currentTrack by PlayerManager.currentTrack.collectAsState()
-            val isPlaying by PlayerManager.isPlaying.collectAsState()
-            
-            if (currentTrack != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                    MiniPlayer(
-                        modifier = Modifier.padding(bottom = UiConstants.MiniPlayerBottomMargin),
-                        currentTrack = currentTrack,
-                        isPlaying = isPlaying,
-                        onPlayPauseClick = { PlayerManager.togglePlayPause() },
-                        onClick = onPlayerClick,
-                        onNextClick = { PlayerManager.next() },
-                        onPreviousClick = { PlayerManager.previous() }
-                    )
                 }
             }
         }

@@ -1,4 +1,4 @@
-package com.example.velodrome.presentation.screen.homescreen
+package com.example.velodrome.presentation.screen.home
 
 import com.example.velodrome.domain.model.Album
 
