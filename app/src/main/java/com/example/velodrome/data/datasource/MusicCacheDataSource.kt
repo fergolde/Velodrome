@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.util.CacheManager
-import com.example.velodrome.util.CredentialsManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +30,8 @@ class MusicCacheDataSource @Inject constructor(
     @ApplicationContext private val context: Context,
     private val okHttpClient: OkHttpClient,
     private val cacheManager: CacheManager,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val credentialsManager: CredentialsManager
 ) {
     companion object {
         private const val TAG = "MusicCacheDataSource"
@@ -64,7 +64,7 @@ class MusicCacheDataSource @Inject constructor(
             }
 
             // Step 2: Get stream URL and download
-            val streamUrl = CredentialsManager.getStreamUrl(trackId, 320) // 320kbps default
+            val streamUrl = credentialsManager.getStreamUrl(trackId, 320) // 320kbps default
             if (streamUrl.isBlank()) {
                 Log.w(TAG, "Could not get stream URL for track: $trackId")
                 return@withContext null

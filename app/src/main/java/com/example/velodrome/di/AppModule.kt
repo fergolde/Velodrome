@@ -42,19 +42,14 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-        // First add the auth interceptor (adds u, t, s, v, c to all requests)
-        val authInterceptor = AuthInterceptor
-
-        // Logging interceptor for debugging
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        }
-
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor,
+        credentialsManager: CredentialsManager
+    ): OkHttpClient {
         // URL rewriting interceptor - uses stored server URL from CredentialsManager
         val urlRewriterInterceptor = okhttp3.Interceptor { chain ->
             val originalRequest = chain.request()
-            var serverUrl = CredentialsManager.getServerUrl() ?: DEFAULT_URL
+            var serverUrl = credentialsManager.getServerUrl() ?: DEFAULT_URL
             
             val originalUrl = originalRequest.url.toString()
             
@@ -82,6 +77,11 @@ object AppModule {
                 .build()
 
             chain.proceed(newRequest)
+        }
+
+        // Logging interceptor for debugging
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
         }
 
         return OkHttpClient.Builder()

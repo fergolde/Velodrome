@@ -3,25 +3,31 @@ package com.example.velodrome.presentation.player
 import android.util.Log
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.audio.AudioPlayerManager
+import dagger.hilt.android.scopes.ViewModelComponent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
- * Singleton player state manager - delegates to AudioPlayerManager for real playback.
- * Maintains backward compatibility with existing UI code.
+ * Player state manager - delegates to AudioPlayerManager for real playback.
+ * Injected as a singleton to maintain backward compatibility with existing UI code.
  */
-object PlayerManager {
+@Singleton
+class PlayerManager @Inject constructor(
+    private val audioPlayerManager: AudioPlayerManager
+) {
 
     private const val TAG = "PlayerManager"
 
     // Expose state from AudioPlayerManager
-    val playlist: StateFlow<List<Track>> = AudioPlayerManager.playlist
-    val currentIndex: StateFlow<Int> = AudioPlayerManager.currentIndex
-    val isPlaying: StateFlow<Boolean> = AudioPlayerManager.isPlaying
-    val currentPosition: StateFlow<Long> = AudioPlayerManager.currentPosition
-    val currentTrack: StateFlow<Track?> = AudioPlayerManager.currentTrack
-    val currentTrackId: StateFlow<String?> = AudioPlayerManager.currentTrackId
-    val isBuffering: StateFlow<Boolean> = AudioPlayerManager.isBuffering
+    val playlist: StateFlow<List<Track>> = audioPlayerManager.playlist
+    val currentIndex: StateFlow<Int> = audioPlayerManager.currentIndex
+    val isPlaying: StateFlow<Boolean> = audioPlayerManager.isPlaying
+    val currentPosition: StateFlow<Long> = audioPlayerManager.currentPosition
+    val currentTrack: StateFlow<Track?> = audioPlayerManager.currentTrack
+    val currentTrackId: StateFlow<String?> = audioPlayerManager.currentTrackId
+    val isBuffering: StateFlow<Boolean> = audioPlayerManager.isBuffering
 
     // Keep local state for duration (not exposed by AudioPlayerManager in same way)
     private val _duration = MutableStateFlow(0L)
@@ -33,7 +39,7 @@ object PlayerManager {
         Log.d(TAG, "setPlaylist: ${tracks.size} tracks, startPlaying: $startPlaying")
         if (tracks.isNotEmpty()) {
             val startIndex = if (startPlaying) 0 else -1
-            AudioPlayerManager.playTrack(tracks[0], tracks, startIndex)
+            audioPlayerManager.playTrack(tracks[0], tracks, startIndex)
         }
     }
 
@@ -43,9 +49,9 @@ object PlayerManager {
     fun setPlaylist(tracks: List<Track>, startIndex: Int, startPlaying: Boolean = true) {
         Log.d(TAG, "setPlaylist: ${tracks.size} tracks, startIndex: $startIndex, startPlaying: $startPlaying")
         if (tracks.isNotEmpty() && startIndex in tracks.indices) {
-            AudioPlayerManager.playTrack(tracks[startIndex], tracks, startIndex)
+            audioPlayerManager.playTrack(tracks[startIndex], tracks, startIndex)
         } else if (tracks.isNotEmpty()) {
-            AudioPlayerManager.playTrack(tracks[0], tracks, 0)
+            audioPlayerManager.playTrack(tracks[0], tracks, 0)
         }
     }
 
@@ -55,7 +61,7 @@ object PlayerManager {
     fun playTrack(track: Track, playlist: List<Track> = listOf(track)) {
         Log.d(TAG, "playTrack: ${track.title}")
         val index = playlist.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
-        AudioPlayerManager.playTrack(track, playlist, index)
+        audioPlayerManager.playTrack(track, playlist, index)
     }
 
     /**
@@ -63,8 +69,8 @@ object PlayerManager {
      */
     fun appendToPlaylist(tracks: List<Track>) {
         if (tracks.isNotEmpty()) {
-            AudioPlayerManager.appendToPlaylist(tracks)
-            Log.d(TAG, "Appended ${tracks.size} tracks, playlist size: ${AudioPlayerManager.playlist.value.size}")
+            audioPlayerManager.appendToPlaylist(tracks)
+            Log.d(TAG, "Appended ${tracks.size} tracks, playlist size: ${audioPlayerManager.playlist.value.size}")
         }
     }
 
@@ -73,10 +79,10 @@ object PlayerManager {
      * Set current index directly (for queue navigation)
      */
     fun setCurrentIndex(index: Int) {
-        val playlist = AudioPlayerManager.playlist.value
+        val playlist = audioPlayerManager.playlist.value
         if (index in playlist.indices) {
             Log.d(TAG, "Set current index to $index, track: ${playlist[index].title}")
-            AudioPlayerManager.playTrack(playlist[index], playlist, index)
+            audioPlayerManager.playTrack(playlist[index], playlist, index)
         }
     }
 
@@ -84,7 +90,7 @@ object PlayerManager {
      * Update current track position
      */
     fun updatePosition(position: Int) {
-        AudioPlayerManager.seekTo(position.toLong())
+        audioPlayerManager.seekTo(position.toLong())
     }
 
     /**
@@ -92,35 +98,35 @@ object PlayerManager {
      */
     fun togglePlayPause() {
         Log.d(TAG, "togglePlayPause")
-        AudioPlayerManager.togglePlayPause()
+        audioPlayerManager.togglePlayPause()
     }
 
     /**
      * Start/resume playback
      */
     fun play() {
-        AudioPlayerManager.play()
+        audioPlayerManager.play()
     }
 
     /**
      * Go to next track
      */
     fun next(): Boolean {
-        return AudioPlayerManager.next()
+        return audioPlayerManager.next()
     }
 
     /**
      * Go to previous track
      */
     fun previous(): Boolean {
-        return AudioPlayerManager.previous()
+        return audioPlayerManager.previous()
     }
 
     /**
      * Seek to position in milliseconds
      */
     fun seekTo(positionMs: Long) {
-        AudioPlayerManager.seekTo(positionMs)
+        audioPlayerManager.seekTo(positionMs)
     }
 
     /**
@@ -128,13 +134,13 @@ object PlayerManager {
      */
     fun playNext(track: Track) {
         Log.d(TAG, "playNext: ${track.title}")
-        val currentList = AudioPlayerManager.playlist.value.toMutableList()
-        val currentIdx = AudioPlayerManager.currentIndex.value
+        val currentList = audioPlayerManager.playlist.value.toMutableList()
+        val currentIdx = audioPlayerManager.currentIndex.value
         
         // Insert right after current track
         val insertIndex = (currentIdx + 1).coerceAtMost(currentList.size)
         currentList.add(insertIndex, track)
-        AudioPlayerManager.setPlaylist(currentList)
+        audioPlayerManager.setPlaylist(currentList)
     }
 
     /**
@@ -142,9 +148,9 @@ object PlayerManager {
      */
     fun addToQueue(track: Track) {
         Log.d(TAG, "addToQueue: ${track.title}")
-        val currentList = AudioPlayerManager.playlist.value.toMutableList()
+        val currentList = audioPlayerManager.playlist.value.toMutableList()
         currentList.add(track)
-        AudioPlayerManager.setPlaylist(currentList)
+        audioPlayerManager.setPlaylist(currentList)
     }
 
     /**
@@ -154,9 +160,8 @@ object PlayerManager {
 
     fun setLoadMoreCallback(callback: () -> Unit) {
         Log.d(TAG, "setLoadMoreCallback called")
-        loadMoreCallback = callback
         // Also set it in AudioPlayerManager
-        AudioPlayerManager.setLoadMoreCallback {
+        audioPlayerManager.setLoadMoreCallback {
             Log.d(TAG, "LoadMoreCallback invoked from AudioPlayerManager, calling inner callback")
             Log.d(TAG, "loadMoreCallback is null: ${loadMoreCallback == null}")
             callback()

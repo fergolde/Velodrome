@@ -25,7 +25,8 @@ import javax.inject.Singleton
 class NavidromeRepositoryImpl @Inject constructor(
     private val api: NavidromeApi,
     private val dataStore: DataStore<Preferences>,
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val credentialsManager: CredentialsManager
 ) : NavidromeRepository {
 
     private val cacheDir: File = context.cacheDir
@@ -41,7 +42,7 @@ class NavidromeRepositoryImpl @Inject constructor(
         return runCatching {
             try {
                 // Save credentials securely (username + password, NO token)
-                CredentialsManager.saveCredentials(username, password, serverUrl)
+                credentialsManager.saveCredentials(username, password, serverUrl)
                 Log.d("Velodrome", "Credentials saved for user: $username")
 
                 // Try ping - auth interceptor will add u, t, s params automatically
@@ -58,7 +59,7 @@ class NavidromeRepositoryImpl @Inject constructor(
                     AuthResult(success = true, token = password)
                 } else {
                     // Login failed - clear credentials
-                    CredentialsManager.clearCredentials()
+                    credentialsManager.clearCredentials()
                     val errorMap = response["error"] as? Map<*, *>
                     val errorMsg = errorMap?.get("message")?.toString() ?: "Invalid credentials"
                     Log.d("Velodrome", "Error: $errorMsg")
@@ -67,7 +68,7 @@ class NavidromeRepositoryImpl @Inject constructor(
             } catch (e: Exception) {
                 Log.e("Velodrome", "Login exception", e)
                 // Clear credentials on error
-                CredentialsManager.clearCredentials()
+                credentialsManager.clearCredentials()
                 AuthResult(success = false, error = e.message ?: "Unknown error")
             }
         }
@@ -77,14 +78,14 @@ class NavidromeRepositoryImpl @Inject constructor(
      * Check if user is already logged in (has stored credentials)
      */
     override fun isLoggedIn(): Boolean {
-        return CredentialsManager.hasCredentials()
+        return credentialsManager.hasCredentials()
     }
 
     /**
      * Force logout - clear all stored credentials
      */
     override fun logout() {
-        CredentialsManager.clearCredentials()
+        credentialsManager.clearCredentials()
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -231,8 +232,8 @@ class NavidromeRepositoryImpl @Inject constructor(
 
     override suspend fun getStreamUrl(trackId: String): String {
         // For streaming, we need to build URL manually with auth
-        val serverUrl = CredentialsManager.getServerUrl() ?: ""
-        val authParams = CredentialsManager.generateAuthParams()
+        val serverUrl = credentialsManager.getServerUrl() ?: ""
+        val authParams = credentialsManager.generateAuthParams()
         
         return if (authParams != null) {
             val (username, token, salt) = authParams
@@ -284,15 +285,15 @@ class NavidromeRepositoryImpl @Inject constructor(
     }
 
     override fun getServerUrl(): String {
-        return CredentialsManager.getServerUrl() ?: "https://your-navidrome-server.com/"
+        return credentialsManager.getServerUrl() ?: "https://your-navidrome-server.com/"
     }
 
     override fun setServerUrl(url: String) {
         // Update stored server URL
-        val currentUser = CredentialsManager.getUsername()
-        val currentPass = CredentialsManager.getPassword()
+        val currentUser = credentialsManager.getUsername()
+        val currentPass = credentialsManager.getPassword()
         if (currentUser != null && currentPass != null) {
-            CredentialsManager.saveCredentials(currentUser, currentPass, url)
+            credentialsManager.saveCredentials(currentUser, currentPass, url)
         }
     }
 

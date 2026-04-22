@@ -30,7 +30,8 @@ data class AlbumDetailUiState(
 class AlbumDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getAlbumUseCase: GetAlbumUseCase,
-    private val getTracksUseCase: GetTracksUseCase
+    private val getTracksUseCase: GetTracksUseCase,
+    private val playerManager: PlayerManager
 ) : ViewModel() {
 
     private val albumId: String = savedStateHandle.get<String>("albumId") ?: ""
@@ -87,7 +88,7 @@ class AlbumDetailViewModel @Inject constructor(
         val trackIndex = tracks.indexOf(track)
         if (trackIndex >= 0) {
             Log.d(TAG, "Playing track: ${track.title} at index $trackIndex")
-            PlayerManager.setPlaylist(tracks, startIndex = trackIndex, startPlaying = true)
+            playerManager.setPlaylist(tracks, startIndex = trackIndex, startPlaying = true)
         }
     }
 
@@ -96,7 +97,7 @@ class AlbumDetailViewModel @Inject constructor(
         if (tracks.isEmpty()) return
 
         Log.d(TAG, "Playing all ${tracks.size} tracks")
-        PlayerManager.setPlaylist(tracks, startIndex = 0, startPlaying = true)
+        playerManager.setPlaylist(tracks, startIndex = 0, startPlaying = true)
     }
 
     fun shuffleAll() {
@@ -105,7 +106,7 @@ class AlbumDetailViewModel @Inject constructor(
 
         Log.d(TAG, "Shuffling and playing ${tracks.size} tracks")
         val shuffled = tracks.shuffled()
-        PlayerManager.setPlaylist(shuffled, startIndex = 0, startPlaying = true)
+        playerManager.setPlaylist(shuffled, startIndex = 0, startPlaying = true)
     }
 
     fun addAllToQueue() {
@@ -114,17 +115,17 @@ class AlbumDetailViewModel @Inject constructor(
 
         Log.d(TAG, "Adding all ${tracks.size} tracks to queue")
         tracks.forEach { track ->
-            PlayerManager.addToQueue(track)
+            playerManager.addToQueue(track)
         }
     }
 
     fun playNext(track: Track) {
         Log.d(TAG, "Play next: ${track.title}")
-        PlayerManager.playNext(track)
+        playerManager.playNext(track)
     }
 
     fun addToQueue(track: Track) {
         Log.d(TAG, "Add to queue: ${track.title}")
-        PlayerManager.addToQueue(track)
+        playerManager.addToQueue(track)
     }
 }

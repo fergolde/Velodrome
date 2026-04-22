@@ -22,22 +22,16 @@ class VelodromeApp : Application() {
     @Inject
     lateinit var musicCacheDataSource: MusicCacheDataSource
 
+    @Inject
+    lateinit var credentialsManager: CredentialsManager
+
     override fun onCreate() {
         super.onCreate()
-        // Initialize secure credential storage
-        CredentialsManager.init(this)
-        // Initialize audio player manager
-        AudioPlayerManager.initialize(this)
-        // Set scrobble manager reference
-        AudioPlayerManager.scrobbleManager = scrobbleManager
-
+        
         // Initialize cache services
         CacheService.initialize(
             imageCache = imageCacheDataSource,
             musicCache = musicCacheDataSource
         )
-
-        // Set music cache for AudioPlayerManager
-        AudioPlayerManager.musicCacheDataSource = musicCacheDataSource
     }
 }

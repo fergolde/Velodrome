@@ -14,19 +14,28 @@ import com.example.velodrome.domain.model.Track
 import com.example.velodrome.util.CredentialsManager
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.android.scopes.ViewModelComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Singleton manager for audio playback.
  * Provides a clean interface between UI and AudioPlayerService.
  * Manages MediaController connection and exposes state to observers.
  */
-object AudioPlayerManager {
+@Singleton
+class AudioPlayerManager @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val scrobbleManager: ScrobbleManager,
+    private val musicCacheDataSource: MusicCacheDataSource?
+) {
 
     private const val TAG = "AudioPlayerManager"
 
@@ -61,11 +70,10 @@ object AudioPlayerManager {
     private var controllerFuture: ListenableFuture<MediaController>? = null
 
     // Scrobble manager reference
-    var scrobbleManager: ScrobbleManager? = null
     var isLoadingMoreCallbackInvoked = false  // Prevent multiple calls
 
     // Music cache for offline playback
-    var musicCacheDataSource: MusicCacheDataSource? = null
+    private val musicCacheDataSource: MusicCacheDataSource? = musicCacheDataSource
     private val playerScope = CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
 
     // Callback for loading more tracks when playlist runs out
@@ -91,12 +99,10 @@ object AudioPlayerManager {
                     val currentTime = System.currentTimeMillis()
                     if (currentTime - lastScrobbleCheckTime >= scrobbleCheckIntervalMs) {
                         lastScrobbleCheckTime = currentTime
-                        scrobbleManager?.let { sm ->
-                            val trackId = _currentTrackId.value
-                            val duration = _duration.value
-                            if (trackId != null && duration > 0) {
-                                sm.checkAndScrobble(trackId, _currentPosition.value, duration)
-                            }
+                        val trackId = _currentTrackId.value
+                        val duration = _duration.value
+                        if (trackId != null && duration > 0) {
+                            scrobbleManager.checkAndScrobble(trackId, _currentPosition.value, duration)
                         }
                     }
                 }
@@ -105,11 +111,7 @@ object AudioPlayerManager {
         }
     }
 
-    /**
-     * Initialize the AudioPlayerManager with application context.
-     * Should be called once from Application class.
-     */
-    fun initialize(context: Context) {
+    init {
         val sessionToken = SessionToken(
             context,
             ComponentName(context, AudioPlayerService::class.java)

@@ -41,7 +41,6 @@ import com.example.velodrome.presentation.screen.settings.SettingsScreen
 import com.example.velodrome.presentation.player.PlayerScreen
 import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.ui.theme.VelodromeTheme
-import com.example.velodrome.util.CredentialsManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -51,6 +50,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
+    
+    @Inject
+    lateinit var credentialsManager: CredentialsManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,7 +78,7 @@ object PlayerState {
 @Composable
 fun MainApp() {
     val navController = rememberNavController()
-    var isLoggedIn by remember { mutableStateOf(CredentialsManager.hasCredentials()) }
+    var isLoggedIn by remember { mutableStateOf(credentialsManager.hasCredentials()) }
     val startDestination = if (isLoggedIn) "home" else "login"
 
     Box(modifier = Modifier.fillMaxSize()) {

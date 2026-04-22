@@ -44,7 +44,8 @@ class HomeViewModel @Inject constructor(
     private val getGenresUseCase: GetGenresUseCase,
     private val getTracksUseCase: GetTracksUseCase,
     private val navidromeRepository: NavidromeRepository,
-    private val localMusicDataSource: LocalMusicDataSource
+    private val localMusicDataSource: LocalMusicDataSource,
+    private val playerManager: PlayerManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -129,16 +130,16 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Sync UI state with PlayerManager singleton
+     * Sync UI state with PlayerManager injected instance
      */
     private fun syncWithPlayerManager() {
         viewModelScope.launch {
-            PlayerManager.isPlaying.collect { isPlaying ->
+            playerManager.isPlaying.collect { isPlaying ->
                 _uiState.update { it.copy(isPlaying = isPlaying) }
             }
         }
         viewModelScope.launch {
-            PlayerManager.currentTrack.collect { track ->
+            playerManager.currentTrack.collect { track ->
                 _uiState.update { it.copy(currentTrackId = track?.id) }
             }
         }
@@ -326,7 +327,7 @@ class HomeViewModel @Inject constructor(
      * Toggles play/pause for the current track.
      */
     fun togglePlayPause() {
-        PlayerManager.togglePlayPause()
+        playerManager.togglePlayPause()
     }
 
     /**
@@ -349,13 +350,13 @@ class HomeViewModel @Inject constructor(
                         val shuffledSongs = songs.shuffled().take(10)
                         
                         // Set up callback for infinite scroll
-                        PlayerManager.setLoadMoreCallback {
+                        playerManager.setLoadMoreCallback {
                             Log.d("HomeViewModel", "Home shuffle: loading more songs")
                             loadMoreRandomSongs()
                         }
                         
                         // Start playback
-                        PlayerManager.setPlaylist(shuffledSongs, startPlaying = true)
+                        playerManager.setPlaylist(shuffledSongs, startPlaying = true)
                         Log.d("HomeViewModel", "Started shuffle playback with ${shuffledSongs.size} songs")
                     }
                     
@@ -380,7 +381,7 @@ class HomeViewModel @Inject constructor(
                 val songsResult = navidromeRepository.getRandomSongs(size = 10)
                 songsResult.onSuccess { songs ->
                     if (songs.isNotEmpty()) {
-                        PlayerManager.appendToPlaylist(songs)
+                        playerManager.appendToPlaylist(songs)
                         Log.d("HomeViewModel", "Appended ${songs.size} more random songs")
                     }
                 }
