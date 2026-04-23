@@ -1,6 +1,8 @@
 [versions]
 agp = "9.1.1"
 kotlin = "2.3.20"
+serializationPlugin = "2.3.20"
+serializationLib = "1.11.0"
 composeBom = "2026.03.01"
 ksp = "2.3.3"
 retrofit = "3.0.0"
@@ -68,10 +70,13 @@ room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
+kotlinx-serialization-json = {group = "org.jetbrains.kotlinx",name = "kotlinx-serialization-json",version.ref = "serializationLib"}
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = {id = "org.jetbrains.kotlin.plugin.serialization",version.ref = "serializationPlugin"}
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 

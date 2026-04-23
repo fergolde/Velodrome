@@ -28,6 +28,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.velodrome.di.CredentialsEntryPoint
+import com.example.velodrome.presentation.VelodromeMainApp
+import com.example.velodrome.presentation.PlayerState
 import com.example.velodrome.presentation.navigation.Screen
 import com.example.velodrome.presentation.screen.home.HomeScreen
 import com.example.velodrome.presentation.screen.login.LoginScreen
@@ -61,14 +63,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainApp()
+                    VelodromeMainApp()
                 }
             }
         }
     }
-}
-object PlayerState {
-    var isVisible by mutableStateOf(false)
 }
 
 
