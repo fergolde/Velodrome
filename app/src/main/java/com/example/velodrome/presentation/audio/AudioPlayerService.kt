@@ -8,17 +8,29 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.example.velodrome.MainActivity
-import com.example.velodrome.util.CacheManager
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Foreground service for real audio playback using Media3 ExoPlayer.
- * Handles streaming audio from Navidrome server with progressive caching.
+ * Uses SimpleCache for progressive caching of audio streams.
  */
+@UnstableApi
+@AndroidEntryPoint
 class AudioPlayerService : MediaSessionService() {
+
+    @Inject
+    lateinit var simpleCache: SimpleCache
+
+    @Inject
+    lateinit var cacheDataSourceFactory: CacheDataSource.Factory
 
     private var mediaSession: MediaSession? = null
     private var exoPlayer: ExoPlayer? = null
@@ -32,9 +44,13 @@ class AudioPlayerService : MediaSessionService() {
         super.onCreate()
         Log.d(TAG, "AudioPlayerService onCreate")
 
+        // Build ExoPlayer with CacheDataSource.Factory for progressive caching
         exoPlayer = ExoPlayer.Builder(this)
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
+            .setMediaSourceFactory(
+                androidx.media3.exoplayer.source.ProgressiveMediaSource.Factory(cacheDataSourceFactory)
+            )
             .build()
 
         // Create pending intent for media notification
@@ -201,22 +217,27 @@ class AudioPlayerService : MediaSessionService() {
      */
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
-            Log.d(TAG, "onIsPlayingChanged: $isPlaying")
             AudioPlayerManager.onPlaybackStateChanged(isPlaying)
+            if (isPlaying) {
+                Log.d(TAG, "Player is playing")
+            } else {
+                Log.d(TAG, "Player stopped")
+            }
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
-            Log.d(TAG, "onPlaybackStateChanged: $playbackState")
             when (playbackState) {
                 Player.STATE_READY -> {
                     AudioPlayerManager.onReady(exoPlayer?.duration ?: 0L)
-                }
-                Player.STATE_ENDED -> {
-                    Log.d(TAG, "Playback ended")
-                    AudioPlayerManager.onPlaybackCompleted()
+                    Log.d(TAG, "Player ready, duration: ${exoPlayer?.duration}")
                 }
                 Player.STATE_BUFFERING -> {
                     AudioPlayerManager.onBuffering()
+                    Log.d(TAG, "Player buffering")
+                }
+                Player.STATE_ENDED -> {
+                    AudioPlayerManager.onPlaybackCompleted()
+                    Log.d(TAG, "Player ended")
                 }
                 Player.STATE_IDLE -> {
                     Log.d(TAG, "Player idle")
@@ -226,26 +247,13 @@ class AudioPlayerService : MediaSessionService() {
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             mediaItem?.let {
-                Log.d(TAG, "MediaItem transition: ${it.mediaMetadata.title}")
+                Log.d(TAG, "Media item changed: ${it.mediaMetadata.title}")
                 AudioPlayerManager.onMediaItemChanged(it)
             }
-        }
-
-        override fun onPositionDiscontinuity(
-            oldPosition: Player.PositionInfo,
-            newPosition: Player.PositionInfo,
-            reason: Int
-        ) {
-            Log.d(TAG, "Position discontinuity: $oldPosition -> $newPosition")
         }
     }
 
     companion object {
         private const val TAG = "AudioPlayerService"
-
-        @Volatile
-        private var instance: AudioPlayerService? = null
-
-        fun getInstance(): AudioPlayerService? = instance
     }
 }

@@ -7,10 +7,9 @@ import android.net.Uri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.example.velodrome.data.datasource.CachedMusicDataSourceFactory
-import com.example.velodrome.data.datasource.MusicCacheDataSource
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.util.CredentialsManager
 import com.google.common.util.concurrent.ListenableFuture
@@ -33,9 +32,8 @@ import javax.inject.Singleton
 class AudioPlayerManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val scrobbleManager: ScrobbleManager,
-    private val musicCacheDataSource: MusicCacheDataSource?,
     private val credentialsManager: CredentialsManager,
-    private val cachedMusicDataSourceFactory: CachedMusicDataSourceFactory?
+    private val cacheDataSourceFactory: CacheDataSource.Factory
 ) {
     companion object {
         @Volatile private var self: AudioPlayerManager? = null
@@ -91,7 +89,6 @@ class AudioPlayerManager @Inject constructor(
     private var controllerFuture: ListenableFuture<MediaController>? = null
     var isLoadingMoreCallbackInvoked = false
 
-    private val cacheDataSource: MusicCacheDataSource? = musicCacheDataSource
     private val playerScope = CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
     private var loadMoreCallback: (() -> Unit)? = null
     var positionUpdateIntervalMs: Long = 1000L
@@ -216,9 +213,9 @@ fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
         isLoadingMoreCallbackInvoked = false
 
         val mediaItems = playlist.mapIndexed { index, t ->
-            val mediaSource = getMediaSourceUrl(t)
+            val streamUrl = getStreamUrl(t)
             val coverUrl = t.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
-            MediaItem.Builder().setMediaId(index.toString()).setUri(mediaSource)
+            MediaItem.Builder().setMediaId(index.toString()).setUri(streamUrl)
                 .setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artistName).setAlbumTitle(t.albumName)
                     .apply { coverUrl?.let { setArtworkUri(Uri.parse(it)) } }.build()).build()
         }
@@ -272,16 +269,10 @@ fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
         }, MoreExecutors.directExecutor())
     }
 
-    private fun getMediaSourceUrl(track: Track): String {
-        val cache = cacheDataSource
-        return if (cache != null && cache.isCached(track.id)) {
-            cache.getCacheFilePath(track.id)
-        } else {
-            if (cache != null) {
-                playerScope.launch { try { cache.getMusic(track.id, track.artistName, track.title) } catch (e: Exception) { } }
-            }
-            credentialsManager.getStreamUrl(track.id)
-        }
+    private fun getStreamUrl(track: Track): String {
+        // SimpleCache handles caching automatically via CacheDataSource.Factory
+        // ExoPlayer will intercept streaming and cache data on-the-fly
+        return credentialsManager.getStreamUrl(track.id)
     }
 
     fun appendToPlaylist(tracks: List<Track>) {
@@ -289,9 +280,9 @@ fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
         _playlist.value += tracks
         val startIndex = _playlist.value.size - tracks.size
         val mediaItems = tracks.mapIndexed { index, t ->
-            val mediaSource = getMediaSourceUrl(t)
+            val streamUrl = getStreamUrl(t)
             val coverUrl = t.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
-            MediaItem.Builder().setMediaId((startIndex + index).toString()).setUri(mediaSource)
+            MediaItem.Builder().setMediaId((startIndex + index).toString()).setUri(streamUrl)
                 .setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artistName).setAlbumTitle(t.albumName)
                     .apply { coverUrl?.let { setArtworkUri(Uri.parse(it)) } }.build()).build()
         }
@@ -341,27 +332,8 @@ fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
     fun setLoadMoreCallback(callback: () -> Unit) { loadMoreCallback = callback }
 
     /**
-     * Get the cached data source factory for use with ExoPlayer.
-     * Returns null if caching is not available.
+     * Get the CacheDataSource.Factory for ExoPlayer configuration in AudioPlayerService.
+     * Uses the injected factory from constructor.
      */
-    fun getCachedDataSourceFactory(): CachedMusicDataSourceFactory? = cachedMusicDataSourceFactory
-
-    /**
-     * Pre-cache a track in the background.
-     * Uses SimpleCache for progressive caching.
-     */
-    fun preCacheTrack(track: Track) {
-        cachedMusicDataSourceFactory?.let { factory ->
-            playerScope.launch {
-                try {
-                    val streamUrl = credentialsManager.getStreamUrl(track.id)
-                    Log.d(TAG, "Pre-caching track: ${track.title} from $streamUrl")
-                    // SimpleCache will be populated when ExoPlayer streams the URL
-                    // The cache is managed automatically by Media3
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error pre-caching track: ${e.message}")
-                }
-            }
-        }
-    }
+    fun getCacheDataSourceFactory(): CacheDataSource.Factory = cacheDataSourceFactory
 }
