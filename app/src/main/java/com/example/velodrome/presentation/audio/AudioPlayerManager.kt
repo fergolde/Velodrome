@@ -132,7 +132,23 @@ class AudioPlayerManager @Inject constructor(
             override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
                 _currentPosition.value = newPosition.positionMs
             }
+
         })
+        startPositionPolling()
+
+    }
+
+    private fun startPositionPolling() {
+        playerScope.launch {
+            while (true) {
+                mediaController?.let { controller ->
+                    if (controller.isPlaying) {
+                        _currentPosition.value = controller.currentPosition
+                    }
+                }
+                kotlinx.coroutines.delay(1000L)
+            }
+        }
     }
 
     // Añade esta función privada a la misma clase AudioPlayerManager
