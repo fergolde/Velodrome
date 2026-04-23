@@ -1,26 +1,65 @@
 package com.example.velodrome.presentation.player
 
 import androidx.compose.animation.animateColorAsState
-import com.example.velodrome.presentation.components.SharedBottomNavigationBar
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Shuffle
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,8 +78,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
+import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.screen.home.AlbumCover
-import androidx.compose.animation.core.RepeatMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,10 +102,23 @@ fun PlayerScreen(
     val screenHeight = LocalConfiguration.current.screenHeightDp.toFloat()
     val dismissThreshold = 0.28f   // 28% de la pantalla para disparar
 
+    // ── Track accumulated fraction para efectos visuales ─────────────────────────────────────────
+    var accumulatedFraction by remember { mutableFloatStateOf(0f) }
+
+    // Animar translación Y y alpha basada en el arrastre hacia abajo
+    val animatedTranslationY by animateFloatAsState(
+        targetValue = accumulatedFraction * 500f, // 500dp de movimiento máximo
+        animationSpec = tween(durationMillis = 16), // 60fps smooth
+        label = "player_translation"
+    )
+    val animatedAlpha by animateFloatAsState(
+        targetValue = 1f - (accumulatedFraction * 0.8f), // alpha mínimo 0.2
+        animationSpec = tween(durationMillis = 16),
+        label = "player_alpha"
+    )
+
     // ─────────────────────────────────────────────────────────────────────────
 
-
-    var accumulatedFraction by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current.density
     Scaffold(
         bottomBar = {
@@ -130,7 +182,11 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 24.dp)
+                    .graphicsLayer {
+                        translationY = animatedTranslationY
+                        alpha = animatedAlpha
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(20.dp))
@@ -638,19 +694,19 @@ fun EqualizerBars(isPlaying: Boolean) {
         val bar1 by infiniteTransition.animateFloat(
             initialValue = 0.3f, targetValue = 1f,
             animationSpec = infiniteRepeatable(
-                tween(400, easing = EaseInOutSine), RepeatMode.Reverse
+                tween(400, easing = FastOutSlowInEasing), RepeatMode.Reverse
             ), label = "b1"
         )
         val bar2 by infiniteTransition.animateFloat(
             initialValue = 1f, targetValue = 0.4f,
             animationSpec = infiniteRepeatable(
-                tween(300, easing = EaseInOutSine), RepeatMode.Reverse
+                tween(300, easing = FastOutSlowInEasing), RepeatMode.Reverse
             ), label = "b2"
         )
         val bar3 by infiniteTransition.animateFloat(
             initialValue = 0.5f, targetValue = 0.9f,
             animationSpec = infiniteRepeatable(
-                tween(500, easing = EaseInOutSine), RepeatMode.Reverse
+                tween(500, easing = FastOutSlowInEasing), RepeatMode.Reverse
             ), label = "b3"
         )
 

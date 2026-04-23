@@ -86,10 +86,13 @@ fun MainScaffold(
             currentRoute == "albums" || currentRoute == "artists" ||
             currentRoute.startsWith("album/") || currentRoute.startsWith("artist/")
 
+    // Hide bottom bar when player is visible
+    val showGlobalBottomBar = showBottomBar && !PlayerState.isVisible
+
     Scaffold(
         bottomBar = {
             Column {
-                if (showBottomBar) {
+                if (showGlobalBottomBar) {
                     MiniPlayerOverlay(onPlayerClick = { PlayerState.isVisible = true })
                     SharedBottomNavigationBar(
                         currentRoute = currentRoute ?: "",
@@ -199,6 +202,15 @@ fun MainScaffold(
         if (PlayerState.isVisible) {
             PlayerScreen(
                 onMinimizeClick = { PlayerState.isVisible = false },
+                onDrag = { fraction ->
+                    // Animate scale/opacity based on drag (1f = no drag, 0f = fully dismissed)
+                    // The visual feedback will be handled inside PlayerScreen
+                },
+                onDragEnd = { completed ->
+                    if (completed) {
+                        PlayerState.isVisible = false
+                    }
+                },
                 onHomeClick = {
                     PlayerState.isVisible = false
                     navController.navigate(Screen.Home.route)
