@@ -1,5 +1,6 @@
 package com.example.velodrome.presentation.components
 
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
@@ -27,10 +28,11 @@ fun SharedBottomNavigationBar(
     showSettings: Boolean = true,
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     NavigationBar(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
         tonalElevation = 0.dp
     ) {

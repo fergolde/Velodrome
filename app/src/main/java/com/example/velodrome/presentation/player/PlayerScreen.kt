@@ -14,7 +14,6 @@ import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +46,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Slider
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -56,7 +57,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -66,9 +66,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -86,8 +83,6 @@ import com.example.velodrome.presentation.screen.home.AlbumCover
 fun PlayerScreen(
     viewModel: PlayerViewModel = hiltViewModel(),
     onMinimizeClick: () -> Unit = {},
-    onDrag: (fraction: Float) -> Unit = {},       // fracción 0f–1f del drag
-    onDragEnd: (completed: Boolean) -> Unit = {}, // true = supera umbral
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
@@ -98,35 +93,10 @@ fun PlayerScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showQueue by remember { mutableStateOf(false) }
 
-    // ── Swipe to dismiss ──────────────────────────────────────────────────────
-    val screenHeight = LocalConfiguration.current.screenHeightDp.toFloat()
-    val dismissThreshold = 0.28f   // 28% de la pantalla para disparar
-
-    // ── Track accumulated fraction para efectos visuales ─────────────────────────────────────────
-    var accumulatedFraction by remember { mutableFloatStateOf(0f) }
-
-    // Animar translación Y y alpha basada en el arrastre hacia abajo
-    val animatedTranslationY by animateFloatAsState(
-        targetValue = accumulatedFraction * 500f, // 500dp de movimiento máximo
-        animationSpec = tween(durationMillis = 16), // 60fps smooth
-        label = "player_translation"
-    )
-    val animatedAlpha by animateFloatAsState(
-        targetValue = 1f - (accumulatedFraction * 0.8f), // alpha mínimo 0.2
-        animationSpec = tween(durationMillis = 16),
-        label = "player_alpha"
-    )
-
-    // ─────────────────────────────────────────────────────────────────────────
-
-    val density = LocalDensity.current.density
     Scaffold(
         bottomBar = {
             SharedBottomNavigationBar(
                 currentRoute = "player",
-                showHome = true,
-                showExplore = true,
-                showSettings = true,
                 onHomeClick = onHomeClick,
                 onExploreClick = onExploreClick,
                 onSettingsClick = onSettingsClick
@@ -134,36 +104,7 @@ fun PlayerScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                // ── Gesto vertical ──────────────────────────────────────────
-                .pointerInput(showQueue) {  // ← key vinculada a showQueue
-                    if (showQueue) return@pointerInput  // ← bloquear gestos cuando el sheet está abierto
-                    detectVerticalDragGestures(
-                        onDragEnd = {
-                            android.util.Log.d("SWIPE", "accumulatedFraction = $accumulatedFraction, threshold = $dismissThreshold")
-                            val completed = accumulatedFraction >= dismissThreshold
-                            onDragEnd(completed)
-                            accumulatedFraction = 0f
-                        },
-                        onDragCancel = {
-                            onDragEnd(false)
-                            accumulatedFraction = 0f
-                        },
-                        onVerticalDrag = { change, dragAmount ->
-                            if (dragAmount > 0 || accumulatedFraction > 0f) {
-                                change.consume()
-                                val resistance = if (accumulatedFraction < 0.1f) 0.6f else 0.85f
-                                accumulatedFraction = (accumulatedFraction + (dragAmount / (screenHeight * density)) * resistance)
-                                    .coerceIn(0f, 1f)
-                                onDrag(accumulatedFraction)
-                            }
-                        }
-                    )
-                }
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
             // Gradient overlay
             Box(
                 modifier = Modifier
@@ -182,11 +123,8 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp)
-                    .graphicsLayer {
-                        translationY = animatedTranslationY
-                        alpha = animatedAlpha
-                    },
+                    .padding(paddingValues)
+                    .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(20.dp))
@@ -210,11 +148,10 @@ fun PlayerScreen(
                 Spacer(modifier = Modifier.height(14.dp))
                 PlaybackControls(
                     isPlaying = uiState.isPlaying,
-                    onPlayPauseClick = viewModel::onPlayPauseClick,
-                    onPreviousClick = viewModel::onPreviousClick,
-                    onNextClick = viewModel::onNextClick
+                    onPlayPauseClick = { viewModel.onPlayPauseClick() },
+                    onPreviousClick = { viewModel.onPreviousClick() },
+                    onNextClick = { viewModel.onNextClick() }
                 )
-                //Spacer(modifier = Modifier.height(28.dp))
                 Spacer(modifier = Modifier.weight(1f))
                 QueueChip(onClick = { showQueue = true })
                 Spacer(modifier = Modifier.height(1.dp))
