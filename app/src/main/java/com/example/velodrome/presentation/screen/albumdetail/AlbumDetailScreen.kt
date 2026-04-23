@@ -31,7 +31,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -56,8 +55,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Track
-import com.example.velodrome.presentation.components.MiniPlayerOverlay
-import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.screen.home.AlbumCover
 
@@ -81,56 +78,38 @@ fun AlbumDetailScreen(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
-    Scaffold(
-        bottomBar = {
-            Column {
-                MiniPlayerOverlay(onPlayerClick = onPlayerClick)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
 
-                SharedBottomNavigationBar(
-                    currentRoute = "albumdetail",
-                    onHomeClick = onHomeClick,
-                    onExploreClick = onExploreClick,
-                    onSettingsClick = onSettingsClick
-                )
+        when {
+            uiState.isLoading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-
-            when {
-                uiState.isLoading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+            uiState.error != null -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(uiState.error ?: "Error")
                 }
+            }
 
-                uiState.error != null -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(uiState.error ?: "Error")
-                    }
-                }
-
-                else -> {
-                    AlbumContent(
-                        album = uiState.album,
-                        tracks = uiState.tracks,
-                        onTrackClick = { viewModel.playTrack(it) },
-                        onTrackLongClick = {
-                            selectedTrack = it
-                            showTrackOptions = true
-                        },
-                        onPlayAllClick = { viewModel.playAll() },
-                        onShuffleClick = { viewModel.shuffleAll() },
-                        onAddToQueueClick = { viewModel.addAllToQueue() },
-                        onBackClick = onBackClick // 👈 IMPORTANTE
-                    )
-                }
+            else -> {
+                AlbumContent(
+                    album = uiState.album,
+                    tracks = uiState.tracks,
+                    onTrackClick = { viewModel.playTrack(it) },
+                    onTrackLongClick = {
+                        selectedTrack = it
+                        showTrackOptions = true
+                    },
+                    onPlayAllClick = { viewModel.playAll() },
+                    onShuffleClick = { viewModel.shuffleAll() },
+                    onAddToQueueClick = { viewModel.addAllToQueue() },
+                    onBackClick = onBackClick // 👈 IMPORTANTE
+                )
             }
         }
     }
