@@ -29,7 +29,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,8 +47,6 @@ import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.domain.model.Track
-import com.example.velodrome.presentation.components.MiniPlayerOverlay
-import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.screen.home.ArtistAvatar
 import com.example.velodrome.presentation.screen.home.RecentAlbumsRow
 import com.example.velodrome.presentation.screen.home.SectionHeader
@@ -61,33 +58,16 @@ fun ExploreScreen(
     onHomeClick: () -> Unit = {},
     onArtistsViewAllClick: () -> Unit = {},
     onAlbumsViewAllClick: () -> Unit = {},
-    onPlayerClick: () -> Unit = {},
     onArtistClick: (String) -> Unit = {},
     onAlbumClick: (String) -> Unit = {},
     onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        bottomBar = {
-            Column {
-                MiniPlayerOverlay(onPlayerClick = onPlayerClick)
-
-                SharedBottomNavigationBar(
-                    currentRoute = "explore",
-                    onHomeClick = onHomeClick,
-                    onSettingsClick = onSettingsClick
-                )
-            }
-        },
-
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
         ) {
             item {
                 SearchBar(
@@ -145,11 +125,10 @@ fun ExploreScreen(
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            item {
+item {
                 Spacer(modifier = Modifier.height(100.dp)) // Padding for mini player
             }
         }
-    }
 }
 
 @Composable

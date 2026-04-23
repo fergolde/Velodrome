@@ -164,7 +164,6 @@ fun SettingsScreen(
                 )
             )
         },
-        bottomBar = { SharedBottomNavigationBar(currentRoute = "settings", onHomeClick = onHomeClick, onExploreClick = onExploreClick) },
         containerColor = Color(0xFF0C0E17)
     ) { paddingValues ->
         Column(

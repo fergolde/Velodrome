@@ -27,7 +27,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,8 +42,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
-import com.example.velodrome.presentation.components.MiniPlayerOverlay
-import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.screen.home.AlbumCover
 
 
@@ -60,66 +57,48 @@ fun AlbumsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        //topBar = { AlbumsTopAppBar(onSearchQueryChange = viewModel::onSearchQueryChange) },
-        bottomBar = {
-            Column {
-                MiniPlayerOverlay(onPlayerClick = onPlayerClick)
-
-                SharedBottomNavigationBar(
-                    currentRoute = "albums",
-                    onHomeClick = onHomeClick,
-                    onExploreClick = onExploreClick,
-                    onSettingsClick = onSettingsClick
-                )
-            }
-
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        Box(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-            ) {
-                if (uiState.isLoading) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
-                } else if (uiState.error != null) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = uiState.error!!,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        AlbumsSearchBar(
-                            query = uiState.searchQuery,
-                            onQueryChange = viewModel::onSearchQueryChange
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        AlbumsList(
-                            albums = uiState.albums,
-                            onAlbumClick = onAlbumClick
-                        )
-                    }
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            } else if (uiState.error != null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = uiState.error!!,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    AlbumsSearchBar(
+                        query = uiState.searchQuery,
+                        onQueryChange = viewModel::onSearchQueryChange
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    AlbumsList(
+                        albums = uiState.albums,
+                        onAlbumClick = onAlbumClick
+                    )
+                    Spacer(modifier = Modifier.height(100.dp)) // Space for mini player
                 }
             }
         }

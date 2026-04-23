@@ -29,7 +29,6 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -46,8 +45,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
-import com.example.velodrome.presentation.components.MiniPlayerOverlay
-import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.screen.home.AlbumCover
 import com.example.velodrome.presentation.screen.home.ArtistAvatar
 
@@ -64,49 +61,34 @@ fun ArtistDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = uiState.artist?.name ?: stringResource(R.string.artist_detail_title),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                        fontWeight = FontWeight.Bold
+    Column(modifier = Modifier.fillMaxSize()) {
+        // TopAppBar inline
+        TopAppBar(
+            title = {
+                Text(
+                    text = uiState.artist?.name ?: stringResource(R.string.artist_detail_title),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.nav_back),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background
             )
-        },
-        bottomBar = {
-            Column {
-                MiniPlayerOverlay(onPlayerClick = onPlayerClick)
+        )
 
-                SharedBottomNavigationBar(
-                    currentRoute = "artist",
-                    onHomeClick = onPlayerClick,
-                    onExploreClick = onExploreClick,
-                    onSettingsClick = onSettingsClick
-                )
-            }
-
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+        // Content
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
             when {
                 uiState.isLoading -> {

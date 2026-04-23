@@ -1,6 +1,8 @@
 package com.example.velodrome.presentation
 
+import android.content.Context
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -20,8 +23,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import dagger.hilt.android.EntryPointAccessors
 import com.example.velodrome.di.CredentialsEntryPoint
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
+import com.example.velodrome.presentation.components.MiniPlayerOverlay
 import com.example.velodrome.presentation.navigation.Screen
 import com.example.velodrome.presentation.player.PlayerScreen
 import com.example.velodrome.presentation.screen.albumdetail.AlbumDetailScreen
@@ -40,23 +45,31 @@ object PlayerState {
 @Composable
 fun VelodromeMainApp() {
     val navController = rememberNavController()
-    var isLoggedIn by remember { mutableStateOf(false) }
+    var isLoggedIn by remember { mutableStateOf<Boolean?>(null) }
+
+    val context = LocalContext.current
+    val credentialsManager = EntryPointAccessors.fromApplication(
+        context.applicationContext,
+        CredentialsEntryPoint::class.java
+    ).credentialsManager()
 
     // Check credentials on launch
     LaunchedEffect(Unit) {
-        // Simple check - will be replaced with proper credentials check
-        isLoggedIn = false
+        isLoggedIn = credentialsManager.hasCredentials()
     }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        MainScaffold(
-            navController = navController,
-            startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route,
-            onLoginSuccess = { isLoggedIn = true }
-        )
+        // Only render when we know the state
+        if (isLoggedIn != null) {
+            MainScaffold(
+                navController = navController,
+                startDestination = if (isLoggedIn == true) Screen.Home.route else Screen.Login.route,
+                onLoginSuccess = { isLoggedIn = true }
+            )
+        }
     }
 }
 
@@ -67,31 +80,36 @@ fun MainScaffold(
     onLoginSuccess: () -> Unit
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
+    val currentRoute = navBackStackEntry?.destination?.route ?: ""
 
-    val showBottomBar = currentRoute in listOf("home", "explore", "settings")
+    val showBottomBar = currentRoute == "home" || currentRoute == "explore" || currentRoute == "settings" ||
+            currentRoute == "albums" || currentRoute == "artists" ||
+            currentRoute.startsWith("album/") || currentRoute.startsWith("artist/")
 
     Scaffold(
         bottomBar = {
-            if (showBottomBar) {
-                SharedBottomNavigationBar(
-                    currentRoute = currentRoute ?: "",
-                    onHomeClick = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
+            Column {
+                if (showBottomBar) {
+                    MiniPlayerOverlay(onPlayerClick = { PlayerState.isVisible = true })
+                    SharedBottomNavigationBar(
+                        currentRoute = currentRoute ?: "",
+                        onHomeClick = {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                            }
+                        },
+                        onExploreClick = {
+                            navController.navigate(Screen.Explore.route) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                            }
+                        },
+                        onSettingsClick = {
+                            navController.navigate(Screen.Settings.route) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                            }
                         }
-                    },
-                    onExploreClick = {
-                        navController.navigate(Screen.Explore.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
-                        }
-                    },
-                    onSettingsClick = {
-                        navController.navigate(Screen.Settings.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
-                        }
-                    }
-                )
+                    )
+                }
             }
         }
     ) { paddingValues ->

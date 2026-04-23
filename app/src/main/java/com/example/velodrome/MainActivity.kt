@@ -138,7 +138,6 @@ fun MainApp() {
                         },
                         onArtistsViewAllClick = { navController.navigate(Screen.Artists.route) },
                         onAlbumsViewAllClick = { navController.navigate(Screen.Albums.route) },
-                        onPlayerClick = { PlayerState.isVisible = true },
                         onArtistClick = { artistId ->
                             navController.navigate(Screen.ArtistDetail.createRoute(artistId))
                         },

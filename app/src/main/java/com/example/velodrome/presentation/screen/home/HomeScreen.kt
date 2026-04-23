@@ -20,10 +20,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -37,10 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
-import com.example.velodrome.presentation.components.MiniPlayerOverlay
-import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -51,97 +46,59 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        bottomBar = {
-            Column {
-                MiniPlayerOverlay(onPlayerClick = onPlayerClick)
-
-                SharedBottomNavigationBar(
-                    currentRoute = "home",
-                    onExploreClick = onExploreClick,
-                    onSettingsClick = onSettingsClick
-                )
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-        ) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                ShuffleButton(onShuffle = { viewModel.playShuffle() })
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-            //Recien añadidos
-            item {
-                SectionHeader(title = stringResource(R.string.home_recently_added), subtitle = stringResource(R.string.home_new_arrivals))
-                Spacer(modifier = Modifier.height(16.dp))
-                RecentAlbumsRow(
-                    albums = state.latestAlbums,
-                    onAlbumClick = onAlbumClick
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-            //Aleatorios
-            item {
-                SectionHeader(title = stringResource(R.string.home_random), subtitle = stringResource(R.string.home_discover))
-                Spacer(modifier = Modifier.height(16.dp))
-                RecentAlbumsRow(
-                    albums = state.randomAlbums,
-                    onAlbumClick = onAlbumClick
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-            //Mas reproducidos
-            item {
-                SectionHeader(title = stringResource(R.string.home_most_played), subtitle = stringResource(R.string.home_your_favorites))
-                Spacer(modifier = Modifier.height(16.dp))
-                RecentAlbumsRow(
-                    albums = state.topAlbums,
-                    onAlbumClick = onAlbumClick
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-            //Recientemente reproducidos
-            item {
-                SectionHeader(title = stringResource(R.string.home_recently_played), subtitle = stringResource(R.string.home_just_for_you))
-                Spacer(modifier = Modifier.height(16.dp))
-                RecentAlbumsRow(
-                    albums = state.recentlyPlayedAlbums,
-                    onAlbumClick = onAlbumClick
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+    ) {
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+            ShuffleButton(onShuffle = { viewModel.playShuffle() })
+            Spacer(modifier = Modifier.height(32.dp))
         }
-    }
-    // Error state
-    state.error?.let { error ->
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = { viewModel.retry() },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Text(stringResource(R.string.home_retry), color = MaterialTheme.colorScheme.onPrimary)
-                }
-            }
+
+        // Recien añadidos
+        item {
+            SectionHeader(title = stringResource(R.string.home_recently_added), subtitle = stringResource(R.string.home_new_arrivals))
+            Spacer(modifier = Modifier.height(16.dp))
+            RecentAlbumsRow(
+                albums = state.latestAlbums,
+                onAlbumClick = onAlbumClick
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        // Aleatorios
+        item {
+            SectionHeader(title = stringResource(R.string.home_random), subtitle = stringResource(R.string.home_discover))
+            Spacer(modifier = Modifier.height(16.dp))
+            RecentAlbumsRow(
+                albums = state.randomAlbums,
+                onAlbumClick = onAlbumClick
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        // Mas reproducidos
+        item {
+            SectionHeader(title = stringResource(R.string.home_most_played), subtitle = stringResource(R.string.home_your_favorites))
+            Spacer(modifier = Modifier.height(16.dp))
+            RecentAlbumsRow(
+                albums = state.topAlbums,
+                onAlbumClick = onAlbumClick
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        // Recientemente reproducidos
+        item {
+            SectionHeader(title = stringResource(R.string.home_recently_played), subtitle = stringResource(R.string.home_just_for_you))
+            Spacer(modifier = Modifier.height(16.dp))
+            RecentAlbumsRow(
+                albums = state.recentlyPlayedAlbums,
+                onAlbumClick = onAlbumClick
+            )
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }
