@@ -140,28 +140,28 @@ class NavidromeRepositoryImpl @Inject constructor(
 
     override suspend fun getTracks(albumId: String): Result<List<Track>> {
         return runCatching {
-            Log.d("Velodrome", "getTracks called for albumId: $albumId")
-            val response = api.getAlbum(albumId)
-            val songsList = response.response.album?.songs ?: emptyList()
-            Log.d("Velodrome", "Found ${songsList.size} songs in album")
 
-            songsList.map { songDto ->
-                val effectiveCoverArtId = songDto.coverArt ?: "al-$albumId"
+            Log.d("VelodromeTracks", "getMusicDirectory albumId=$albumId")
+
+            val response = api.getMusicDirectory(albumId)
+
+            val songsList = response.response.directory?.child ?: emptyList()
+
+            Log.d("VelodromeTracks", "Found ${songsList.size} songs")
+
+            songsList.map { song ->
                 Track(
-                    id = songDto.id,
+                    id = song.id,
                     albumId = albumId,
-                    title = songDto.title,
-                    artistName = songDto.artist ?: "",
-                    albumName = songDto.album ?: albumId,
-                    durationSec = songDto.duration ?: 0,
-                    sizeBytes = songDto.size ?: 0L,
-                    bitrate = songDto.bitRate ?: 0,
-                    trackNumber = songDto.track ?: 0,
-                    isCached = false,
-                    coverArtId = effectiveCoverArtId
+                    title = song.title,
+                    artistName = song.artist ?: "",
+                    albumName = song.album ?: "",
+                    durationSec = song.duration ?: 0,
+                    sizeBytes = song.size ?: 0L,
+                    bitrate = song.bitRate ?: 0,
+                    trackNumber = song.track ?: 0,
+                    coverArtId = song.coverArt
                 )
-            }.also { tracks ->
-                Log.d("Velodrome", "Mapped ${tracks.size} tracks")
             }
         }
     }

@@ -78,4 +78,9 @@ interface NavidromeApi {
         @Query("size") size: Int = 50,
         @Query("genre") genre: String? = null
     ): SubsonicResponse
+
+    @GET("rest/getMusicDirectory.view")
+    suspend fun getMusicDirectory(
+        @Query("id") id: String
+    ): SubsonicResponse
 }

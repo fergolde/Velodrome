@@ -3,16 +3,8 @@ package com.example.velodrome.data.remote.dto
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-/**
- * Root response from Subsonic API in JSON format.
- * {
- *   "subsonic-response": {
- *     "status": "ok",
- *     "version": "1.16.1",
- *     ...
- *   }
- * }
- */
+// ================= ROOT =================
+
 @JsonClass(generateAdapter = true)
 data class SubsonicResponse(
     @Json(name = "subsonic-response") val response: SubsonicResponseDto
@@ -22,27 +14,38 @@ data class SubsonicResponse(
 data class SubsonicResponseDto(
     val status: String,
     val version: String,
+
+    // Artists
     @Json(name = "artists") val artists: ArtistsDto? = null,
     @Json(name = "artist") val artist: ArtistDetailDto? = null,
+
+    // Albums
     @Json(name = "albumList2") val albumList2: AlbumListDto? = null,
     @Json(name = "album") val album: AlbumDetailDto? = null,
+
+    // 🔥 FIX IMPORTANTE: MusicDirectory (TRACKS REALS)
+    @Json(name = "directory") val directory: DirectoryDto? = null,
+
+    // Search / genres
     @Json(name = "searchResult2") val searchResult2: SearchResultDto? = null,
     @Json(name = "genres") val genres: GenresDto? = null,
+
+    // Songs endpoints (fallbacks reales Subsonic)
     @Json(name = "songs") val songs: List<SongDto>? = null,
     @Json(name = "randomSongs") val randomSongs: RandomSongsDto? = null,
     @Json(name = "songsByGenre") val songsByGenre: SongsByGenreDto? = null,
+
     val error: ErrorDto? = null
 )
 
-@JsonClass(generateAdapter = true)
-data class RandomSongsDto(
-    @Json(name = "song") val song: List<SongDto>? = null
-)
+// ================= MUSIC DIRECTORY (CLAVE) =================
 
 @JsonClass(generateAdapter = true)
-data class SongsByGenreDto(
-    @Json(name = "song") val song: List<SongDto>? = null
+data class DirectoryDto(
+    @Json(name = "child") val child: List<SongDto>? = null
 )
+
+// ================= ERROR =================
 
 @JsonClass(generateAdapter = true)
 data class ErrorDto(
@@ -50,7 +53,7 @@ data class ErrorDto(
     val message: String
 )
 
-// ============ Artists ============
+// ================= ARTISTS =================
 
 @JsonClass(generateAdapter = true)
 data class ArtistsDto(
@@ -82,7 +85,7 @@ data class ArtistDetailDto(
     @Json(name = "album") val albums: List<AlbumDto>? = null
 )
 
-// ============ Albums ============
+// ================= ALBUMS =================
 
 @JsonClass(generateAdapter = true)
 data class AlbumListDto(
@@ -114,25 +117,31 @@ data class AlbumDetailDto(
     @Json(name = "coverArt") val coverArt: String? = null,
     @Json(name = "year") val year: Int? = null,
     @Json(name = "genre") val genre: String? = null,
+
+    // ❌ puede venir null en Subsonic
     @Json(name = "songs") val songs: List<SongDto>? = null,
+
     @Json(name = "songCount") val songCount: Int? = null,
     @Json(name = "duration") val duration: Int? = null
 )
 
-// ============ Songs/Tracks ============
+// ================= SONGS =================
 
 @JsonClass(generateAdapter = true)
 data class SongDto(
     val id: String,
     val title: String,
+
     @Json(name = "album") val album: String? = null,
     @Json(name = "albumId") val albumId: String? = null,
     @Json(name = "artist") val artist: String? = null,
     @Json(name = "artistId") val artistId: String? = null,
+
     @Json(name = "track") val track: Int? = null,
     @Json(name = "year") val year: Int? = null,
     @Json(name = "genre") val genre: String? = null,
     @Json(name = "coverArt") val coverArt: String? = null,
+
     @Json(name = "size") val size: Long? = null,
     @Json(name = "contentType") val contentType: String? = null,
     @Json(name = "suffix") val suffix: String? = null,
@@ -141,7 +150,7 @@ data class SongDto(
     @Json(name = "path") val path: String? = null
 )
 
-// ============ Search ============
+// ================= SEARCH =================
 
 @JsonClass(generateAdapter = true)
 data class SearchResultDto(
@@ -150,7 +159,7 @@ data class SearchResultDto(
     @Json(name = "songs") val songs: List<SongDto>? = null
 )
 
-// ============ Genres ============
+// ================= GENRES =================
 
 @JsonClass(generateAdapter = true)
 data class GenresDto(
@@ -163,4 +172,16 @@ data class GenreDto(
     @Json(name = "value") val value: String? = null,
     @Json(name = "songCount") val songCount: Int? = null,
     @Json(name = "albumCount") val albumCount: Int? = null
+)
+
+// ================= RANDOM / BY GENRE =================
+
+@JsonClass(generateAdapter = true)
+data class RandomSongsDto(
+    @Json(name = "song") val song: List<SongDto>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SongsByGenreDto(
+    @Json(name = "song") val song: List<SongDto>? = null
 )

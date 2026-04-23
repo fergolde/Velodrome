@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
+import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.components.MiniPlayerOverlay
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
@@ -137,7 +138,7 @@ fun AlbumDetailScreen(
 
 @Composable
 private fun AlbumContent(
-    album: com.example.velodrome.domain.model.Album?,
+    album: Album?,
     tracks: List<Track>,
     onTrackClick: (Track) -> Unit,
     onTrackLongClick: (Track) -> Unit,
