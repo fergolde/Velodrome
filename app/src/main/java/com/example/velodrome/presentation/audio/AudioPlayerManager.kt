@@ -91,11 +91,6 @@ class AudioPlayerManager @Inject constructor(
 
     private val playerScope = CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
     private var loadMoreCallback: (() -> Unit)? = null
-    var positionUpdateIntervalMs: Long = 1000L
-
-    private val positionHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    private var lastScrobbleCheckTime: Long = 0
-    private val scrobbleCheckIntervalMs: Long = 10000L
 
     init {
         Log.d(TAG, "init: building MediaController...")
@@ -112,49 +107,25 @@ class AudioPlayerManager @Inject constructor(
         }, MoreExecutors.directExecutor())
     }
 
-    private val positionPollRunnable = object : Runnable {
-        override fun run() {
-            mediaController?.let { controller ->
-                if (controller.isPlaying) {
-                    _currentPosition.value = controller.currentPosition
-                    _bufferedPosition.value = controller.bufferedPosition
-                    _duration.value = controller.duration
-                    val currentTime = System.currentTimeMillis()
-                    if (currentTime - lastScrobbleCheckTime >= scrobbleCheckIntervalMs) {
-                        lastScrobbleCheckTime = currentTime
-                        val trackId = _currentTrackId.value
-                        val duration = _duration.value
-                        if (trackId != null && duration > 0) {
-                            scrobbleManager.checkAndScrobble(trackId, _currentPosition.value, duration)
-                        }
-                    }
-                }
-            }
-            positionHandler.postDelayed(this, positionUpdateIntervalMs)
-        }
-    }
-
     private fun setupControllerListener() {
         mediaController?.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _isPlaying.value = isPlaying
-                if (isPlaying) positionHandler.post(positionPollRunnable)
-                else positionHandler.removeCallbacks(positionPollRunnable)
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
                     Player.STATE_READY -> { _isBuffering.value = false; _duration.value = mediaController?.duration ?: 0L }
                     Player.STATE_BUFFERING -> { _isBuffering.value = true }
-                    Player.STATE_ENDED -> { _isPlaying.value = false; positionHandler.removeCallbacks(positionPollRunnable); handlePlaybackEnded() }
-                    Player.STATE_IDLE -> { _isBuffering.value = false; positionHandler.removeCallbacks(positionPollRunnable) }
+                    Player.STATE_ENDED -> { _isPlaying.value = false; handlePlaybackEnded() }
+                    Player.STATE_IDLE -> { _isBuffering.value = false }
                 }
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 mediaItem?.let {
                     updateCurrentTrackFromMediaItem(it)
-                    checkIfNeedMoreSongs() // <--- ¡AÑADIR ESTA LÍNEA AQUÍ!
+                    checkIfNeedMoreSongs()
                 }
             }
 
@@ -197,7 +168,6 @@ class AudioPlayerManager @Inject constructor(
             if (previousId != playlist[index].id) {
                 scrobbleManager.onTrackChanged(playlist[index].id)
                 scrobbleManager.sendNowPlaying(playlist[index].id)
-                lastScrobbleCheckTime = 0
             }
         }
     }
@@ -209,7 +179,6 @@ fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
         _currentTrackId.value = track.id
         scrobbleManager.onTrackChanged(track.id)
         scrobbleManager.sendNowPlaying(track.id)
-        lastScrobbleCheckTime = 0
         isLoadingMoreCallbackInvoked = false
 
         val mediaItems = playlist.mapIndexed { index, t ->

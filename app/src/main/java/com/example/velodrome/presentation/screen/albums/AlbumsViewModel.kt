@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.data.local.datasource.LocalMusicDataSource
 import com.example.velodrome.data.local.mapper.toDomain
-import com.example.velodrome.data.sync.SyncManager
 import com.example.velodrome.domain.model.Album
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,15 +19,13 @@ private const val TAG = "AlbumsViewModel"
 data class AlbumsUiState(
     val albums: List<Album> = emptyList(),
     val isLoading: Boolean = true,
-    val isSyncing: Boolean = false,
     val error: String? = null,
     val searchQuery: String = ""
 )
 
 @HiltViewModel
 class AlbumsViewModel @Inject constructor(
-    private val localMusicDataSource: LocalMusicDataSource,
-    private val syncManager: SyncManager
+    private val localMusicDataSource: LocalMusicDataSource
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AlbumsUiState())
@@ -38,7 +35,6 @@ class AlbumsViewModel @Inject constructor(
 
     init {
         observeAlbums()
-        triggerSyncIfNeeded()
     }
 
     private fun observeAlbums() {
@@ -55,37 +51,6 @@ class AlbumsViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    private fun triggerSyncIfNeeded() {
-        viewModelScope.launch {
-            val count = localMusicDataSource.getAlbumCount()
-            Log.d(TAG, "Local album count: $count")
-
-            if (count == 0) {
-                Log.d(TAG, "No albums in local DB, triggering sync...")
-                _uiState.update { it.copy(isSyncing = true) }
-
-                val result = syncManager.syncAlbums()
-                when (result) {
-                    is com.example.velodrome.data.sync.SyncResult.Error -> {
-                        _uiState.update {
-                            it.copy(
-                                isSyncing = false,
-                                error = "Failed to sync albums: ${result.message}"
-                            )
-                        }
-                    }
-                    is com.example.velodrome.data.sync.SyncResult.Success -> {
-                        _uiState.update { it.copy(isSyncing = false) }
-                    }
-                }
-            }
-        }
-    }
-
-    fun loadAlbums() {
-        triggerSyncIfNeeded()
     }
 
     fun onSearchQueryChange(query: String) {
