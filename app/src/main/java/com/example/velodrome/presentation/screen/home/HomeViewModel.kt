@@ -54,7 +54,7 @@ class HomeViewModel @Inject constructor(
     init {
         loadInitialData()
         syncWithPlayerManager()
-        syncDataToLocal()
+        //syncDataToLocal()
     }
 
     /**

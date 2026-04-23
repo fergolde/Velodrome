@@ -96,7 +96,7 @@ class SettingsViewModel @Inject constructor(
             }
         }
         // Clean caches on startup based on current settings
-        viewModelScope.launch {
+        /*viewModelScope.launch {
             settingsRepository.imageCacheSizeMb.collect { limitMb ->
                 cacheManager.cleanImageCacheIfNeeded(limitMb)
                 refreshCacheSizes()
@@ -107,7 +107,7 @@ class SettingsViewModel @Inject constructor(
                 cacheManager.cleanMusicCacheIfNeeded(limitGb)
                 refreshCacheSizes()
             }
-        }
+        }*/
     }
 
     // --- Actions ---
@@ -139,8 +139,8 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.setImageCacheSizeMb(imageMb)
             settingsRepository.setMusicCacheSizeGb(musicGb)
 
-            cacheManager.cleanImageCacheIfNeeded(imageMb)
-            cacheManager.cleanMusicCacheIfNeeded(musicGb)
+            //cacheManager.cleanImageCacheIfNeeded(imageMb)
+            //cacheManager.cleanMusicCacheIfNeeded(musicGb)
 
             refreshCacheSizes()
             _hasPendingChanges.value = false

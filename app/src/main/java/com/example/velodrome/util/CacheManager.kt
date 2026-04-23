@@ -92,7 +92,7 @@ class CacheManager @Inject constructor(
      * Clean image cache if it exceeds the limit.
      * Deletes oldest files first (LRU strategy).
      */
-    fun cleanImageCacheIfNeeded(limitMb: Int) {
+    /*fun cleanImageCacheIfNeeded(limitMb: Int) {
         val limitBytes = limitMb.toLong() * 1024 * 1024
         trimCacheIfNeeded(imageCacheDir, limitBytes)
     }
@@ -112,7 +112,7 @@ class CacheManager @Inject constructor(
     fun cleanCachesIfNeeded(imageLimitMb: Int, musicLimitGb: Int) {
         cleanImageCacheIfNeeded(imageLimitMb)
         cleanMusicCacheIfNeeded(musicLimitGb)
-    }
+    }*/
 
     /**
      * Clear all image cache immediately.

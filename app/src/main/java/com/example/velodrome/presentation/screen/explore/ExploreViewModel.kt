@@ -44,7 +44,7 @@ class ExploreViewModel @Inject constructor(
 
     init {
         loadContent()
-        checkAndSyncLocalData()
+        //checkAndSyncLocalData()
     }
 
     private fun checkAndSyncLocalData() {

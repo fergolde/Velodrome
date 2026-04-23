@@ -1,51 +1,25 @@
 package com.example.velodrome.presentation
 
-import android.content.Context
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Surface
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import androidx.navigation.compose.*
+import androidx.navigation.toRoute
 import dagger.hilt.android.EntryPointAccessors
 import com.example.velodrome.di.CredentialsEntryPoint
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.components.MiniPlayer
-import com.example.velodrome.presentation.navigation.Screen
+import com.example.velodrome.presentation.navigation.Routes
 import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.player.PlayerScreen
 import com.example.velodrome.presentation.screen.albumdetail.AlbumDetailScreen
@@ -58,27 +32,18 @@ import com.example.velodrome.presentation.screen.login.LoginScreen
 import com.example.velodrome.presentation.screen.settings.SettingsScreen
 import kotlinx.coroutines.launch
 
-object PlayerState {
-    var isVisible by mutableStateOf(false)
-    private var _hasSong by mutableStateOf(false)
-
-    fun updateHasSong(has: Boolean) {
-        _hasSong = has
-    }
-
-    val hasSong: Boolean get() = _hasSong
-}
-
 @Composable
 fun VelodromeMainApp() {
     val navController = rememberNavController()
     var isLoggedIn by remember { mutableStateOf<Boolean?>(null) }
 
     val context = LocalContext.current
-    val credentialsManager = EntryPointAccessors.fromApplication(
-        context.applicationContext,
-        CredentialsEntryPoint::class.java
-    ).credentialsManager()
+    val credentialsManager = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            CredentialsEntryPoint::class.java
+        ).credentialsManager()
+    }
 
     LaunchedEffect(Unit) {
         isLoggedIn = credentialsManager.hasCredentials()
@@ -91,7 +56,8 @@ fun VelodromeMainApp() {
         if (isLoggedIn != null) {
             MainScaffold(
                 navController = navController,
-                startDestination = if (isLoggedIn == true) Screen.Home.route else Screen.Login.route,
+                // Si está logueado va a Home, si no a Login (usando objetos de Routes)
+                startDestination = if (isLoggedIn == true) Routes.Home else Routes.Login,
                 onLoginSuccess = { isLoggedIn = true }
             )
         }
@@ -102,197 +68,147 @@ fun VelodromeMainApp() {
 @Composable
 fun MainScaffold(
     navController: NavHostController,
-    startDestination: String,
+    startDestination: Any,
     onLoginSuccess: () -> Unit
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: ""
+    val currentDestination = navBackStackEntry?.destination
 
-    // Track song state from PlayerManager
+    // Estado del reproductor
     val currentTrack by PlayerManager.currentTrack.collectAsState()
     val isPlaying by PlayerManager.isPlaying.collectAsState()
     val currentPosition by PlayerManager.currentPosition.collectAsState()
     val hasSong = currentTrack != null
     val scope = rememberCoroutineScope()
 
-    // Bottom sheet state
+    // Configuración del BottomSheet para el Player
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded
         )
     )
 
-    // Peek height: 0dp — mini player now lives in the bottom bar
-    val sheetPeekHeight = 0.dp
-
-    // Sheet content: only PlayerScreen when expanded
-    val sheetContent: @Composable ColumnScope.() -> Unit = {
-        when (sheetState.bottomSheetState.currentValue) {
-            SheetValue.Expanded -> {
-                PlayerScreen(
-                    onMinimizeClick = {
-                        scope.launch { sheetState.bottomSheetState.partialExpand() }
-                    },
-                    onHomeClick = {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
-                        }
-                    },
-                    onExploreClick = {
-                        navController.navigate(Screen.Explore.route)
-                    },
-                    onSettingsClick = {
-                        navController.navigate(Screen.Settings.route)
-                    },
-                    onQueueClick = { }
-                )
-            }
-            SheetValue.PartiallyExpanded,
-            SheetValue.Hidden -> { /* no-op */ }
-        }
-    }
-
     BottomSheetScaffold(
         scaffoldState = sheetState,
-        sheetPeekHeight = sheetPeekHeight,
-        sheetContent = sheetContent,
+        sheetPeekHeight = 0.dp, // El mini reproductor se gestiona en la bottomBar del Scaffold interno
+        sheetContent = {
+            PlayerScreen(
+                onMinimizeClick = {
+                    scope.launch { sheetState.bottomSheetState.partialExpand() }
+                },
+                onHomeClick = { navController.navigate(Routes.Home) },
+                onExploreClick = { navController.navigate(Routes.Explore) },
+                onSettingsClick = { navController.navigate(Routes.Settings) }
+            )
+        },
         sheetDragHandle = {
             if (hasSong) {
                 Box(
-                    modifier = Modifier.padding(vertical = 12.dp),
+                    modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .width(36.dp)
-                            .height(4.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFAAAAAA))
-                    )
+                    Box(modifier = Modifier.width(36.dp).height(4.dp).clip(CircleShape).background(Color.Gray.copy(alpha = 0.5f)))
                 }
             }
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues: PaddingValues ->
+        }
+    ) {
         Scaffold(
             bottomBar = {
-                Column {
-                    // MiniPlayer above NavBar — only when sheet is collapsed
-                    if (hasSong && sheetState.bottomSheetState.currentValue == SheetValue.PartiallyExpanded) {
-                        MiniPlayer(
-                            modifier = Modifier.fillMaxWidth(),
-                            currentTrack = currentTrack,
-                            isPlaying = isPlaying,
-                            currentPosition = currentPosition,
-                            onPlayPauseClick = { PlayerManager.togglePlayPause() },
-                            onClick = {
-                                scope.launch { sheetState.bottomSheetState.expand() }
+                // Solo mostramos la barra si no estamos en la pantalla de Login
+                val showBars = currentDestination?.hasRoute<Routes.Login>() == false
+                if (showBars) {
+                    Column {
+                        // MiniPlayer: Solo si hay canción y el BottomSheet está colapsado
+                        if (hasSong && sheetState.bottomSheetState.currentValue != SheetValue.Expanded) {
+                            MiniPlayer(
+                                currentTrack = currentTrack,
+                                isPlaying = isPlaying,
+                                currentPosition = currentPosition,
+                                onPlayPauseClick = { PlayerManager.togglePlayPause() },
+                                onClick = { scope.launch { sheetState.bottomSheetState.expand() } },
+                                onNextClick = { PlayerManager.next() },
+                                onPreviousClick = { PlayerManager.previous() }
+                            )
+                        }
+
+                        SharedBottomNavigationBar(
+                            // Comprobamos la ruta actual de forma segura
+                            currentRoute = when {
+                                currentDestination?.hasRoute<Routes.Home>() == true -> "home"
+                                currentDestination?.hasRoute<Routes.Explore>() == true -> "explore"
+                                currentDestination?.hasRoute<Routes.Settings>() == true -> "settings"
+                                else -> ""
                             },
-                            onNextClick = { PlayerManager.next() },
-                            onPreviousClick = { PlayerManager.previous() }
+                            onHomeClick = { navController.navigate(Routes.Home) { launchSingleTop = true } },
+                            onExploreClick = { navController.navigate(Routes.Explore) { launchSingleTop = true } },
+                            onSettingsClick = { navController.navigate(Routes.Settings) { launchSingleTop = true } }
                         )
                     }
-                    // NavBar — always visible
-                    SharedBottomNavigationBar(
-                        currentRoute = currentRoute,
-                        onHomeClick = {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Home.route) { inclusive = true }
-                            }
-                        },
-                        onExploreClick = {
-                            navController.navigate(Screen.Explore.route) {
-                                popUpTo(Screen.Home.route) { inclusive = true }
-                            }
-                        },
-                        onSettingsClick = {
-                            navController.navigate(Screen.Settings.route) {
-                                popUpTo(Screen.Home.route) { inclusive = true }
-                            }
-                        }
-                    )
                 }
             }
-        ) { scaffoldPadding: PaddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(scaffoldPadding)
-            ) {
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
                 NavHost(
                     navController = navController,
                     startDestination = startDestination
                 ) {
-                    composable(Screen.Login.route) {
+                    composable<Routes.Login> {
                         LoginScreen(onLoginSuccess = onLoginSuccess)
                     }
 
-                    composable(Screen.Home.route) {
+                    composable<Routes.Home> {
                         HomeScreen(
-                            onAlbumClick = { navController.navigate(Screen.AlbumDetail.createRoute(it)) },
-                            onExploreClick = { navController.navigate(Screen.Explore.route) },
-                            onPlayerClick = {
-                                scope.launch { sheetState.bottomSheetState.expand() }
-                            },
-                            onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                            onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) },
+                            onExploreClick = { navController.navigate(Routes.Explore) },
+                            onSettingsClick = { navController.navigate(Routes.Settings) },
+                            onPlayerClick = { scope.launch { sheetState.bottomSheetState.expand() } }
                         )
                     }
 
-                    composable(Screen.Explore.route) {
+                    composable<Routes.Explore> {
                         ExploreScreen(
-                            onHomeClick = { navController.navigate(Screen.Home.route) },
-                            onArtistsViewAllClick = { navController.navigate(Screen.Artists.route) },
-                            onAlbumsViewAllClick = { navController.navigate(Screen.Albums.route) },
-                            onArtistClick = { navController.navigate(Screen.ArtistDetail.createRoute(it)) },
-                            onAlbumClick = { navController.navigate(Screen.AlbumDetail.createRoute(it)) },
-                            onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                            onArtistClick = { id -> navController.navigate(Routes.ArtistDetail(id)) },
+                            onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) },
+                            onArtistsViewAllClick = { navController.navigate(Routes.Artists) },
+                            onAlbumsViewAllClick = { navController.navigate(Routes.Albums) }
                         )
                     }
 
-                    composable(Screen.Artists.route) {
+                    composable<Routes.Artists> {
                         ArtistsScreen(
-                            onHomeClick = { navController.navigate(Screen.Home.route) },
-                            onArtistClick = { navController.navigate(Screen.ArtistDetail.createRoute(it.id)) },
-                            onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                            onArtistClick = { artist -> navController.navigate(Routes.ArtistDetail(artist.id)) }
                         )
                     }
 
-                    composable(Screen.Albums.route) {
+                    composable<Routes.Albums> {
                         AlbumsScreen(
-                            onHomeClick = { navController.navigate(Screen.Home.route) },
-                            onAlbumClick = { navController.navigate(Screen.AlbumDetail.createRoute(it.id)) },
-                            onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                            onAlbumClick = { album -> navController.navigate(Routes.AlbumDetail(album.id)) }
                         )
                     }
 
-                    composable(Screen.Settings.route) {
+                    composable<Routes.Settings> {
                         SettingsScreen(
-                            onNavigateBack = { navController.popBackStack() },
-                            onHomeClick = { navController.navigate(Screen.Home.route) }
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
 
-                    composable(
-                        route = Screen.ArtistDetail.route,
-                        arguments = listOf(navArgument("artistId") { type = NavType.StringType })
-                    ) { backStackEntry ->
-                        val artistId = backStackEntry.arguments?.getString("artistId") ?: return@composable
+                    // Detalle de Artista con argumento tipado
+                    composable<Routes.ArtistDetail> { backStackEntry ->
+                        val route: Routes.ArtistDetail = backStackEntry.toRoute()
                         ArtistDetailScreen(
-                            artistId = artistId,
+                            artistId = route.artistId,
                             onBackClick = { navController.popBackStack() },
-                            onAlbumClick = { navController.navigate(Screen.AlbumDetail.createRoute(it)) }
+                            onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) }
                         )
                     }
 
-                    composable(
-                        route = Screen.AlbumDetail.route,
-                        arguments = listOf(navArgument("albumId") { type = NavType.StringType })
-                    ) { backStackEntry ->
-                        val albumId = backStackEntry.arguments?.getString("albumId") ?: return@composable
+                    // Detalle de Álbum con argumento tipado
+                    composable<Routes.AlbumDetail> { backStackEntry ->
+                        val route: Routes.AlbumDetail = backStackEntry.toRoute()
                         AlbumDetailScreen(
-                            albumId = albumId,
+                            albumId = route.albumId,
                             onBackClick = { navController.popBackStack() },
-                            onHomeClick = { navController.navigate(Screen.Home.route) }
+                            onHomeClick = { navController.navigate(Routes.Home) }
                         )
                     }
                 }

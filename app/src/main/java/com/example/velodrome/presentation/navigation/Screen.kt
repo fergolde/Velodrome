@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
  * Type-safe navigation routes for Velodrome app.
  * Replaces hardcoded string routes with strongly-typed sealed class.
  */
-sealed class Screen(
+/*sealed class Screen(
     val route: String,
     val title: String,
     val icon: ImageVector? = null
@@ -41,4 +41,4 @@ sealed class Screen(
          */
         val bottomNavItems = listOf(Home, Explore, Settings)
     }
-}
+}*/
