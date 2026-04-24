@@ -39,7 +39,6 @@ fun ArtistDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Usamos Box para que el botón de atrás flote sobre la lista
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
         when {
@@ -60,21 +59,23 @@ fun ArtistDetailScreen(
                 ArtistAlbumsList(
                     artist = uiState.artist,
                     albums = uiState.albums,
-                    onAlbumClick = onAlbumClick
+                    isPreparingPlayback = uiState.isPreparingPlayback,
+                    onAlbumClick = onAlbumClick,
+                    onPlayAllClick = viewModel::playAll,
+                    onShuffleAllClick = viewModel::shuffleAll,
+                    onAddToQueueClick = viewModel::addToQueue
                 )
             }
         }
 
-        // BOTÓN DE ATRÁS: Flota arriba a la izquierda
-        // Usamos statusBarsPadding() AQUÍ para que no toque el borde físico pero el contenido sí
         IconButton(
             onClick = onBackClick,
             modifier = Modifier
-                .statusBarsPadding() // Se ajusta debajo del reloj/iconos de sistema
+                .statusBarsPadding()
                 .padding(8.dp)
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.3f)) // Fondo sutil para legibilidad
+                .background(Color.Black.copy(alpha = 0.3f))
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -89,25 +90,27 @@ fun ArtistDetailScreen(
 private fun ArtistAlbumsList(
     artist: com.example.velodrome.domain.model.Artist?,
     albums: List<Album>,
-    onAlbumClick: (String) -> Unit
+    isPreparingPlayback: Boolean,
+    onAlbumClick: (String) -> Unit,
+    onPlayAllClick: () -> Unit,
+    onShuffleAllClick: () -> Unit,
+    onAddToQueueClick: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        // HEADER DEL ARTISTA: Ahora es vertical y centrado para aprovechar el borde superior
         item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp), // Un poco de espacio respecto al borde superior
+                    .padding(top = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Imagen circular grande
                 Box(
                     modifier = Modifier
-                        .statusBarsPadding() // Espacio para que la imagen no empiece "dentro" del notch
-                        .padding(top = 24.dp) // Padding extra para que quede debajo del botón de atrás
+                        .statusBarsPadding()
+                        .padding(top = 24.dp)
                         .size(180.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -121,7 +124,6 @@ private fun ArtistAlbumsList(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Nombre del artista
                 Text(
                     text = artist?.name ?: "",
                     fontSize = 28.sp,
@@ -139,25 +141,39 @@ private fun ArtistAlbumsList(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Botones de acción rápidos
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Button(
-                        onClick = { /* Implementar play all */ },
-                        shape = RoundedCornerShape(24.dp)
+                        onClick = onPlayAllClick,
+                        shape = RoundedCornerShape(24.dp),
+                        enabled = !isPreparingPlayback
                     ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null)
+                        if (isPreparingPlayback) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null)
+                        }
                         Spacer(Modifier.width(8.dp))
                         Text("Reproducir")
                     }
 
-                    FilledTonalIconButton(onClick = { /* Shuffle */ }) {
+                    FilledTonalIconButton(
+                        onClick = onShuffleAllClick,
+                        enabled = !isPreparingPlayback
+                    ) {
                         Icon(Icons.Default.Shuffle, contentDescription = null)
                     }
 
-                    FilledTonalIconButton(onClick = { /* Queue */ }) {
+                    FilledTonalIconButton(
+                        onClick = onAddToQueueClick,
+                        enabled = !isPreparingPlayback
+                    ) {
                         Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
                     }
                 }
@@ -166,7 +182,6 @@ private fun ArtistAlbumsList(
             }
         }
 
-        // Título de sección
         item {
             Text(
                 text = stringResource(R.string.artist_detail_albums),
@@ -177,7 +192,6 @@ private fun ArtistAlbumsList(
             )
         }
 
-        // Grid de álbumes (2 columnas)
         val albumPairs = albums.chunked(2)
         items(albumPairs) { rowAlbums ->
             Row(
