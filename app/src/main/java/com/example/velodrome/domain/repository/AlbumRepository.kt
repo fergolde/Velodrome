@@ -25,6 +25,12 @@ interface AlbumRepository {
     suspend fun getGenres(): Result<List<String>>
 
     /**
+     * Busca albums en la base de datos local por título o nombre de artista.
+     * Uso: búsqueda reactiva con flatMapLatest en el ViewModel.
+     */
+    suspend fun searchLocal(query: String): List<Album>
+
+    /**
      * Sincroniza albums desde el servidor y los guarda en la base de datos local.
      * El repositorio decide si usar caché o red.
      */

@@ -146,4 +146,8 @@ class ArtistRepositoryImpl @Inject constructor(
             totalSynced
         }
     }
+
+    override suspend fun searchLocal(query: String): List<Artist> {
+        return localMusicDataSource.searchArtists(query).map { it.toDomain() }
+    }
 }
