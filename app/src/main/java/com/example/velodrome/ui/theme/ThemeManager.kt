@@ -1,10 +1,7 @@
 package com.example.velodrome.ui.theme
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.toColorInt
 
 /**
  * Centralized theme colors for Velodrome.
@@ -22,7 +19,6 @@ object VelodromeColors {
     val TextSecondary = Color(0xFFAAAAB7)
     
     // Primary variants
-    val PrimaryColor = Color(0xFF7C4DFF)
     val AccentPurple = Color(0xFFB6A0FF)
 }
 
@@ -32,16 +28,8 @@ object VelodromeColors {
 fun String.toComposeColor(): Color {
     return try {
         val cleanHex = this.removePrefix("#")
-        Color(android.graphics.Color.parseColor("#$cleanHex"))
+        Color("#$cleanHex".toColorInt())
     } catch (e: Exception) {
         VelodromeColors.AccentPurple
     }
-}
-
-/**
- * Extension to convert Compose Color to hex string.
- */
-fun Color.toHexString(): String {
-    val argb = this.toArgb()
-    return String.format("#%06X", 0xFFFFFF and argb)
 }

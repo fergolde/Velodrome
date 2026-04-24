@@ -1,7 +1,6 @@
 package com.example.velodrome
 
 import android.app.Application
-import android.util.Log
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
@@ -28,11 +27,6 @@ class VelodromeApp : Application(), ImageLoaderFactory {
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
-
-    override fun onCreate() {
-        super.onCreate()
-        Log.d(TAG, "VelodromeApp onCreate")
-    }
 
     override fun newImageLoader(): ImageLoader {
         // Image cache: usa setting del usuario (en MB)

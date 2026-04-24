@@ -1,6 +1,5 @@
 package com.example.velodrome.util
 
-import android.util.Log
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import kotlin.random.Random
@@ -36,7 +35,6 @@ object NavidromeAuth {
             val digest = md.digest(input.toByteArray(charset("UTF-8")))
             digest.joinToString("") { "%02x".format(it) }
         } catch (e: NoSuchAlgorithmException) {
-            Log.e("NavidromeAuth", "MD5 not available", e)
             ""
         }
     }

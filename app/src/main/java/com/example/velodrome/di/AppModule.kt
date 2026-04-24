@@ -2,7 +2,6 @@ package com.example.velodrome.di
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -87,10 +86,6 @@ object AppModule {
                     )
             } else {
                 originalUrl
-            }
-
-            if (newUrl != originalUrl) {
-                Log.d("AppModule", "URL rewrite: $originalUrl -> $newUrl")
             }
 
             val newRequest = originalRequest.newBuilder()

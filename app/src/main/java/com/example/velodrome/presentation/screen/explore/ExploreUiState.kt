@@ -28,5 +28,4 @@ data class SearchResults(
     val tracks: List<Track> = emptyList()
 ) {
     val isEmpty: Boolean get() = artists.isEmpty() && albums.isEmpty() && tracks.isEmpty()
-    val totalCount: Int get() = artists.size + albums.size + tracks.size
 }

@@ -62,14 +62,12 @@ object AudioModule {
     fun provideAudioPlayerManager(
         @ApplicationContext context: Context,
         scrobbleManager: ScrobbleManager,
-        credentialsManager: CredentialsManager,
-        cacheDataSourceFactory: CacheDataSource.Factory
+        credentialsManager: CredentialsManager
     ): AudioPlayerManager {
         return AudioPlayerManager(
             context = context,
             scrobbleManager = scrobbleManager,
-            credentialsManager = credentialsManager,
-            cacheDataSourceFactory = cacheDataSourceFactory
+            credentialsManager = credentialsManager
         )
     }
 }

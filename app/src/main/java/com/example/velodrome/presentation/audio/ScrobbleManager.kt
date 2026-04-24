@@ -1,7 +1,6 @@
 package com.example.velodrome.presentation.audio
 
 import android.content.Context
-import android.util.Log
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
@@ -29,7 +28,6 @@ class ScrobbleManager @Inject constructor(
     private val settingsRepository: SettingsRepository,
     @ApplicationContext private val context: Context
 ) {
-    private val TAG = "ScrobbleManager"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val workManager = WorkManager.getInstance(context)
 
@@ -56,11 +54,9 @@ class ScrobbleManager @Inject constructor(
                 if (currentPositionMs >= scrobbleThreshold) {
                     // Marcar inmediatamente para evitar llamadas duplicadas del polling
                     currentScrobbleTrackId = trackId
-                    Log.d(TAG, "Scrobble threshold reached for track: $trackId, pos: $currentPositionMs/$durationMs")
                     scrobble(trackId)
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error checking scrobble: ${e.message}")
+            } catch (_: Exception) {
             }
         }
     }
@@ -68,9 +64,8 @@ class ScrobbleManager @Inject constructor(
     /**
      * Reset scrobble state for a new track.
      */
-    fun onTrackChanged(trackId: String) {
+    fun onTrackChanged() {
         currentScrobbleTrackId = null
-        Log.d(TAG, "Reset scrobble state for new track: $trackId")
     }
 
     /**
@@ -86,18 +81,8 @@ class ScrobbleManager @Inject constructor(
                 }
 
                 // Send now playing (submission = false)
-                val result = scrobbleRepository.scrobble(trackId, System.currentTimeMillis(), submission = false)
-                result.fold(
-                    onSuccess = {
-                        Log.d(TAG, "Now playing sent for track: $trackId")
-                    },
-                    onFailure = { error ->
-                        Log.w(TAG, "Failed to send now playing: ${error.message}")
-                    }
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Error sending now playing: ${e.message}")
-            }
+                scrobbleRepository.scrobble(trackId, System.currentTimeMillis(), submission = false)
+            } catch (_: Exception) { }
         }
     }
 
@@ -109,15 +94,12 @@ class ScrobbleManager @Inject constructor(
         try {
             // Step 1: Save to Room immediately
             scrobbleRepository.savePendingScrobble(trackId, timestamp)
-            Log.d(TAG, "Saved pending scrobble for track: $trackId")
 
             // Step 2: Enqueue WorkManager for reliable delivery
             enqueueScrobbleWork()
 
             // Mark as tracked (don't set currentScrobbleTrackId until WorkManager succeeds)
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception during scrobble: ${e.message}")
-        }
+        } catch (_: Exception) { }
     }
 
     /**
@@ -137,7 +119,6 @@ class ScrobbleManager @Inject constructor(
             ExistingWorkPolicy.KEEP,
             workRequest
         )
-        Log.d(TAG, "Enqueued ScrobbleWorker")
     }
 
     companion object {

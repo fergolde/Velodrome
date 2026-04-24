@@ -1,6 +1,5 @@
 package com.example.velodrome.util
 
-import android.util.Log
 import com.example.velodrome.data.remote.NavidromeApi
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -36,7 +35,6 @@ class AuthInterceptor @Inject constructor(
         val authParams = credentialsManager.generateAuthParams()
 
         if (authParams == null) {
-            Log.w(TAG, "No credentials available - request without auth")
             // Allow request to proceed (might be login request)
             return chain.proceed(originalRequest)
         }
@@ -57,20 +55,16 @@ class AuthInterceptor @Inject constructor(
             .url(newUrl)
             .build()
 
-        Log.d(TAG, "Added auth: u=$username, s=$salt, v=${NavidromeApi.API_VERSION}, c=${NavidromeApi.CLIENT_NAME}")
-
         return try {
             val response = chain.proceed(newRequest)
             
             // Check for auth errors - if 401/403, clear credentials
             if (response.code == 401 || response.code == 403) {
-                Log.w(TAG, "Auth error - clearing credentials")
                 credentialsManager.clearCredentials()
             }
             
             response
         } catch (e: IOException) {
-            Log.e(TAG, "Request failed", e)
             throw e
         }
     }

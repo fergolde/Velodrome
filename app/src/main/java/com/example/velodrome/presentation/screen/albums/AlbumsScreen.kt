@@ -17,12 +17,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,11 +50,7 @@ import com.example.velodrome.presentation.screen.home.AlbumCover
 @Composable
 fun AlbumsScreen(
     viewModel: AlbumsViewModel = hiltViewModel(),
-    onHomeClick: () -> Unit = {},
-    onExploreClick: () -> Unit = {},
-    onPlayerClick: () -> Unit = {},
-    onAlbumClick: (Album) -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onAlbumClick: (Album) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -110,28 +104,6 @@ fun AlbumsScreen(
 }
 
 @Composable
-fun AlbumsTopAppBar(onSearchQueryChange: (String) -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Default.Search, contentDescription = "Search", tint = MaterialTheme.colorScheme.onBackground)
-        Text(stringResource(R.string.albums_title), color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(color = MaterialTheme.colorScheme.surface)
-        ) {
-            Icon(Icons.Default.Person, contentDescription = "Profile", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.align(Alignment.Center))
-        }
-    }
-}
-
-@Composable
 fun AlbumsSearchBar(
     query: String = "",
     onQueryChange: (String) -> Unit = {},
@@ -146,7 +118,7 @@ fun AlbumsSearchBar(
             .clip(RoundedCornerShape(28.dp))
             .background(MaterialTheme.colorScheme.surface),
         placeholder = { Text(stringResource(R.string.albums_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         shape = RoundedCornerShape(28.dp),
         trailingIcon = {
             if (query.isNotEmpty()) {
@@ -154,7 +126,7 @@ fun AlbumsSearchBar(
                     Icon(
                         imageVector = Icons.Default.Clear,
                         contentDescription = "Limpiar búsqueda",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }

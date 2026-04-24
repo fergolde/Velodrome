@@ -1,11 +1,5 @@
 package com.example.velodrome.domain.model
 
-data class User(
-    val username: String,
-    val token: String,
-    val serverUrl: String
-)
-
 data class Artist(
     val id: String,
     val name: String,

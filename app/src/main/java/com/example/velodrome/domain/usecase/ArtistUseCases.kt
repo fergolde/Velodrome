@@ -38,7 +38,6 @@ class SearchLocalArtistsUseCase @Inject constructor(
 // ========== WRAPPER ==========
 class ArtistUseCases @Inject constructor(
     val getArtists: GetArtistsUseCase,
-    val getArtist: GetArtistUseCase,
     val search: SearchUseCase,
     val searchLocal: SearchLocalArtistsUseCase
 )

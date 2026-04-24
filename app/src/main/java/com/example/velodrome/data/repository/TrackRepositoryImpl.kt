@@ -1,6 +1,5 @@
 package com.example.velodrome.data.repository
 
-import android.util.Log
 import com.example.velodrome.data.local.dao.TrackDao
 import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.data.local.mapper.toEntity
@@ -29,10 +28,8 @@ class TrackRepositoryImpl @Inject constructor(
 
     override suspend fun syncTracksForAlbum(albumId: String): Result<Unit> {
         return runCatching {
-            Log.d("VelodromeTracks", "syncTracksForAlbum albumId=$albumId")
             val response = api.getMusicDirectory(albumId)
             val songsList = response.response.directory?.child ?: emptyList()
-            Log.d("VelodromeTracks", "Found ${songsList.size} songs from API")
 
             val entities = songsList.map { song ->
                 Track(
@@ -49,7 +46,6 @@ class TrackRepositoryImpl @Inject constructor(
                 ).toEntity()
             }
             trackDao.insertTracks(entities)
-            Log.d("VelodromeTracks", "Inserted ${entities.size} tracks to local DB")
         }
     }
 
@@ -84,39 +80,30 @@ class TrackRepositoryImpl @Inject constructor(
 
     override suspend fun getSongsByGenre(genre: String, count: Int, offset: Int): Result<List<Track>> {
         return runCatching {
-            Log.d("TrackRepo", "getSongsByGenre: genre=$genre, count=$count, offset=$offset")
             val response = api.getSongsByGenre(genre, count, offset)
             val songDtos = response.response.songsByGenre?.song ?: emptyList()
-            Log.d("TrackRepo", "Found ${songDtos.size} songs from genre $genre")
             songDtos.map { mapSongDto(it, it.albumId ?: genre) }
         }
     }
 
     override suspend fun getRandomSongsByGenre(genre: String, size: Int): Result<List<Track>> {
         return runCatching {
-            Log.d("TrackRepo", "getRandomSongsByGenre: genre=$genre, size=$size")
             val response = api.getRandomSongs(size, genre)
             val songDtos = response.response.randomSongs?.song ?: emptyList()
-            Log.d("TrackRepo", "Found ${songDtos.size} random songs from genre $genre")
             songDtos.map { mapSongDto(it, it.albumId ?: genre) }
         }
     }
 
     override suspend fun getRandomSongs(size: Int): Result<List<Track>> {
         return runCatching {
-            Log.d("TrackRepo", "getRandomSongs: size=$size")
             val response = api.getRandomSongs(size, null)
-            Log.d("TrackRepo", "getRandomSongs: response=$response")
             val songDtos = response.response.randomSongs?.song ?: emptyList()
-            Log.d("TrackRepo", "Found ${songDtos.size} random songs")
             songDtos.map { mapSongDto(it, it.albumId ?: "") }
         }
     }
 
     override suspend fun searchRemoteTracks(query: String): Result<List<Track>> {
         return runCatching {
-            Log.d("TrackRepo", "Iniciando búsqueda remota estricta: $query")
-
             // Aumentamos el songCount a 100 para tener un margen mayor antes de filtrar
             val response = api.search3(query = query, songCount = 100)
             val res = response.response
@@ -130,11 +117,7 @@ class TrackRepositoryImpl @Inject constructor(
                 song.title.contains(query, ignoreCase = true)
             }
 
-            Log.d("TrackRepo", "Encontradas ${rawSongDtos.size} canciones, tras filtrar por título quedan: ${filteredSongDtos.size}")
-
             filteredSongDtos.map { mapSongDto(it, it.albumId ?: "search_res") }
-        }.onFailure {
-            Log.e("TrackRepo", "Error en búsqueda remota", it)
         }
     }
 }

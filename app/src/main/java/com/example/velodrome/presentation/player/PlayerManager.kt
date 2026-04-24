@@ -1,6 +1,5 @@
 package com.example.velodrome.presentation.player
 
-import android.util.Log
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.audio.AudioPlayerManager
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +23,6 @@ class PlayerManager @Inject constructor(
     val isBuffering: StateFlow<Boolean> = audioPlayerManager.isBuffering
 
     fun setPlaylist(tracks: List<Track>, startPlaying: Boolean = true) {
-        Log.d("PlayerManager", "setPlaylist: ${tracks.size} tracks, startPlaying=$startPlaying")
         if (tracks.isNotEmpty()) {
             audioPlayerManager.playTrack(tracks[0], tracks, if (startPlaying) 0 else -1)
         }
@@ -58,16 +56,8 @@ class PlayerManager @Inject constructor(
         }
     }
 
-    fun updatePosition(position: Int) {
-        audioPlayerManager.seekTo(position.toLong())
-    }
-
     fun togglePlayPause() {
         audioPlayerManager.togglePlayPause()
-    }
-
-    fun play() {
-        audioPlayerManager.play()
     }
 
     fun next(): Boolean {
@@ -80,14 +70,6 @@ class PlayerManager @Inject constructor(
 
     fun seekTo(positionMs: Long) {
         audioPlayerManager.seekTo(positionMs)
-    }
-
-    fun playNext(track: Track) {
-        val currentList = audioPlayerManager.playlist.value.toMutableList()
-        val currentIdx = audioPlayerManager.currentIndex.value
-        val insertIndex = (currentIdx + 1).coerceAtMost(currentList.size)
-        currentList.add(insertIndex, track)
-        audioPlayerManager.setPlaylist(currentList)
     }
 
     fun addToQueue(track: Track) {

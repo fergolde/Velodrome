@@ -1,9 +1,7 @@
 package com.example.velodrome.presentation.player
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.velodrome.domain.model.Track
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,18 +60,9 @@ class PlayerViewModel @Inject constructor(
     }
 
     /**
-     * Start playing a track
-     */
-    fun playTrack(track: Track, playlist: List<Track> = listOf(track)) {
-        Log.d(TAG, "playTrack: ${track.title}")
-        playerManager.playTrack(track, playlist)
-    }
-
-    /**
      * Play/Pause toggle
      */
     fun onPlayPauseClick() {
-        Log.d(TAG, "onPlayPauseClick")
         playerManager.togglePlayPause()
     }
 
@@ -81,7 +70,6 @@ class PlayerViewModel @Inject constructor(
      * Go to previous track
      */
     fun onPreviousClick() {
-        Log.d(TAG, "onPreviousClick")
         playerManager.previous()
     }
 
@@ -89,7 +77,6 @@ class PlayerViewModel @Inject constructor(
      * Go to next track
      */
     fun onNextClick() {
-        Log.d(TAG, "onNextClick")
         playerManager.next()
     }
 
@@ -97,7 +84,6 @@ class PlayerViewModel @Inject constructor(
      * Select a track from the queue (jump to index)
      */
     fun onTrackSelected(index: Int) {
-        Log.d(TAG, "onTrackSelected: $index")
         playerManager.setCurrentIndex(index)
     }
 
@@ -105,7 +91,6 @@ class PlayerViewModel @Inject constructor(
      * Seek to position (in seconds)
      */
     fun onSeek(position: Int) {
-        Log.d(TAG, "onSeek: $position")
         playerManager.seekTo(position.toLong() * 1000)
     }
 

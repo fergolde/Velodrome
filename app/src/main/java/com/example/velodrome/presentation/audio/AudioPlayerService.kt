@@ -2,7 +2,6 @@ package com.example.velodrome.presentation.audio
 
 import android.app.PendingIntent
 import android.content.Intent
-import android.util.Log
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -34,11 +33,9 @@ class AudioPlayerService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private var exoPlayer: ExoPlayer? = null
 
-    private val TAG = "AudioPlayerService"
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "AudioPlayerService onCreate")
 
         val audioAttributes = AudioAttributes.Builder()
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
@@ -75,7 +72,6 @@ class AudioPlayerService : MediaSessionService() {
     }
 
     override fun onDestroy() {
-        Log.d(TAG, "AudioPlayerService onDestroy")
         mediaSession?.run {
             player.removeListener(playerListener)
             player.release()
@@ -93,14 +89,10 @@ class AudioPlayerService : MediaSessionService() {
      */
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
-            Log.d(TAG, "Playback state: isPlaying = $isPlaying")
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             when (playbackState) {
-                Player.STATE_READY -> Log.d(TAG, "Player ready, duration: ${exoPlayer?.duration}")
-                Player.STATE_BUFFERING -> Log.d(TAG, "Player buffering...")
-                Player.STATE_ENDED -> Log.d(TAG, "Playlist ended")
                 else -> Unit
             }
         }
@@ -129,9 +121,8 @@ class AudioPlayerService : MediaSessionService() {
             mediaItem?.let {
                 val trackId = it.mediaId
                 scrobbledTracks.remove(trackId)
-                scrobbleManager.onTrackChanged(trackId)
+                scrobbleManager.onTrackChanged()
                 scrobbleManager.sendNowPlaying(trackId)
-                Log.d(TAG, "Track changed: ${it.mediaMetadata.title}")
             }
         }
 

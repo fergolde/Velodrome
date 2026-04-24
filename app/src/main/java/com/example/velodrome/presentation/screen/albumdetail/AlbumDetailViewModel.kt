@@ -1,6 +1,5 @@
 package com.example.velodrome.presentation.screen.albumdetail
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -68,18 +67,15 @@ class AlbumDetailViewModel @Inject constructor(
             return
         }
 
-        Log.d(TAG, "Loading album data for: $albumId")
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
             // Load album details
             getAlbumUseCase(albumId)
                 .onSuccess { album ->
-                    Log.d(TAG, "Loaded album: ${album.title}")
                     _uiState.update { it.copy(album = album) }
                 }
                 .onFailure { e ->
-                    Log.e(TAG, "Error loading album: ${e.message}")
                     _uiState.update { it.copy(error = e.message) }
                 }
         }
@@ -88,7 +84,6 @@ class AlbumDetailViewModel @Inject constructor(
         viewModelScope.launch {
             trackUseCases.observeTracksByAlbum(albumId).collect { tracks ->
                 val sortedTracks = tracks.sortedBy { it.trackNumber }
-                Log.d(TAG, "Observed ${tracks.size} tracks from DB")
                 _uiState.update { it.copy(tracks = sortedTracks, isLoading = false) }
             }
         }
@@ -97,7 +92,6 @@ class AlbumDetailViewModel @Inject constructor(
         viewModelScope.launch {
             trackUseCases.syncTracksForAlbum(albumId)
                 .onFailure { e ->
-                    Log.e(TAG, "Sync error: ${e.message}")
                 }
         }
     }
@@ -108,7 +102,6 @@ class AlbumDetailViewModel @Inject constructor(
 
         val trackIndex = tracks.indexOf(track)
         if (trackIndex >= 0) {
-            Log.d(TAG, "Playing track: ${track.title} at index $trackIndex")
             playerManager.setPlaylist(tracks, startIndex = trackIndex, startPlaying = true)
         }
     }
@@ -116,8 +109,6 @@ class AlbumDetailViewModel @Inject constructor(
     fun playAll() {
         val tracks = _uiState.value.tracks
         if (tracks.isEmpty()) return
-
-        Log.d(TAG, "Playing all ${tracks.size} tracks")
         playerManager.setPlaylist(tracks, startIndex = 0, startPlaying = true)
     }
 
@@ -125,7 +116,6 @@ class AlbumDetailViewModel @Inject constructor(
         val tracks = _uiState.value.tracks
         if (tracks.isEmpty()) return
 
-        Log.d(TAG, "Shuffling and playing ${tracks.size} tracks")
         val shuffled = tracks.shuffled()
         playerManager.setPlaylist(shuffled, startIndex = 0, startPlaying = true)
     }
@@ -134,19 +124,9 @@ class AlbumDetailViewModel @Inject constructor(
         val tracks = _uiState.value.tracks
         if (tracks.isEmpty()) return
 
-        Log.d(TAG, "Adding all ${tracks.size} tracks to queue")
         tracks.forEach { track ->
             playerManager.addToQueue(track)
         }
     }
 
-    fun playNext(track: Track) {
-        Log.d(TAG, "Play next: ${track.title}")
-        playerManager.playNext(track)
-    }
-
-    fun addToQueue(track: Track) {
-        Log.d(TAG, "Add to queue: ${track.title}")
-        playerManager.addToQueue(track)
-    }
 }

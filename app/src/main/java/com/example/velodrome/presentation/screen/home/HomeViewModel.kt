@@ -1,6 +1,5 @@
 package com.example.velodrome.presentation.screen.home
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.data.local.datasource.LocalMusicDataSource
@@ -177,74 +176,6 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Loads albums filtered by year.
-     * @param year The year to filter by
-     */
-    private fun loadAlbumsByYear(year: Int) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            albumUseCases.getAlbumsByYear(year)
-                .onSuccess { albums ->
-                    _uiState.update {
-                        it.copy(
-                            filteredAlbums = albums,
-                            isLoading = false
-                        )
-                    }
-                }
-                .onFailure { error ->
-                    _uiState.update {
-                        it.copy(
-                            error = error.message ?: "Failed to filter by year",
-                            isLoading = false
-                        )
-                    }
-                }
-        }
-    }
-
-    /**
-     * Loads albums filtered by genre.
-     * @param genre The genre to filter by
-     */
-    private fun loadAlbumsByGenre(genre: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            albumUseCases.getAlbumsByGenre(genre)
-                .onSuccess { albums ->
-                    _uiState.update {
-                        it.copy(
-                            filteredAlbums = albums,
-                            isLoading = false
-                        )
-                    }
-                }
-                .onFailure { error ->
-                    _uiState.update {
-                        it.copy(
-                            error = error.message ?: "Failed to filter by genre",
-                            isLoading = false
-                        )
-                    }
-                }
-        }
-    }
-
-    /**
-     * Retries loading all data after an error.
-     */
-    fun retry() {
-        loadInitialData()
-    }
-
-    /**
-     * Toggles play/pause for the current track.
-     */
-    fun togglePlayPause() {
-        playerManager.togglePlayPause()
-    }
-
-    /**
      * Plays a random playlist from all available albums.
      * Uses API to get random songs directly with infinite scroll.
      */
@@ -256,27 +187,26 @@ class HomeViewModel @Inject constructor(
                 val songsResult = trackUseCases.getRandomSongs(size = 10)
 
                 songsResult.onSuccess { songs ->
-                    Log.d("HomeViewModel", "Loaded ${songs.size} random songs")
 
                     if (songs.isNotEmpty()) {
                         val shuffledSongs = songs.shuffled().take(10)
 
                         playerManager.setLoadMoreCallback {
-                            Log.d("HomeViewModel", "Home shuffle: loading more songs")
+
                             loadMoreRandomSongs()
                         }
 
                         playerManager.setPlaylist(shuffledSongs, startPlaying = true)
-                        Log.d("HomeViewModel", "Started shuffle playback with ${shuffledSongs.size} songs")
+
                     }
 
                     _uiState.update { it.copy(isLoading = false, isPlaying = true) }
                 }.onFailure { error ->
-                    Log.e("HomeViewModel", "Error loading random songs: ${error.message}")
+
                     _uiState.update { it.copy(isLoading = false) }
                 }
-            } catch (e: Exception) {
-                Log.e("HomeViewModel", "Error in playShuffle", e)
+            } catch (_: Exception) {
+
                 _uiState.update { it.copy(isLoading = false) }
             }
         }
@@ -292,11 +222,11 @@ class HomeViewModel @Inject constructor(
                 songsResult.onSuccess { songs ->
                     if (songs.isNotEmpty()) {
                         playerManager.appendToPlaylist(songs)
-                        Log.d("HomeViewModel", "Appended ${songs.size} more random songs")
+
                     }
                 }
-            } catch (e: Exception) {
-                Log.e("HomeViewModel", "Error loading more random songs", e)
+            } catch (_: Exception) {
+
             }
         }
     }

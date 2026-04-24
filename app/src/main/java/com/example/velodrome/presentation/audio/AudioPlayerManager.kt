@@ -1,13 +1,13 @@
 package com.example.velodrome.presentation.audio
 
 import android.content.ComponentName
-import android.util.Log
 import android.content.Context
-import android.net.Uri
+import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
-import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.example.velodrome.domain.model.Track
@@ -17,10 +17,10 @@ import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,13 +29,12 @@ import javax.inject.Singleton
  * Injected by Hilt - singleton ensures single instance.
  */
 @Singleton
-class AudioPlayerManager @Inject constructor(
+class AudioPlayerManager @OptIn(UnstableApi::class)
+@Inject constructor(
     @ApplicationContext private val context: Context,
     private val scrobbleManager: ScrobbleManager,
     private val credentialsManager: CredentialsManager,
-    private val cacheDataSourceFactory: CacheDataSource.Factory
 ) {
-    private val TAG = "AudioPlayerManager"
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
@@ -44,10 +43,6 @@ class AudioPlayerManager @Inject constructor(
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
 
     private val _duration = MutableStateFlow(0L)
-    val duration: StateFlow<Long> = _duration.asStateFlow()
-
-    private val _bufferedPosition = MutableStateFlow(0L)
-    val bufferedPosition: StateFlow<Long> = _bufferedPosition.asStateFlow()
 
     private val _currentTrack = MutableStateFlow<Track?>(null)
     val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
@@ -71,17 +66,13 @@ class AudioPlayerManager @Inject constructor(
     private var loadMoreCallback: (() -> Unit)? = null
 
     init {
-        Log.d(TAG, "init: building MediaController...")
         val sessionToken = SessionToken(context, ComponentName(context, AudioPlayerService::class.java))
         controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
         controllerFuture?.addListener({
             try {
                 mediaController = controllerFuture?.get()
-                Log.d(TAG, "init: MediaController ready: $mediaController")
                 setupControllerListener()
-            } catch (e: Exception) {
-                Log.e(TAG, "init: failed to get MediaController", e)
-            }
+            } catch (_: Exception) { }
         }, MoreExecutors.directExecutor())
     }
 
@@ -143,20 +134,12 @@ class AudioPlayerManager @Inject constructor(
         val totalItems = controller.mediaItemCount
         val remaining = totalItems - currentIndex
 
-        Log.d(TAG, "Remaining tracks: $remaining")
-
         // Si quedan menos de 3 y no hemos disparado el callback aún
         if (remaining <= 3 && !isLoadingMoreCallbackInvoked) {
             isLoadingMoreCallbackInvoked = true
-            Log.d(TAG, "Threshold reached, requesting more songs...")
             loadMoreCallback?.invoke()
         }
     }
-
-    fun onPlaybackStateChangedInternal(isPlaying: Boolean) { _isPlaying.value = isPlaying }
-    fun onReadyInternal(durationMs: Long) { _duration.value = durationMs; _isBuffering.value = false }
-    fun onPlaybackCompletedInternal() { _isPlaying.value = false }
-    fun onBufferingInternal() { _isBuffering.value = true }
 
     private fun updateCurrentTrackFromMediaItem(mediaItem: MediaItem) {
         val playlist = _playlist.value
@@ -168,7 +151,7 @@ class AudioPlayerManager @Inject constructor(
             _currentTrackId.value = playlist[index].id
             // Notificar scrobble solo si realmente cambió la canción
             if (previousId != playlist[index].id) {
-                scrobbleManager.onTrackChanged(playlist[index].id)
+                scrobbleManager.onTrackChanged()
                 scrobbleManager.sendNowPlaying(playlist[index].id)
             }
         }
@@ -179,7 +162,7 @@ class AudioPlayerManager @Inject constructor(
         _currentIndex.value = startIndex
         _currentTrack.value = track
         _currentTrackId.value = track.id
-        scrobbleManager.onTrackChanged(track.id)
+        scrobbleManager.onTrackChanged()
         scrobbleManager.sendNowPlaying(track.id)
         isLoadingMoreCallbackInvoked = false
 
@@ -188,7 +171,7 @@ class AudioPlayerManager @Inject constructor(
             val coverUrl = t.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
             MediaItem.Builder().setMediaId(index.toString()).setUri(streamUrl)
                 .setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artistName).setAlbumTitle(t.albumName)
-                    .apply { coverUrl?.let { setArtworkUri(Uri.parse(it)) } }.build()).build()
+                    .apply { coverUrl?.let { setArtworkUri(it.toUri()) } }.build()).build()
         }
 
         doPlayWithController(mediaItems, startIndex)
@@ -197,46 +180,30 @@ class AudioPlayerManager @Inject constructor(
     private fun doPlayWithController(mediaItems: List<MediaItem>, startIndex: Int) {
         // Try to get the controller directly if it's ready
         mediaController?.let { controller ->
-            Log.d(TAG, "doPlayWithController: using existing controller, ${mediaItems.size} tracks")
             controller.setMediaItems(mediaItems, startIndex, 0L)
             controller.prepare()
             controller.play()
-            Log.d(TAG, "Playback started with ${mediaItems.size} tracks")
             return
         }
 
         // If not ready, wait for it
-        val future = controllerFuture
-        if (future == null) {
-            Log.e(TAG, "doPlayWithController: controllerFuture is null, cannot play")
-            return
-        }
+        val future = controllerFuture ?: return
 
-        Log.d(TAG, "doPlayWithController: future isDone=${future.isDone}, mediaController=$mediaController")
 
         if (future.isDone) {
             try {
-                Log.d(TAG, "doPlayWithController: future is done, getting controller...")
                 mediaController = future.get()
-                Log.d(TAG, "doPlayWithController: got controller=$mediaController")
                 doPlayWithController(mediaItems, startIndex)
-            } catch (e: Exception) {
-                Log.e(TAG, "doPlayWithController: Failed to get MediaController", e)
-            }
+            } catch (_: Exception) { }
             return
         }
 
         // Wait for the future to complete, then retry
-        Log.d(TAG, "doPlayWithController: future not done, adding listener")
         future.addListener({
             try {
-                Log.d(TAG, "doPlayWithController: future completed, getting controller...")
                 mediaController = future.get()
-                Log.d(TAG, "doPlayWithController: listener got controller=$mediaController")
                 doPlayWithController(mediaItems, startIndex)
-            } catch (e: Exception) {
-                Log.e(TAG, "doPlayWithController: Failed to get MediaController in callback", e)
-            }
+            } catch (_: Exception) { }
         }, MoreExecutors.directExecutor())
     }
 
@@ -255,12 +222,11 @@ class AudioPlayerManager @Inject constructor(
             val coverUrl = t.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
             MediaItem.Builder().setMediaId((startIndex + index).toString()).setUri(streamUrl)
                 .setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artistName).setAlbumTitle(t.albumName)
-                    .apply { coverUrl?.let { setArtworkUri(Uri.parse(it)) } }.build()).build()
+                    .apply { coverUrl?.let { setArtworkUri(it.toUri()) } }.build()).build()
         }
 
         // Try to add directly if controller is ready
         mediaController?.let { controller ->
-            Log.d(TAG, "appendToPlaylist: adding ${mediaItems.size} items directly")
             controller.addMediaItems(mediaItems)
             isLoadingMoreCallbackInvoked = false
             return
@@ -269,7 +235,6 @@ class AudioPlayerManager @Inject constructor(
         // Wait for controller to be ready, then add
         val future = controllerFuture
         if (future == null || !future.isDone) {
-            Log.w(TAG, "appendToPlaylist: controller not ready, skipping append (will retry on next track)")
             isLoadingMoreCallbackInvoked = false
             return
         }
@@ -277,17 +242,12 @@ class AudioPlayerManager @Inject constructor(
         try {
             mediaController = future.get()
             mediaController?.addMediaItems(mediaItems)
-            Log.d(TAG, "appendToPlaylist: added ${mediaItems.size} items after wait")
-        } catch (e: Exception) {
-            Log.e(TAG, "appendToPlaylist: failed to get controller", e)
-        }
+        } catch (_: Exception) { }
         isLoadingMoreCallbackInvoked = false
     }
 
-    fun play() { mediaController?.play() }
     fun togglePlayPause() { mediaController?.let { if (it.isPlaying) it.pause() else it.play() } }
     fun seekTo(positionMs: Long) { mediaController?.seekTo(positionMs); _currentPosition.value = positionMs }
-    fun getCurrentPositionMs(): Long = mediaController?.currentPosition ?: 0L
     fun next(): Boolean = mediaController?.hasNextMediaItem()?.also { mediaController?.seekToNextMediaItem() } ?: false
     fun previous(): Boolean = mediaController?.hasPreviousMediaItem()?.also { mediaController?.seekToPreviousMediaItem() } ?: false
 
@@ -297,14 +257,7 @@ class AudioPlayerManager @Inject constructor(
     }
 
     fun setPlaylist(playlist: List<Track>) { _playlist.value = playlist }
-    fun clearPlaylist() { _playlist.value = emptyList(); _currentTrack.value = null; _currentTrackId.value = null; _currentIndex.value = 0; mediaController?.clearMediaItems() }
-    fun release() { controllerFuture?.let { MediaController.releaseFuture(it) }; mediaController = null }
 
     fun setLoadMoreCallback(callback: () -> Unit) { loadMoreCallback = callback }
 
-    /**
-     * Get the CacheDataSource.Factory for ExoPlayer configuration in AudioPlayerService.
-     * Uses the injected factory from constructor.
-     */
-    fun getCacheDataSourceFactory(): CacheDataSource.Factory = cacheDataSourceFactory
 }

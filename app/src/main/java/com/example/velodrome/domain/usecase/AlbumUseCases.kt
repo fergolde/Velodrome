@@ -86,12 +86,8 @@ class SearchLocalAlbumsUseCase @Inject constructor(
 class AlbumUseCases @Inject constructor(
     val getLatestAlbums: GetLatestAlbumsUseCase,
     val getTopAlbums: GetTopAlbumsUseCase,
-    val getAlbumsByYear: GetAlbumsByYearUseCase,
-    val getAlbumsByGenre: GetAlbumsByGenreUseCase,
     val getGenres: GetGenresUseCase,
     val getRecentlyPlayedAlbums: GetRecentlyPlayedAlbumsUseCase,
     val getRandomAlbums: GetRandomAlbumsUseCase,
-    val getAllAlbums: GetAllAlbumsUseCase,
-    val getAlbum: GetAlbumUseCase,
     val searchLocal: SearchLocalAlbumsUseCase
 )

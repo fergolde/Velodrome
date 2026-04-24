@@ -1,6 +1,5 @@
 package com.example.velodrome.data.repository
 
-import android.util.Log
 import com.example.velodrome.data.remote.NavidromeApi
 import com.example.velodrome.domain.model.AuthResult
 import com.example.velodrome.domain.repository.AuthRepository
@@ -19,25 +18,18 @@ class AuthRepositoryImpl @Inject constructor(
             try {
                 // Save credentials securely (username + password, NO token)
                 credentialsManager.saveCredentials(username, password, serverUrl)
-                Log.d("AuthRepository", "Credentials saved for user: $username, server: $serverUrl")
 
                 // Try ping - auth interceptor will add u, t, s params automatically
-                Log.d("AuthRepository", "Calling api.ping()...")
                 val response = api.ping()
-                Log.d("AuthRepository", "Ping response: $response")
-                Log.d("AuthRepository", "Ping response status: ${response.response.status}")
 
                 if (response.response.status == "ok") {
-                    Log.d("AuthRepository", "Login successful!")
                     AuthResult(success = true, token = password)
                 } else {
                     credentialsManager.clearCredentials()
                     val errorMsg = response.response.error?.message ?: "Invalid credentials"
-                    Log.d("AuthRepository", "Error: $errorMsg")
                     AuthResult(success = false, error = errorMsg)
                 }
             } catch (e: Exception) {
-                Log.e("AuthRepository", "Login exception", e)
                 credentialsManager.clearCredentials()
                 AuthResult(success = false, error = e.message ?: "Unknown error")
             }

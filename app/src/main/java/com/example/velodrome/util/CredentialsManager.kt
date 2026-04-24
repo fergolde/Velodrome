@@ -3,8 +3,6 @@ package com.example.velodrome.util
 import android.content.Context
 import android.content.SharedPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dev.spght.encryptedprefs.EncryptedSharedPreferences
-import dev.spght.encryptedprefs.MasterKey
 import javax.inject.Inject
 import javax.inject.Singleton
 

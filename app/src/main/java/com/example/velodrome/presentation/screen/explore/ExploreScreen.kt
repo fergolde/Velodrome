@@ -22,7 +22,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -167,14 +166,14 @@ fun SearchBar(
         placeholder = { Text(stringResource(R.string.explore_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
         singleLine = true,
         shape = RoundedCornerShape(28.dp),
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = onClearClick) {
                     Icon(
                         imageVector = Icons.Default.Clear,
                         contentDescription = "Borrar búsqueda",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -189,7 +188,7 @@ fun RandomArtistsRow(
     if (artists.isEmpty()) {
         // Show placeholder when loading
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            repeat(5) { index ->
+            repeat(5) { _ ->
                 ArtistPlaceholder(modifier = Modifier.width(80.dp))
             }
         }

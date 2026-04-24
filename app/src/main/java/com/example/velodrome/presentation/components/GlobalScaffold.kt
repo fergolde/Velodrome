@@ -1,6 +1,5 @@
 package com.example.velodrome.presentation.components
 
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
@@ -15,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import android.util.Log
 
 /**
  * Bottom Navigation Bar unificada - reusable en TODOS los screens.
@@ -32,9 +30,7 @@ fun SharedBottomNavigationBar(
     onSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Log.d("SharedBottomNav", "=== SharedBottomNavigationBar rendered ===")
-    Log.d("SharedBottomNav", "currentRoute: $currentRoute")
-    
+
     NavigationBar(
         modifier = modifier.fillMaxWidth(),
         containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
@@ -46,8 +42,7 @@ fun SharedBottomNavigationBar(
                 icon = { Icon(Icons.Default.Home, contentDescription = null) },
                 label = { Text("Home") },
                 selected = currentRoute == "home",
-                onClick = { 
-                    Log.d("SharedBottomNav", "Home button clicked!")
+                onClick = {
                     onHomeClick() 
                 },
                 colors = NavigationBarItemDefaults.colors(
@@ -63,8 +58,7 @@ fun SharedBottomNavigationBar(
                 icon = { Icon(Icons.Default.Explore, contentDescription = null) },
                 label = { Text("Explore") },
                 selected = currentRoute == "explore",
-                onClick = { 
-                    Log.d("SharedBottomNav", "Explore button clicked!")
+                onClick = {
                     onExploreClick() 
                 },
                 colors = NavigationBarItemDefaults.colors(
@@ -80,8 +74,7 @@ fun SharedBottomNavigationBar(
                 icon = { Icon(Icons.Default.Settings, contentDescription = null) },
                 label = { Text("Settings") },
                 selected = currentRoute == "settings",
-                onClick = { 
-                    Log.d("SharedBottomNav", "Settings button clicked!")
+                onClick = {
                     onSettingsClick() 
                 },
                 colors = NavigationBarItemDefaults.colors(

@@ -1,6 +1,5 @@
 package com.example.velodrome.data.repository
 
-import android.util.Log
 import com.example.velodrome.data.local.VelodromeDatabase
 import com.example.velodrome.data.local.entity.ScrobbleEntity
 import com.example.velodrome.data.remote.NavidromeApi
@@ -17,7 +16,6 @@ class ScrobbleRepositoryImpl @Inject constructor(
     override suspend fun scrobble(trackId: String, time: Long?, submission: Boolean): Result<Unit> {
         return runCatching {
             api.scrobble(trackId, time, submission)
-            Log.d("ScrobbleRepo", "Scrobbled track: $trackId, submission: $submission")
         }
     }
 
@@ -28,6 +26,5 @@ class ScrobbleRepositoryImpl @Inject constructor(
             isSubmitted = false
         )
         database.scrobbleDao().insertScrobble(entity)
-        Log.d("ScrobbleRepo", "Saved pending scrobble for track: $trackId")
     }
 }

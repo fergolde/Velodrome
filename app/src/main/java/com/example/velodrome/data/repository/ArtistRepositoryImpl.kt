@@ -1,17 +1,14 @@
 package com.example.velodrome.data.repository
 
-import android.util.Log
 import com.example.velodrome.data.local.datasource.LocalMusicDataSource
 import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.data.local.mapper.toEntity
 import com.example.velodrome.data.remote.NavidromeApi
-import com.example.velodrome.data.remote.dto.AlbumDetailDto
 import com.example.velodrome.data.remote.dto.AlbumDto
 import com.example.velodrome.data.remote.dto.ArtistDetailDto
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.domain.model.ArtistWithAlbums
-import com.example.velodrome.domain.repository.AlbumRepository
 import com.example.velodrome.domain.repository.ArtistRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -32,7 +29,6 @@ class ArtistRepositoryImpl @Inject constructor(
 
     override suspend fun getArtists(offset: Int, size: Int): Result<List<Artist>> {
         return runCatching {
-            Log.d("Repo", "=== getArtists called ===")
             val response = api.getArtists(size, offset)
 
             val indexes = response.response.artists?.indexes
@@ -44,7 +40,6 @@ class ArtistRepositoryImpl @Inject constructor(
                 else -> emptyList()
             }
 
-            Log.d("Repo", "Found ${artistsList.size} artists")
 
             artistsList.map { artistDto ->
                 Artist(
@@ -59,16 +54,11 @@ class ArtistRepositoryImpl @Inject constructor(
 
     override suspend fun getArtist(artistId: String): Result<ArtistWithAlbums> {
         return runCatching {
-            Log.d("Repo", "=== getArtist called: $artistId ===")
             val response = api.getArtist(artistId)
             val artistDto = response.response.artist
 
-            Log.d("Repo", "Got artist DTO: id=${artistDto?.id}, name=${artistDto?.name}")
-
             val dto = artistDto ?: ArtistDetailDto(id = artistId, name = "Unknown")
             val albums = dto.albums?.map { mapAlbumDto(it) } ?: emptyList()
-
-            Log.d("Repo", "Found ${albums.size} albums for artist ${dto.name}")
 
             val artist = Artist(
                 id = dto.id,
@@ -126,7 +116,6 @@ class ArtistRepositoryImpl @Inject constructor(
         onPageProcessed: suspend (newOffset: Int) -> Unit
     ): Result<Int> {
         return runCatching {
-            Log.d("ArtistRepo", "=== syncArtistsFromServer startOffset=$startOffset ===")
             var offset = startOffset
             val pageSize = 500
             var totalSynced = 0
@@ -137,14 +126,12 @@ class ArtistRepositoryImpl @Inject constructor(
                     ?: throw result.exceptionOrNull() ?: Exception("Failed to fetch artists")
 
                 if (artists.isEmpty()) {
-                    Log.d("ArtistRepo", "No more artists at offset $offset")
                     break
                 }
 
                 val entities = artists.map { it.toEntity() }
                 localMusicDataSource.insertArtists(entities)
                 totalSynced += artists.size
-                Log.d("ArtistRepo", "Synced ${artists.size} artists (total: $totalSynced)")
 
                 // Notify offset for resume capability
                 onPageProcessed(offset + artists.size)
@@ -152,7 +139,6 @@ class ArtistRepositoryImpl @Inject constructor(
                 if (artists.size < pageSize) break
                 offset += pageSize
             }
-            Log.d("ArtistRepo", "Artist sync completed: $totalSynced total")
             totalSynced
         }
     }
