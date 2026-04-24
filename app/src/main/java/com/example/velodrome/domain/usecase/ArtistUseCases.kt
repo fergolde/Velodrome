@@ -26,3 +26,10 @@ class SearchUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(query: String) = repository.search(query)
 }
+
+// ========== WRAPPER ==========
+class ArtistUseCases @Inject constructor(
+    val getArtists: GetArtistsUseCase,
+    val getArtist: GetArtistUseCase,
+    val search: SearchUseCase
+)

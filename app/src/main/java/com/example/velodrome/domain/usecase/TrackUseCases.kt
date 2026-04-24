@@ -39,3 +39,12 @@ class GetRandomSongsUseCase @Inject constructor(
         return repository.getRandomSongs(size)
     }
 }
+
+// ========== WRAPPER ==========
+class TrackUseCases @Inject constructor(
+    val getTracks: GetTracksUseCase,
+    val getStreamUrl: GetStreamUrlUseCase,
+    val getSongsByGenre: GetSongsByGenreUseCase,
+    val getRandomSongsByGenre: GetRandomSongsByGenreUseCase,
+    val getRandomSongs: GetRandomSongsUseCase
+)
