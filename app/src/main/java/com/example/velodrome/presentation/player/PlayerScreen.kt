@@ -89,7 +89,6 @@ fun PlayerScreen(
     onQueueClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentPosition by PlayerManager.currentPosition.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showQueue by remember { mutableStateOf(false) }
 
@@ -141,7 +140,7 @@ fun PlayerScreen(
                 )
                 Spacer(modifier = Modifier.height(28.dp))
                 SeekBar(
-                    currentPosition = (currentPosition / 1000L).toInt(),
+                    currentPosition = uiState.currentPosition,
                     duration = uiState.currentTrack?.durationSec ?: 0,
                     onSeek = viewModel::onSeek
                 )

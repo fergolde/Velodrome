@@ -16,6 +16,7 @@ import androidx.work.WorkManager
 import com.example.velodrome.data.worker.SyncLibraryWorker
 import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.presentation.VelodromeMainApp
+import com.example.velodrome.presentation.player.SharedPlayerViewModel
 import com.example.velodrome.ui.theme.VelodromeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -40,7 +41,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    VelodromeMainApp()
+                    // Get SharedPlayerViewModel - must be done in compose context
+                    val sharedPlayerViewModel = androidx.hilt.navigation.compose.hiltViewModel<SharedPlayerViewModel>()
+                    VelodromeMainApp(sharedPlayerViewModel = sharedPlayerViewModel)
                 }
             }
         }

@@ -55,7 +55,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Track
-import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.screen.home.AlbumCover
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,9 +68,10 @@ fun AlbumDetailScreen(
     onPlayerClick: () -> Unit = {},
     viewModel: AlbumDetailViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val isPlaying by PlayerManager.isPlaying.collectAsState()
-    val currentPosition by PlayerManager.currentPosition.collectAsState()
+val uiState by viewModel.uiState.collectAsState()
+    val currentTrackId = uiState.currentTrackId
+    val isPlaying = uiState.isPlaying
+    val currentPosition = uiState.currentPosition
 
     var showTrackOptions by remember { mutableStateOf(false) }
     var selectedTrack by remember { mutableStateOf<Track?>(null) }
@@ -108,7 +108,8 @@ fun AlbumDetailScreen(
                     onPlayAllClick = { viewModel.playAll() },
                     onShuffleClick = { viewModel.shuffleAll() },
                     onAddToQueueClick = { viewModel.addAllToQueue() },
-                    onBackClick = onBackClick // 👈 IMPORTANTE
+                    onBackClick = onBackClick,
+                    currentTrackId = uiState.currentTrackId
                 )
             }
         }
@@ -124,10 +125,9 @@ private fun AlbumContent(
     onPlayAllClick: () -> Unit,
     onShuffleClick: () -> Unit,
     onAddToQueueClick: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    currentTrackId: String? = null
 ) {
-    val currentTrackId by PlayerManager.currentTrackId.collectAsState()
-
     LazyColumn(
         contentPadding = PaddingValues(bottom = 100.dp)
     ) {
