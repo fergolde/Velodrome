@@ -211,8 +211,8 @@ class ExploreViewModel @Inject constructor(
                     songsResult = trackUseCases.getRandomSongs(size = 10)
                 } else if (selectedGenres.size == 1) {
                     val genre = selectedGenres.first()
-                    Log.d(TAG, "Loading 10 songs for single genre: $genre using getSongsByGenre")
-                    songsResult = trackUseCases.getSongsByGenre(genre, count = 10, offset = 0)
+                    Log.d(TAG, "Loading 10 random songs for single genre: $genre")
+                    songsResult = trackUseCases.getRandomSongsByGenre(genre, size = 10)
                 } else {
                     Log.d(TAG, "Multiple genres selected: $selectedGenres, loading 10 songs total with random genre")
                     val allSongs = mutableListOf<Track>()
@@ -286,8 +286,8 @@ class ExploreViewModel @Inject constructor(
                     songsResult = trackUseCases.getRandomSongs(size = 10)
                 } else if (currentGenreFilter.size == 1) {
                     val genre = currentGenreFilter.first()
-                    Log.d(TAG, "loadMoreTracks: Loading 10 songs for genre: $genre")
-                    songsResult = trackUseCases.getSongsByGenre(genre, count = 10, offset = 0)
+                    Log.d(TAG, "loadMoreTracks: Loading 10 random songs for genre: $genre")
+                    songsResult = trackUseCases.getRandomSongsByGenre(genre, size = 10)
                 } else {
                     Log.d(TAG, "loadMoreTracks: Loading 10 songs total with random genre from: $currentGenreFilter")
                     val allSongs = mutableListOf<Track>()
