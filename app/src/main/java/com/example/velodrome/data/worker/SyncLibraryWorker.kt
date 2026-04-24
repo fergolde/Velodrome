@@ -62,7 +62,7 @@ class SyncLibraryWorker(
 }
 
 /**
- * Entry point for Hilt injection in Worker.
+ * Entry points for Hilt injection in Workers.
  */
 @dagger.hilt.EntryPoint
 @dagger.hilt.InstallIn(SingletonComponent::class)

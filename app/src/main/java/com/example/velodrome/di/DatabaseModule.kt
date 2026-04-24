@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.example.velodrome.data.local.VelodromeDatabase
 import com.example.velodrome.data.local.dao.AlbumDao
 import com.example.velodrome.data.local.dao.ArtistDao
+import com.example.velodrome.data.local.dao.ScrobbleDao
 import com.example.velodrome.data.local.dao.TrackDao
 import dagger.Module
 import dagger.Provides
@@ -45,5 +46,11 @@ object DatabaseModule {
     @Singleton
     fun provideTrackDao(database: VelodromeDatabase): TrackDao {
         return database.trackDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideScrobbleDao(database: VelodromeDatabase): ScrobbleDao {
+        return database.scrobbleDao()
     }
 }
