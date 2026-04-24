@@ -38,6 +38,8 @@ class ArtistDetailViewModel @Inject constructor(
     private val getArtistUseCase: GetArtistUseCase,
     private val trackUseCases: TrackUseCases, // <-- Inyectado
     private val playerManager: PlayerManager  // <-- Inyectado
+    private val trackUseCases: TrackUseCases,
+    private val playerManager: PlayerManager
 ) : ViewModel() {
 
     private val artistId: String = savedStateHandle.get<String>("artistId") ?: ""
