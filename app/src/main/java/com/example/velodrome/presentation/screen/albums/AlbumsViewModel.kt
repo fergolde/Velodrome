@@ -1,19 +1,19 @@
 package com.example.velodrome.presentation.screen.albums
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.repository.AlbumRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-private const val TAG = "AlbumsViewModel"
 
 data class AlbumsUiState(
     val albums: List<Album> = emptyList(),
@@ -30,20 +30,25 @@ class AlbumsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AlbumsUiState())
     val uiState: StateFlow<AlbumsUiState> = _uiState.asStateFlow()
 
-    private var allAlbums: List<Album> = emptyList()
+    private val searchQuery = MutableStateFlow("")
 
     init {
         observeAlbums()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeAlbums() {
         viewModelScope.launch {
-            albumRepository.observeAllAlbums().collect { albums ->
-                allAlbums = albums
-                val filtered = filterAlbums(allAlbums, _uiState.value.searchQuery)
+            searchQuery.flatMapLatest { query ->
+                if (query.isBlank()) {
+                    albumRepository.observeAllAlbums()
+                } else {
+                    flowOf(albumRepository.searchLocal(query))
+                }
+            }.collect { albums ->
                 _uiState.update {
                     it.copy(
-                        albums = filtered,
+                        albums = albums,
                         isLoading = false,
                         error = null
                     )
@@ -53,25 +58,7 @@ class AlbumsViewModel @Inject constructor(
     }
 
     fun onSearchQueryChange(query: String) {
-        val filtered = filterAlbums(allAlbums, query)
-        _uiState.update { it.copy(searchQuery = query, albums = filtered) }
-    }
-
-    private fun filterAlbums(albums: List<Album>, query: String): List<Album> {
-        if (query.isBlank()) {
-            return albums
-        }
-        val lowerQuery = query.lowercase()
-        Log.d(TAG, "Filtering by query: '$lowerQuery'")
-        val filtered = albums.filter { album ->
-            val titleMatch = album.title.lowercase().contains(lowerQuery)
-            val artistMatch = album.artistName.lowercase().contains(lowerQuery)
-            if (titleMatch || artistMatch) {
-                Log.d(TAG, "Match: ${album.title} by ${album.artistName}")
-            }
-            titleMatch || artistMatch
-        }
-        Log.d(TAG, "Found ${filtered.size} albums matching '$query'")
-        return filtered
+        searchQuery.value = query
+        _uiState.update { it.copy(searchQuery = query) }
     }
 }

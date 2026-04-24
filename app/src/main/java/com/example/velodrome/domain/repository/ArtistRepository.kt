@@ -23,4 +23,10 @@ interface ArtistRepository {
      * El repositorio decide si usar caché o red.
      */
     suspend fun syncArtistsFromServer(): Result<Int>
+
+    /**
+     * Busca artists en la base de datos local por nombre.
+     * Uso: búsqueda reactiva con flatMapLatest en el ViewModel.
+     */
+    suspend fun searchLocal(query: String): List<Artist>
 }
