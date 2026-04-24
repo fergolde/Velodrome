@@ -21,6 +21,9 @@ interface TrackDao {
     @Query("SELECT * FROM tracks WHERE albumId = :albumId ORDER BY trackNumber ASC")
     suspend fun getTracksByAlbum(albumId: String): List<TrackEntity>
 
+    @Query("SELECT * FROM tracks WHERE albumId = :albumId ORDER BY trackNumber ASC")
+    fun observeTracksByAlbum(albumId: String): Flow<List<TrackEntity>>
+
     @Query("SELECT * FROM tracks WHERE title LIKE '%' || :query || '%' OR artistName LIKE '%' || :query || '%' ORDER BY title ASC")
     suspend fun searchTracks(query: String): List<TrackEntity>
 

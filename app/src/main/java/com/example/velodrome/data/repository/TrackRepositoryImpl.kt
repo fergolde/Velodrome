@@ -1,28 +1,40 @@
 package com.example.velodrome.data.repository
 
 import android.util.Log
+import com.example.velodrome.data.local.dao.TrackDao
+import com.example.velodrome.data.local.mapper.toDomain
+import com.example.velodrome.data.local.mapper.toEntity
 import com.example.velodrome.data.remote.NavidromeApi
 import com.example.velodrome.data.remote.dto.SongDto
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.domain.repository.TrackRepository
 import com.example.velodrome.util.CredentialsManager
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class TrackRepositoryImpl @Inject constructor(
     private val api: NavidromeApi,
+    private val trackDao: TrackDao,
     private val credentialsManager: CredentialsManager
 ) : TrackRepository {
 
-    override suspend fun getTracks(albumId: String): Result<List<Track>> {
+    override fun observeTracksByAlbum(albumId: String): Flow<List<Track>> {
+        return trackDao.observeTracksByAlbum(albumId).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun syncTracksForAlbum(albumId: String): Result<Unit> {
         return runCatching {
-            Log.d("VelodromeTracks", "getMusicDirectory albumId=$albumId")
+            Log.d("VelodromeTracks", "syncTracksForAlbum albumId=$albumId")
             val response = api.getMusicDirectory(albumId)
             val songsList = response.response.directory?.child ?: emptyList()
-            Log.d("VelodromeTracks", "Found ${songsList.size} songs")
+            Log.d("VelodromeTracks", "Found ${songsList.size} songs from API")
 
-            songsList.map { song ->
+            val entities = songsList.map { song ->
                 Track(
                     id = song.id,
                     albumId = albumId,
@@ -34,8 +46,10 @@ class TrackRepositoryImpl @Inject constructor(
                     bitrate = song.bitRate ?: 0,
                     trackNumber = song.track ?: 0,
                     coverArtId = song.coverArt
-                )
+                ).toEntity()
             }
+            trackDao.insertTracks(entities)
+            Log.d("VelodromeTracks", "Inserted ${entities.size} tracks to local DB")
         }
     }
 
