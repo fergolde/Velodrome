@@ -22,8 +22,8 @@ class CacheManager @Inject constructor(
 ) {
 
     companion object {
-        private const val MUSIC_CACHE_DIR = "musicCache"
-        private const val IMAGE_CACHE_DIR = "imageCache"
+        private const val MUSIC_CACHE_DIR = "audioCache"
+        private const val IMAGE_CACHE_DIR = "image_cache"
     }
 
     // --- Directory Access ---
@@ -35,12 +35,16 @@ class CacheManager @Inject constructor(
     val imageCacheDir: File
         get() = File(context.cacheDir, IMAGE_CACHE_DIR).also { it.mkdirs() }
 
+    fun setMusicCacheLimitBytes(bytes: Long) {
+        trimCacheIfNeeded(musicCacheDir, bytes) // ya tienes este método
+    }
+
     /**
      * Directory for music cache (app-specific external storage).
      * Persists until explicitly cleared or when storage is low.
      */
     val musicCacheDir: File
-        get() = File(context.filesDir, MUSIC_CACHE_DIR).also { it.mkdirs() }
+        get() = File(context.filesDir, "audioCache").also { it.mkdirs() } // era "musicCache"
 
     // --- Size Calculation ---
 
@@ -92,7 +96,7 @@ class CacheManager @Inject constructor(
      * Clean image cache if it exceeds the limit.
      * Deletes oldest files first (LRU strategy).
      */
-    /*fun cleanImageCacheIfNeeded(limitMb: Int) {
+    fun cleanImageCacheIfNeeded(limitMb: Int) {
         val limitBytes = limitMb.toLong() * 1024 * 1024
         trimCacheIfNeeded(imageCacheDir, limitBytes)
     }
@@ -112,7 +116,7 @@ class CacheManager @Inject constructor(
     fun cleanCachesIfNeeded(imageLimitMb: Int, musicLimitGb: Int) {
         cleanImageCacheIfNeeded(imageLimitMb)
         cleanMusicCacheIfNeeded(musicLimitGb)
-    }*/
+    }
 
     /**
      * Clear all image cache immediately.

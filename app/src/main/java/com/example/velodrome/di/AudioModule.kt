@@ -7,6 +7,7 @@ import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.presentation.audio.AudioPlayerManager
 import com.example.velodrome.presentation.audio.ScrobbleManager
 import com.example.velodrome.util.CredentialsManager
@@ -15,25 +16,31 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import java.io.File
 import javax.inject.Singleton
 
-private const val AUDIO_CACHE_SIZE_BYTES = 2L * 1024 * 1024 * 1024 // 2GB
-
-@OptIn(UnstableApi::class)
+@UnstableApi
 @Module
 @InstallIn(SingletonComponent::class)
 object AudioModule {
-
     @Provides
     @Singleton
     fun provideSimpleCache(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        settingsRepository: SettingsRepository
     ): SimpleCache {
         val cacheDir = File(context.filesDir, "audioCache").also { it.mkdirs() }
         val databaseProvider = StandaloneDatabaseProvider(context)
-        val evictor = LeastRecentlyUsedCacheEvictor(AUDIO_CACHE_SIZE_BYTES)
+
+        // Obtener límite de configuración y convertir GB a bytes
+        val limitBytes = runBlocking {
+            settingsRepository.musicCacheSizeGb.first()
+        }.toLong() * 1024 * 1024 * 1024
+
+        val evictor = LeastRecentlyUsedCacheEvictor(limitBytes)
         return SimpleCache(cacheDir, evictor, databaseProvider)
     }
 
