@@ -6,12 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.velodrome.data.local.datasource.LocalMusicDataSource
 import com.example.velodrome.data.local.entity.AlbumEntity
 import com.example.velodrome.data.local.entity.ArtistEntity
-import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.domain.model.Track
-import com.example.velodrome.domain.repository.NavidromeRepository
 import com.example.velodrome.domain.usecase.GetArtistsUseCase
 import com.example.velodrome.domain.usecase.GetGenresUseCase
 import com.example.velodrome.domain.usecase.GetRandomAlbumsUseCase
+import com.example.velodrome.domain.usecase.GetRandomSongsByGenreUseCase
+import com.example.velodrome.domain.usecase.GetRandomSongsUseCase
+import com.example.velodrome.domain.usecase.GetSongsByGenreUseCase
 import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,82 +29,32 @@ class ExploreViewModel @Inject constructor(
     private val getArtistsUseCase: GetArtistsUseCase,
     private val getRandomAlbumsUseCase: GetRandomAlbumsUseCase,
     private val getGenresUseCase: GetGenresUseCase,
-    private val navidromeRepository: NavidromeRepository,
+    private val getSongsByGenreUseCase: GetSongsByGenreUseCase,
+    private val getRandomSongsByGenreUseCase: GetRandomSongsByGenreUseCase,
+    private val getRandomSongsUseCase: GetRandomSongsUseCase,
     private val localMusicDataSource: LocalMusicDataSource,
     private val playerManager: PlayerManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExploreUiState())
     val uiState: StateFlow<ExploreUiState> = _uiState.asStateFlow()
-    
+
     // Dynamic playlist state
     private val playlist = mutableListOf<Track>()
     private var currentPlaylistPosition = 0
     private var isLoadingMore = false
-    private var currentGenreFilter: List<String> = emptyList()  // Tracks which genre(s) to use
+    private var currentGenreFilter: List<String> = emptyList()
 
     init {
         loadContent()
-        //checkAndSyncLocalData()
-    }
-
-    private fun checkAndSyncLocalData() {
-        viewModelScope.launch {
-            val artistCount = localMusicDataSource.getArtistCount()
-            val albumCount = localMusicDataSource.getAlbumCount()
-
-            Log.d(TAG, "Local DB: $artistCount artists, $albumCount albums")
-
-            if (artistCount == 0) {
-                Log.d(TAG, "No artists in local DB, syncing from Explore...")
-                getArtistsUseCase(offset = 0, size = 20)
-                    .onSuccess { artists ->
-                        val entities = artists.map {
-                            ArtistEntity(
-                                id = it.id,
-                                name = it.name,
-                                albumCount = it.albumCount,
-                                coverUrl = it.coverUrl
-                            )
-                        }
-                        viewModelScope.launch {
-                            localMusicDataSource.insertArtists(entities)
-                            Log.d(TAG, "Synced ${entities.size} artists to local DB")
-                        }
-                    }
-            }
-
-            if (albumCount == 0) {
-                Log.d(TAG, "No albums in local DB, syncing from Explore...")
-                getRandomAlbumsUseCase(size = 20)
-                    .onSuccess { albums ->
-                        val entities = albums.map {
-                            AlbumEntity(
-                                id = it.id,
-                                artistId = it.artistId,
-                                artistName = it.artistName,
-                                title = it.title,
-                                year = it.year,
-                                genre = it.genre,
-                                coverUrl = it.coverUrl
-                            )
-                        }
-                        viewModelScope.launch {
-                            localMusicDataSource.insertAlbums(entities)
-                            Log.d(TAG, "Synced ${entities.size} albums to local DB")
-                        }
-                    }
-            }
-        }
     }
 
     fun loadContent() {
         Log.d(TAG, "=== loadContent() called ===")
         _uiState.update { it.copy(isLoading = true, error = null) }
-        
+
         viewModelScope.launch {
             Log.d(TAG, "Loading artists...")
-            // Load artists and shuffle for random order
             getArtistsUseCase(offset = 0, size = 20)
                 .onSuccess { artists ->
                     Log.d(TAG, "Loaded ${artists.size} artists, shuffling...")
@@ -115,10 +66,9 @@ class ExploreViewModel @Inject constructor(
                     _uiState.update { it.copy(error = e.message) }
                 }
         }
-        
+
         viewModelScope.launch {
             Log.d(TAG, "Loading random albums...")
-            // Load random albums
             getRandomAlbumsUseCase(size = 20)
                 .onSuccess { albums ->
                     Log.d(TAG, "Loaded ${albums.size} random albums")
@@ -129,10 +79,9 @@ class ExploreViewModel @Inject constructor(
                     _uiState.update { it.copy(error = e.message) }
                 }
         }
-        
+
         viewModelScope.launch {
             Log.d(TAG, "Loading curated albums...")
-            // Load curated/albums for "Based on your activity" section
             getRandomAlbumsUseCase(size = 10)
                 .onSuccess { albums ->
                     Log.d(TAG, "Loaded ${albums.size} curated albums")
@@ -143,10 +92,9 @@ class ExploreViewModel @Inject constructor(
                     _uiState.update { it.copy(error = e.message) }
                 }
         }
-        
+
         viewModelScope.launch {
             Log.d(TAG, "Loading genres...")
-            // Load all genres
             getGenresUseCase()
                 .onSuccess { genres ->
                     Log.d(TAG, "Loaded ${genres.size} genres")
@@ -160,7 +108,6 @@ class ExploreViewModel @Inject constructor(
     }
 
     fun onSearchQueryChange(query: String) {
-        // Just save the query, don't search yet
         _uiState.update { it.copy(searchQuery = query) }
     }
 
@@ -183,41 +130,34 @@ class ExploreViewModel @Inject constructor(
         val selectedGenres = _uiState.value.selectedGenres
 
         _uiState.update { it.copy(isLoading = true) }
-        
-        // Clear and rebuild playlist
+
         playlist.clear()
         currentPlaylistPosition = 0
-        
-        // Determine which genre(s) to use for this session
+
         currentGenreFilter = if (selectedGenres.isEmpty()) {
             emptyList()
         } else {
-            // Keep all selected genres
             selectedGenres.toList()
         }
         Log.d(TAG, "Genre filter for this session: $currentGenreFilter")
-        
+
         viewModelScope.launch {
             try {
-                // Use the new API endpoints to get songs directly by genre
                 val songsResult: Result<List<Track>>
-                
-if (selectedGenres.isEmpty()) {
-                    // No genre selected - get random songs (all genres)
+
+                if (selectedGenres.isEmpty()) {
                     Log.d(TAG, "Loading 10 random songs (all genres)")
-                    songsResult = navidromeRepository.getRandomSongs(size = 10)
+                    songsResult = getRandomSongsUseCase(size = 10)
                 } else if (selectedGenres.size == 1) {
-                    // Single genre - use getSongsByGenre for exact genre filtering
                     val genre = selectedGenres.first()
                     Log.d(TAG, "Loading 10 songs for single genre: $genre using getSongsByGenre")
-                    songsResult = navidromeRepository.getSongsByGenre(genre, count = 10, offset = 0)
+                    songsResult = getSongsByGenreUseCase(genre, count = 10, offset = 0)
                 } else {
-                    // Multiple genres - get 10 songs total, picking random genre each time
                     Log.d(TAG, "Multiple genres selected: $selectedGenres, loading 10 songs total with random genre")
                     val allSongs = mutableListOf<Track>()
                     for (i in 1..10) {
                         val randomGenre = selectedGenres.random()
-                        val result = navidromeRepository.getRandomSongsByGenre(randomGenre, size = 1)
+                        val result = getRandomSongsByGenreUseCase(randomGenre, size = 1)
                         result.onSuccess { songs ->
                             allSongs.addAll(songs)
                             Log.d(TAG, "Got ${songs.size} song for genre: $randomGenre (call $i)")
@@ -234,46 +174,38 @@ if (selectedGenres.isEmpty()) {
                     _uiState.update { it.copy(error = error.message, isLoading = false) }
                     return@launch
                 }
-                
-                // Shuffle the full playlist
+
                 playlist.shuffle()
                 Log.d(TAG, "Total playlist after shuffle: ${playlist.size}")
-                
-                // Emit first 10 tracks
+
                 val initialTracks = playlist.take(10)
                 currentPlaylistPosition = 10
                 Log.d(TAG, "First 10 tracks: ${initialTracks.map { it.title }}")
-                
+
                 _uiState.update { it.copy(
                     isLoading = false,
                     dynamicPlaylist = initialTracks
                 ) }
-                
-                // Set up callback for PlayerManager to request more tracks
+
                 playerManager.setLoadMoreCallback {
                     Log.d(TAG, "=== PlayerManager callback triggered! ===")
                     checkAndLoadMore()
                 }
 
-                // Set playlist in PlayerManager to start playback
                 if (initialTracks.isNotEmpty()) {
                     playerManager.setPlaylist(initialTracks, startPlaying = true)
                     Log.d(TAG, "Started playback with PlayerManager")
                 }
-                
+
                 Log.d(TAG, "Starting playback with ${initialTracks.size} tracks")
-                
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error creating playlist", e)
                 _uiState.update { it.copy(error = e.message, isLoading = false) }
             }
         }
     }
-    
-/**
-     * Load more tracks when approaching the end
-     * Simply loads more songs and appends to player
-     */
+
     fun loadMoreTracks() {
         Log.d(TAG, "=== loadMoreTracks ENTRY ===")
         if (isLoadingMore) {
@@ -287,23 +219,20 @@ if (selectedGenres.isEmpty()) {
         viewModelScope.launch {
             try {
                 val songsResult: Result<List<Track>>
-                
+
                 if (currentGenreFilter.isEmpty()) {
-                    // No genre filter - get more random songs
                     Log.d(TAG, "loadMoreTracks: Loading 10 random songs...")
-                    songsResult = navidromeRepository.getRandomSongs(size = 10)
+                    songsResult = getRandomSongsUseCase(size = 10)
                 } else if (currentGenreFilter.size == 1) {
-                    // Single genre
                     val genre = currentGenreFilter.first()
                     Log.d(TAG, "loadMoreTracks: Loading 10 songs for genre: $genre")
-                    songsResult = navidromeRepository.getSongsByGenre(genre, count = 10, offset = 0)
+                    songsResult = getSongsByGenreUseCase(genre, count = 10, offset = 0)
                 } else {
-                    // Multiple genres - get 10 songs total, picking random genre each time
                     Log.d(TAG, "loadMoreTracks: Loading 10 songs total with random genre from: $currentGenreFilter")
                     val allSongs = mutableListOf<Track>()
                     for (i in 1..10) {
                         val randomGenre = currentGenreFilter.random()
-                        val result = navidromeRepository.getRandomSongsByGenre(randomGenre, size = 1)
+                        val result = getRandomSongsByGenreUseCase(randomGenre, size = 1)
                         result.onSuccess { songs ->
                             allSongs.addAll(songs)
                         }
@@ -331,10 +260,6 @@ if (selectedGenres.isEmpty()) {
         }
     }
 
-    /**
-     * Check if we need to load more tracks - called from player
-     * Simply triggers loadMoreTracks - AudioPlayerManager handles when to call it
-     */
     fun checkAndLoadMore() {
         Log.d(TAG, "=== checkAndLoadMore called - triggering loadMoreTracks ===")
         loadMoreTracks()

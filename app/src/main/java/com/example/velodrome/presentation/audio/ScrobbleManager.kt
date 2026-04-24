@@ -1,7 +1,7 @@
 package com.example.velodrome.presentation.audio
 
 import android.util.Log
-import com.example.velodrome.domain.repository.NavidromeRepository
+import com.example.velodrome.domain.repository.ScrobbleRepository
 import com.example.velodrome.domain.repository.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +17,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class ScrobbleManager @Inject constructor(
-    private val navidromeRepository: NavidromeRepository,
+    private val scrobbleRepository: ScrobbleRepository,
     private val settingsRepository: SettingsRepository
 ) {
     private val TAG = "ScrobbleManager"
@@ -84,7 +84,7 @@ class ScrobbleManager @Inject constructor(
                 }
 
                 // Send now playing (submission = false)
-                val result = navidromeRepository.scrobble(trackId, System.currentTimeMillis(), submission = false)
+                val result = scrobbleRepository.scrobble(trackId, System.currentTimeMillis(), submission = false)
                 result.fold(
                     onSuccess = {
                         Log.d(TAG, "Now playing sent for track: $trackId")
@@ -104,7 +104,7 @@ class ScrobbleManager @Inject constructor(
      */
     private suspend fun scrobble(trackId: String) {
         try {
-            val result = navidromeRepository.scrobble(trackId, System.currentTimeMillis(), submission = true)
+            val result = scrobbleRepository.scrobble(trackId, System.currentTimeMillis(), submission = true)
             result.fold(
                 onSuccess = {
                     currentScrobbleTrackId = trackId

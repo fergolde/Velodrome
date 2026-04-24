@@ -1,11 +1,11 @@
 package com.example.velodrome.domain.usecase
 
 import com.example.velodrome.domain.model.AuthResult
-import com.example.velodrome.domain.repository.NavidromeRepository
+import com.example.velodrome.domain.repository.AuthRepository
 import javax.inject.Inject
 
 class LoginUseCase @Inject constructor(
-    private val repository: NavidromeRepository
+    private val repository: AuthRepository
 ) {
     suspend operator fun invoke(username: String, password: String, serverUrl: String): Result<AuthResult> {
         if (username.isBlank()) {
