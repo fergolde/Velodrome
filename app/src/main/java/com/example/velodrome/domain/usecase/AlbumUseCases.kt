@@ -73,3 +73,16 @@ class GetAlbumUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(albumId: String) = repository.getAlbum(albumId)
 }
+
+// ========== WRAPPER ==========
+class AlbumUseCases @Inject constructor(
+    val getLatestAlbums: GetLatestAlbumsUseCase,
+    val getTopAlbums: GetTopAlbumsUseCase,
+    val getAlbumsByYear: GetAlbumsByYearUseCase,
+    val getAlbumsByGenre: GetAlbumsByGenreUseCase,
+    val getGenres: GetGenresUseCase,
+    val getRecentlyPlayedAlbums: GetRecentlyPlayedAlbumsUseCase,
+    val getRandomAlbums: GetRandomAlbumsUseCase,
+    val getAllAlbums: GetAllAlbumsUseCase,
+    val getAlbum: GetAlbumUseCase
+)

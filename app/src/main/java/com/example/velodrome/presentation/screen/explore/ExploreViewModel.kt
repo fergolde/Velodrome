@@ -7,12 +7,9 @@ import com.example.velodrome.data.local.datasource.LocalMusicDataSource
 import com.example.velodrome.data.local.entity.AlbumEntity
 import com.example.velodrome.data.local.entity.ArtistEntity
 import com.example.velodrome.domain.model.Track
-import com.example.velodrome.domain.usecase.GetArtistsUseCase
-import com.example.velodrome.domain.usecase.GetGenresUseCase
-import com.example.velodrome.domain.usecase.GetRandomAlbumsUseCase
-import com.example.velodrome.domain.usecase.GetRandomSongsByGenreUseCase
-import com.example.velodrome.domain.usecase.GetRandomSongsUseCase
-import com.example.velodrome.domain.usecase.GetSongsByGenreUseCase
+import com.example.velodrome.domain.usecase.AlbumUseCases
+import com.example.velodrome.domain.usecase.ArtistUseCases
+import com.example.velodrome.domain.usecase.TrackUseCases
 import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,12 +23,9 @@ private const val TAG = "ExploreViewModel"
 
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
-    private val getArtistsUseCase: GetArtistsUseCase,
-    private val getRandomAlbumsUseCase: GetRandomAlbumsUseCase,
-    private val getGenresUseCase: GetGenresUseCase,
-    private val getSongsByGenreUseCase: GetSongsByGenreUseCase,
-    private val getRandomSongsByGenreUseCase: GetRandomSongsByGenreUseCase,
-    private val getRandomSongsUseCase: GetRandomSongsUseCase,
+    private val albumUseCases: AlbumUseCases,
+    private val artistUseCases: ArtistUseCases,
+    private val trackUseCases: TrackUseCases,
     private val localMusicDataSource: LocalMusicDataSource,
     private val playerManager: PlayerManager
 ) : ViewModel() {
@@ -55,7 +49,7 @@ class ExploreViewModel @Inject constructor(
 
         viewModelScope.launch {
             Log.d(TAG, "Loading artists...")
-            getArtistsUseCase(offset = 0, size = 20)
+            artistUseCases.getArtists(offset = 0, size = 20)
                 .onSuccess { artists ->
                     Log.d(TAG, "Loaded ${artists.size} artists, shuffling...")
                     val shuffledArtists = artists.shuffled()
@@ -69,7 +63,7 @@ class ExploreViewModel @Inject constructor(
 
         viewModelScope.launch {
             Log.d(TAG, "Loading random albums...")
-            getRandomAlbumsUseCase(size = 20)
+            albumUseCases.getRandomAlbums(size = 20)
                 .onSuccess { albums ->
                     Log.d(TAG, "Loaded ${albums.size} random albums")
                     _uiState.update { it.copy(randomAlbums = albums) }
@@ -82,7 +76,7 @@ class ExploreViewModel @Inject constructor(
 
         viewModelScope.launch {
             Log.d(TAG, "Loading curated albums...")
-            getRandomAlbumsUseCase(size = 10)
+            albumUseCases.getRandomAlbums(size = 10)
                 .onSuccess { albums ->
                     Log.d(TAG, "Loaded ${albums.size} curated albums")
                     _uiState.update { it.copy(curatedAlbums = albums) }
@@ -95,7 +89,7 @@ class ExploreViewModel @Inject constructor(
 
         viewModelScope.launch {
             Log.d(TAG, "Loading genres...")
-            getGenresUseCase()
+            albumUseCases.getGenres()
                 .onSuccess { genres ->
                     Log.d(TAG, "Loaded ${genres.size} genres")
                     _uiState.update { it.copy(genres = genres, isLoading = false) }
@@ -147,17 +141,17 @@ class ExploreViewModel @Inject constructor(
 
                 if (selectedGenres.isEmpty()) {
                     Log.d(TAG, "Loading 10 random songs (all genres)")
-                    songsResult = getRandomSongsUseCase(size = 10)
+                    songsResult = trackUseCases.getRandomSongs(size = 10)
                 } else if (selectedGenres.size == 1) {
                     val genre = selectedGenres.first()
                     Log.d(TAG, "Loading 10 songs for single genre: $genre using getSongsByGenre")
-                    songsResult = getSongsByGenreUseCase(genre, count = 10, offset = 0)
+                    songsResult = trackUseCases.getSongsByGenre(genre, count = 10, offset = 0)
                 } else {
                     Log.d(TAG, "Multiple genres selected: $selectedGenres, loading 10 songs total with random genre")
                     val allSongs = mutableListOf<Track>()
                     for (i in 1..10) {
                         val randomGenre = selectedGenres.random()
-                        val result = getRandomSongsByGenreUseCase(randomGenre, size = 1)
+                        val result = trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
                         result.onSuccess { songs ->
                             allSongs.addAll(songs)
                             Log.d(TAG, "Got ${songs.size} song for genre: $randomGenre (call $i)")
@@ -222,17 +216,17 @@ class ExploreViewModel @Inject constructor(
 
                 if (currentGenreFilter.isEmpty()) {
                     Log.d(TAG, "loadMoreTracks: Loading 10 random songs...")
-                    songsResult = getRandomSongsUseCase(size = 10)
+                    songsResult = trackUseCases.getRandomSongs(size = 10)
                 } else if (currentGenreFilter.size == 1) {
                     val genre = currentGenreFilter.first()
                     Log.d(TAG, "loadMoreTracks: Loading 10 songs for genre: $genre")
-                    songsResult = getSongsByGenreUseCase(genre, count = 10, offset = 0)
+                    songsResult = trackUseCases.getSongsByGenre(genre, count = 10, offset = 0)
                 } else {
                     Log.d(TAG, "loadMoreTracks: Loading 10 songs total with random genre from: $currentGenreFilter")
                     val allSongs = mutableListOf<Track>()
                     for (i in 1..10) {
                         val randomGenre = currentGenreFilter.random()
-                        val result = getRandomSongsByGenreUseCase(randomGenre, size = 1)
+                        val result = trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
                         result.onSuccess { songs ->
                             allSongs.addAll(songs)
                         }

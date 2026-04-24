@@ -4,20 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.data.local.datasource.LocalMusicDataSource
-import com.example.velodrome.data.local.entity.AlbumEntity
-import com.example.velodrome.data.local.entity.ArtistEntity
 import com.example.velodrome.domain.repository.AlbumRepository
 import com.example.velodrome.domain.repository.ArtistRepository
-import com.example.velodrome.domain.usecase.GetAlbumsByGenreUseCase
-import com.example.velodrome.domain.usecase.GetAlbumsByYearUseCase
-import com.example.velodrome.domain.usecase.GetAllAlbumsUseCase
-import com.example.velodrome.domain.usecase.GetGenresUseCase
-import com.example.velodrome.domain.usecase.GetLatestAlbumsUseCase
-import com.example.velodrome.domain.usecase.GetRandomAlbumsUseCase
-import com.example.velodrome.domain.usecase.GetRecentlyPlayedAlbumsUseCase
-import com.example.velodrome.domain.usecase.GetTopAlbumsUseCase
-import com.example.velodrome.domain.usecase.GetTracksUseCase
-import com.example.velodrome.domain.usecase.GetRandomSongsUseCase
+import com.example.velodrome.domain.usecase.AlbumUseCases
+import com.example.velodrome.domain.usecase.TrackUseCases
 import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,15 +28,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val getLatestAlbumsUseCase: GetLatestAlbumsUseCase,
-    private val getTopAlbumsUseCase: GetTopAlbumsUseCase,
-    private val getRecentlyPlayedAlbumsUseCase: GetRecentlyPlayedAlbumsUseCase,
-    private val getRandomAlbumsUseCase: GetRandomAlbumsUseCase,
-    private val getAlbumsByYearUseCase: GetAlbumsByYearUseCase,
-    private val getAlbumsByGenreUseCase: GetAlbumsByGenreUseCase,
-    private val getGenresUseCase: GetGenresUseCase,
-    private val getTracksUseCase: GetTracksUseCase,
-    private val getRandomSongsUseCase: GetRandomSongsUseCase,
+    private val albumUseCases: AlbumUseCases,
+    private val trackUseCases: TrackUseCases,
     private val albumRepository: AlbumRepository,
     private val artistRepository: ArtistRepository,
     private val localMusicDataSource: LocalMusicDataSource,
@@ -97,7 +80,7 @@ class HomeViewModel @Inject constructor(
     fun loadLatestAlbums(size: Int = 20) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            getLatestAlbumsUseCase(size)
+            albumUseCases.getLatestAlbums(size)
                 .onSuccess { albums ->
                     _uiState.update {
                         it.copy(
@@ -125,7 +108,7 @@ class HomeViewModel @Inject constructor(
      */
     fun loadTopAlbums(size: Int = 20) {
         viewModelScope.launch {
-            getTopAlbumsUseCase(size)
+            albumUseCases.getTopAlbums(size)
                 .onSuccess { albums ->
                     _uiState.update {
                         it.copy(
@@ -142,7 +125,7 @@ class HomeViewModel @Inject constructor(
      */
     fun loadRecentlyPlayedAlbums(size: Int = 20) {
         viewModelScope.launch {
-            getRecentlyPlayedAlbumsUseCase(size)
+            albumUseCases.getRecentlyPlayedAlbums(size)
                 .onSuccess { albums ->
                     _uiState.update {
                         it.copy(recentlyPlayedAlbums = albums)
@@ -156,7 +139,7 @@ class HomeViewModel @Inject constructor(
      */
     fun loadRandomAlbums(size: Int = 20) {
         viewModelScope.launch {
-            getRandomAlbumsUseCase(size)
+            albumUseCases.getRandomAlbums(size)
                 .onSuccess { albums ->
                     _uiState.update {
                         it.copy(randomAlbums = albums)
@@ -170,7 +153,7 @@ class HomeViewModel @Inject constructor(
      */
     private fun loadGenres() {
         viewModelScope.launch {
-            getGenresUseCase()
+            albumUseCases.getGenres()
                 .onSuccess { genres ->
                     _uiState.update { it.copy(genres = genres) }
                 }
@@ -182,7 +165,7 @@ class HomeViewModel @Inject constructor(
      */
     private fun loadAvailableYears() {
         viewModelScope.launch {
-            getLatestAlbumsUseCase(50)
+            albumUseCases.getLatestAlbums(50)
                 .onSuccess { albums ->
                     val years = albums
                         .mapNotNull { it.year }
@@ -200,7 +183,7 @@ class HomeViewModel @Inject constructor(
     private fun loadAlbumsByYear(year: Int) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            getAlbumsByYearUseCase(year)
+            albumUseCases.getAlbumsByYear(year)
                 .onSuccess { albums ->
                     _uiState.update {
                         it.copy(
@@ -227,7 +210,7 @@ class HomeViewModel @Inject constructor(
     private fun loadAlbumsByGenre(genre: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            getAlbumsByGenreUseCase(genre)
+            albumUseCases.getAlbumsByGenre(genre)
                 .onSuccess { albums ->
                     _uiState.update {
                         it.copy(
@@ -270,7 +253,7 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                val songsResult = getRandomSongsUseCase(size = 10)
+                val songsResult = trackUseCases.getRandomSongs(size = 10)
 
                 songsResult.onSuccess { songs ->
                     Log.d("HomeViewModel", "Loaded ${songs.size} random songs")
@@ -305,7 +288,7 @@ class HomeViewModel @Inject constructor(
     private fun loadMoreRandomSongs() {
         viewModelScope.launch {
             try {
-                val songsResult = getRandomSongsUseCase(size = 10)
+                val songsResult = trackUseCases.getRandomSongs(size = 10)
                 songsResult.onSuccess { songs ->
                     if (songs.isNotEmpty()) {
                         playerManager.appendToPlaylist(songs)
