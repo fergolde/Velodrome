@@ -15,8 +15,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 
 private const val TAG = "ExploreViewModel"
@@ -33,6 +39,8 @@ class ExploreViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ExploreUiState())
     val uiState: StateFlow<ExploreUiState> = _uiState.asStateFlow()
 
+    private val searchQueryFlow = MutableStateFlow("")
+
     // Dynamic playlist state
     private val playlist = mutableListOf<Track>()
     private var currentPlaylistPosition = 0
@@ -41,6 +49,64 @@ class ExploreViewModel @Inject constructor(
 
     init {
         loadContent()
+        observeSearchQuery()
+    }
+
+    private fun observeSearchQuery() {
+        viewModelScope.launch {
+            searchQueryFlow
+                .debounce(500L) // Espera 500ms tras dejar de escribir
+                .distinctUntilChanged() // No busca si la query es idéntica a la anterior
+                .collectLatest { query ->
+                    // 1. Limpiar resultados si la query está vacía
+                    if (query.isBlank()) {
+                        _uiState.update {
+                            it.copy(searchResults = SearchResults(), isSearching = false)
+                        }
+                        return@collectLatest
+                    }
+
+                    // 2. Iniciar estado de carga
+                    _uiState.update { it.copy(isSearching = true) }
+
+                    try {
+                        // 3. Ejecución en paralelo
+                        // coroutineScope asegura que si esta búsqueda se cancela (porque llega otra query),
+                        // todas las tareas internas se cancelen inmediatamente.
+                        coroutineScope {
+                            val artistsDeferred = async { artistUseCases.searchLocal(query) }
+                            val albumsDeferred = async { albumUseCases.searchLocal(query) }
+                            val tracksDeferred = async {
+                                // Importante: usamos getOrDefault para que si falla la red,
+                                // los resultados locales (artistas/albums) sigan apareciendo.
+                                trackUseCases.searchRemoteTracks(query).getOrDefault(emptyList())
+                            }
+
+                            // Esperamos a que todos terminen (el tiempo total será el de la petición más lenta)
+                            val artists = artistsDeferred.await()
+                            val albums = albumsDeferred.await()
+                            val tracks = tracksDeferred.await()
+
+                            // 4. Actualizar estado final
+                            _uiState.update { it.copy(
+                                searchResults = SearchResults(
+                                    artists = artists,
+                                    albums = albums,
+                                    tracks = tracks
+                                ),
+                                isSearching = false
+                            ) }
+                        }
+                    } catch (e: Exception) {
+                        // 5. Manejo de excepciones
+                        // Si el error es por cancelación (el usuario escribió otra letra), lo relanzamos.
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+
+                        Log.e("ExploreViewModel", "Search failed for query: $query", e)
+                        _uiState.update { it.copy(isSearching = false) }
+                    }
+                }
+        }
     }
 
     fun loadContent() {
@@ -103,6 +169,7 @@ class ExploreViewModel @Inject constructor(
 
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
+        searchQueryFlow.value = query
     }
 
     fun clearSearch() {
@@ -257,5 +324,9 @@ class ExploreViewModel @Inject constructor(
     fun checkAndLoadMore() {
         Log.d(TAG, "=== checkAndLoadMore called - triggering loadMoreTracks ===")
         loadMoreTracks()
+    }
+
+    fun playSearchedTrack(track: Track) {
+        playerManager.playTrack(track)
     }
 }

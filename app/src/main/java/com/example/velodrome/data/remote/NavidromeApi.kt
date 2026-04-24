@@ -33,6 +33,14 @@ interface NavidromeApi {
         @Query("size") size: Int = 20
     ): SubsonicResponse
 
+    @GET("rest/search3.view")
+    suspend fun search3(
+        @Query("query") query: String,
+        @Query("albumCount") albumCount: Int = 10,
+        @Query("artistCount") artistCount: Int = 10,
+        @Query("songCount") songCount: Int = 25
+    ): SubsonicResponse
+
     // Home screen APIs
     @GET("rest/getIndexes.view")
     suspend fun getIndexes(

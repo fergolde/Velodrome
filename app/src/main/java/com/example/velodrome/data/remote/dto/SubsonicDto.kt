@@ -28,6 +28,7 @@ data class SubsonicResponseDto(
 
     // Search / genres
     @Json(name = "searchResult2") val searchResult2: SearchResultDto? = null,
+    @Json(name = "searchResult3") val searchResult3: SearchResultDto? = null,
     @Json(name = "genres") val genres: GenresDto? = null,
 
     // Songs endpoints (fallbacks reales Subsonic)
@@ -156,7 +157,7 @@ data class SongDto(
 data class SearchResultDto(
     @Json(name = "artist") val artists: List<ArtistDto>? = null,
     @Json(name = "album") val albums: List<AlbumDto>? = null,
-    @Json(name = "songs") val songs: List<SongDto>? = null
+    @Json(name = "song") val songs: List<SongDto>? = null
 )
 
 // ================= GENRES =================

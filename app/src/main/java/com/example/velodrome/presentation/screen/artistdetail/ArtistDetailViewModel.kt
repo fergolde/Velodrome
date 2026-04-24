@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.domain.usecase.GetArtistUseCase
+import com.example.velodrome.presentation.screen.explore.SearchResults
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

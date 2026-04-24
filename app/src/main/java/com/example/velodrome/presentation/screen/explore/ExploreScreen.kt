@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -48,6 +49,7 @@ import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.domain.model.Track
+import com.example.velodrome.presentation.screen.home.AlbumCover
 import com.example.velodrome.presentation.screen.home.ArtistAvatar
 import com.example.velodrome.presentation.screen.home.RecentAlbumsRow
 import com.example.velodrome.presentation.screen.home.SectionHeader
@@ -71,63 +73,78 @@ fun ExploreScreen(
             .statusBarsPadding()
             .padding(horizontal = 16.dp)
         ) {
-            item {
+item {
                 SearchBar(
                     query = uiState.searchQuery,
-                    onQueryChange = { query -> viewModel.onSearchQueryChange(query) }
+                    onQueryChange = { query -> viewModel.onSearchQueryChange(query) },
+                    onClearClick = { viewModel.clearSearch() }
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            // Random Artists Carousel
+            if (uiState.searchQuery.isNotBlank()) {
+                item {
+                    SearchResultsView(
+                        searchQuery = uiState.searchQuery,
+                        searchResults = uiState.searchResults,
+                        isSearching = uiState.isSearching,
+                        onArtistClick = onArtistClick,
+                        onAlbumClick = onAlbumClick,
+                        onPlayTrackClick = viewModel::playSearchedTrack,
+                        onClearSearch = viewModel::clearSearch
+                    )
+                }
+            } else {
+                // Random Artists Carousel
+                item {
+                    SectionHeader(
+                        title = stringResource(R.string.explore_artists),
+                        subtitle = stringResource(R.string.explore_artists_discover),
+                        onViewAllClick = onArtistsViewAllClick
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    RandomArtistsRow(
+                        artists = uiState.randomArtists,
+                        onArtistClick = { artist -> onArtistClick(artist.id) }
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+
+                // Random Albums Carousel
+                item {
+                    SectionHeader(
+                        title = stringResource(R.string.explore_random_albums),
+                        subtitle = stringResource(R.string.nav_explore),
+                        onViewAllClick = onAlbumsViewAllClick
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    RecentAlbumsRow(
+                        albums = uiState.randomAlbums,
+                        onAlbumClick = { albumId -> onAlbumClick(albumId) }
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+
+                // Genres Section
+                item {
+                    SectionHeader(
+                        title = stringResource(R.string.explore_genres),
+                        subtitle = stringResource(R.string.explore_all_genres),
+                        onViewAllClick = null,
+                        showActionText = stringResource(R.string.play),
+                        onActionClick = viewModel::onPlayGenres
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    GenresRow(
+                        genres = uiState.genres,
+                        selectedGenres = uiState.selectedGenres,
+                        onGenreToggle = viewModel::onGenreToggle
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+            }
+
             item {
-                SectionHeader(
-                    title = stringResource(R.string.explore_artists),
-                    subtitle = stringResource(R.string.explore_artists_discover),
-                    onViewAllClick = onArtistsViewAllClick
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                RandomArtistsRow(
-                    artists = uiState.randomArtists,
-                    onArtistClick = { artist -> onArtistClick(artist.id) }
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-            // Random Albums Carousel
-            item {
-                SectionHeader(
-                    title = stringResource(R.string.explore_random_albums),
-                    subtitle = stringResource(R.string.nav_explore),
-                    onViewAllClick = onAlbumsViewAllClick
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                RecentAlbumsRow(
-                    albums = uiState.randomAlbums,
-                    onAlbumClick = { albumId -> onAlbumClick(albumId) }
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-            // Genres Section
-            item {
-                SectionHeader(
-                    title = stringResource(R.string.explore_genres),
-                    subtitle = stringResource(R.string.explore_all_genres),
-                    onViewAllClick = null,
-                    showActionText = stringResource(R.string.play),
-                    onActionClick = viewModel::onPlayGenres
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                GenresRow(
-                    genres = uiState.genres,
-                    selectedGenres = uiState.selectedGenres,
-                    onGenreToggle = viewModel::onGenreToggle
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-item {
                 Spacer(modifier = Modifier.height(100.dp)) // Padding for mini player
             }
         }
@@ -136,7 +153,8 @@ item {
 @Composable
 fun SearchBar(
     query: String,
-    onQueryChange: (String) -> Unit
+    onQueryChange: (String) -> Unit,
+    onClearClick: () -> Unit
 ) {
     OutlinedTextField(
         value = query,
@@ -147,10 +165,20 @@ fun SearchBar(
             .clip(RoundedCornerShape(28.dp))
             .background(MaterialTheme.colorScheme.surface),
         placeholder = { Text(stringResource(R.string.explore_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-        trailingIcon = { Icon(Icons.Default.Mic, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
         singleLine = true,
-        shape = RoundedCornerShape(28.dp)
+        shape = RoundedCornerShape(28.dp),
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = onClearClick) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Borrar búsqueda",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     )
 }
 @Composable
@@ -167,7 +195,7 @@ fun RandomArtistsRow(
         }
         return
     }
-    
+
     LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         items(artists) { artist ->
             ArtistCircleCard(
@@ -251,7 +279,7 @@ fun GenresRow(
         }
         return
     }
-    
+
     // Show genres in 3-column grid
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         genres.chunked(3).forEach { rowGenres ->
@@ -321,62 +349,32 @@ fun SearchResultsView(
     isSearching: Boolean,
     onArtistClick: (String) -> Unit = {},
     onAlbumClick: (String) -> Unit = {},
+    onPlayTrackClick: (Track) -> Unit = {},
     onClearSearch: () -> Unit = {}
 ) {
-    LazyColumn(
+    Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Header
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onClearSearch) {
-                    Icon(Icons.Default.Clear, contentDescription = "Clear", tint = MaterialTheme.colorScheme.onBackground)
-                }
-                Text(
-                    text = "\"$searchQuery\"",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                if (searchResults.totalCount > 0) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "(${searchResults.totalCount})",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-
         if (isSearching) {
-            item {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else if (searchResults.isEmpty) {
-            item {
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    Text("No results found", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text("No results found", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             // Artists - horizontal carousel
             if (searchResults.artists.isNotEmpty()) {
-                item {
-                    Column {
-                        Text("Artists", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(12.dp))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            items(searchResults.artists) { artist ->
-                                ArtistCircleCard(artist = artist, onClick = { onArtistClick(artist.id) })
-                            }
+                Column {
+                    Text("Artists", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(12.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(searchResults.artists.take(10)) { artist ->
+                            ArtistCircleCard(artist = artist, onClick = { onArtistClick(artist.id) })
                         }
                     }
                 }
@@ -384,14 +382,12 @@ fun SearchResultsView(
 
             // Albums - horizontal carousel
             if (searchResults.albums.isNotEmpty()) {
-                item {
-                    Column {
-                        Text("Albums", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(12.dp))
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            items(searchResults.albums) { album ->
-                                AlbumGridItem(album = album, onClick = { onAlbumClick(album.id) })
-                            }
+                Column {
+                    Text("Albums", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(12.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        items(searchResults.albums.take(10)) { album ->
+                            AlbumGridItem(album = album, onClick = { onAlbumClick(album.id) })
                         }
                     }
                 }
@@ -399,14 +395,12 @@ fun SearchResultsView(
 
             // Tracks - vertical list
             if (searchResults.tracks.isNotEmpty()) {
-                item {
-                    Column {
-                        Text("Songs", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(12.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            searchResults.tracks.forEach { track ->
-                                TrackRow(track = track, onClick = { })
-                            }
+                Column {
+                    Text("Songs", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        searchResults.tracks.take(25).forEach { track ->
+                            TrackRow(track = track, onClick = { onPlayTrackClick(track) })
                         }
                     }
                 }
@@ -423,15 +417,12 @@ fun AlbumGridItem(album: Album, onClick: () -> Unit = {}) {
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
-            modifier = Modifier
-                .size(100.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(album.title.take(2), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        AlbumCover(
+            coverArtId = album.coverUrl,
+            contentDescription = album.title,
+            size = 100.dp,
+            cornerRadius = 8.dp
+        )
         Spacer(Modifier.height(8.dp))
         Text(album.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
         Text(album.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1)
@@ -440,28 +431,56 @@ fun AlbumGridItem(album: Album, onClick: () -> Unit = {}) {
 
 @Composable
 fun TrackRow(track: Track, onClick: () -> Unit = {}) {
-    Row(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .clickable(onClick = onClick)
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
     ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("♪", color = MaterialTheme.colorScheme.primary)
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(track.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
-            Text(track.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+            // CARÁTULA REAL EN LA CANCIÓN
+            AlbumCover(
+                coverArtId = track.coverArtId,
+                contentDescription = track.albumName,
+                size = 48.dp,
+                cornerRadius = 8.dp
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = track.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = track.artistName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Indicador de duración sutil
+            Text(
+                text = formatDuration(track.durationSec),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
         }
     }
+}
+private fun formatDuration(seconds: Int): String {
+    val mins = seconds / 60
+    val secs = seconds % 60
+    return "%d:%02d".format(mins, secs)
 }

@@ -21,11 +21,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -92,7 +94,8 @@ fun AlbumsScreen(
                 ) {
                     AlbumsSearchBar(
                         query = uiState.searchQuery,
-                        onQueryChange = viewModel::onSearchQueryChange
+                        onQueryChange = viewModel::onSearchQueryChange,
+                        onClearClick = { viewModel.onSearchQueryChange("") }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     AlbumsList(
@@ -131,7 +134,8 @@ fun AlbumsTopAppBar(onSearchQueryChange: (String) -> Unit) {
 @Composable
 fun AlbumsSearchBar(
     query: String = "",
-    onQueryChange: (String) -> Unit = {}
+    onQueryChange: (String) -> Unit = {},
+    onClearClick: () -> Unit = {}
 ) {
     OutlinedTextField(
         value = query,
@@ -143,7 +147,18 @@ fun AlbumsSearchBar(
             .background(MaterialTheme.colorScheme.surface),
         placeholder = { Text(stringResource(R.string.albums_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-        shape = RoundedCornerShape(28.dp)
+        shape = RoundedCornerShape(28.dp),
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = onClearClick) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Limpiar búsqueda",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     )
 }
 

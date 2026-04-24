@@ -74,6 +74,14 @@ class GetAlbumUseCase @Inject constructor(
     suspend operator fun invoke(albumId: String) = repository.getAlbum(albumId)
 }
 
+class SearchLocalAlbumsUseCase @Inject constructor(
+    private val repository: AlbumRepository
+) {
+    suspend operator fun invoke(query: String): List<Album> {
+        return repository.searchLocal(query)
+    }
+}
+
 // ========== WRAPPER ==========
 class AlbumUseCases @Inject constructor(
     val getLatestAlbums: GetLatestAlbumsUseCase,
@@ -84,5 +92,6 @@ class AlbumUseCases @Inject constructor(
     val getRecentlyPlayedAlbums: GetRecentlyPlayedAlbumsUseCase,
     val getRandomAlbums: GetRandomAlbumsUseCase,
     val getAllAlbums: GetAllAlbumsUseCase,
-    val getAlbum: GetAlbumUseCase
+    val getAlbum: GetAlbumUseCase,
+    val searchLocal: SearchLocalAlbumsUseCase
 )
