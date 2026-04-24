@@ -1,11 +1,11 @@
 package com.example.velodrome.domain.usecase
 
 import com.example.velodrome.domain.model.Album
-import com.example.velodrome.domain.repository.NavidromeRepository
+import com.example.velodrome.domain.repository.AlbumRepository
 import javax.inject.Inject
 
 class GetLatestAlbumsUseCase @Inject constructor(
-    private val repository: NavidromeRepository
+    private val repository: AlbumRepository
 ) {
     suspend operator fun invoke(size: Int = 20): Result<List<Album>> {
         return repository.getLatestAlbums(size)
@@ -13,7 +13,7 @@ class GetLatestAlbumsUseCase @Inject constructor(
 }
 
 class GetTopAlbumsUseCase @Inject constructor(
-    private val repository: NavidromeRepository
+    private val repository: AlbumRepository
 ) {
     suspend operator fun invoke(size: Int = 20): Result<List<Album>> {
         return repository.getTopAlbums(size)
@@ -21,7 +21,7 @@ class GetTopAlbumsUseCase @Inject constructor(
 }
 
 class GetAlbumsByYearUseCase @Inject constructor(
-    private val repository: NavidromeRepository
+    private val repository: AlbumRepository
 ) {
     suspend operator fun invoke(year: Int, size: Int = 20): Result<List<Album>> {
         return repository.getAlbumsByYear(year, size)
@@ -29,7 +29,7 @@ class GetAlbumsByYearUseCase @Inject constructor(
 }
 
 class GetAlbumsByGenreUseCase @Inject constructor(
-    private val repository: NavidromeRepository
+    private val repository: AlbumRepository
 ) {
     suspend operator fun invoke(genre: String, size: Int = 20): Result<List<Album>> {
         return repository.getAlbumsByGenre(genre, size)
@@ -37,7 +37,7 @@ class GetAlbumsByGenreUseCase @Inject constructor(
 }
 
 class GetGenresUseCase @Inject constructor(
-    private val repository: NavidromeRepository
+    private val repository: AlbumRepository
 ) {
     suspend operator fun invoke(): Result<List<String>> {
         return repository.getGenres()
@@ -45,7 +45,7 @@ class GetGenresUseCase @Inject constructor(
 }
 
 class GetRecentlyPlayedAlbumsUseCase @Inject constructor(
-    private val repository: NavidromeRepository
+    private val repository: AlbumRepository
 ) {
     suspend operator fun invoke(size: Int = 20): Result<List<Album>> {
         return repository.getRecentlyPlayedAlbums(size)
@@ -53,7 +53,7 @@ class GetRecentlyPlayedAlbumsUseCase @Inject constructor(
 }
 
 class GetRandomAlbumsUseCase @Inject constructor(
-    private val repository: NavidromeRepository
+    private val repository: AlbumRepository
 ) {
     suspend operator fun invoke(size: Int = 20): Result<List<Album>> {
         return repository.getRandomAlbums(size)
@@ -61,9 +61,15 @@ class GetRandomAlbumsUseCase @Inject constructor(
 }
 
 class GetAllAlbumsUseCase @Inject constructor(
-    private val repository: NavidromeRepository
+    private val repository: AlbumRepository
 ) {
     suspend operator fun invoke(size: Int = 100): Result<List<Album>> {
         return repository.getAllAlbums(size)
     }
+}
+
+class GetAlbumUseCase @Inject constructor(
+    private val repository: AlbumRepository
+) {
+    suspend operator fun invoke(albumId: String) = repository.getAlbum(albumId)
 }

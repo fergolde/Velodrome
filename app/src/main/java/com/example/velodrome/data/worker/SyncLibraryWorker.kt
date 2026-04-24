@@ -6,9 +6,10 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.velodrome.data.local.dao.AlbumDao
 import com.example.velodrome.data.local.dao.ArtistDao
-import com.example.velodrome.data.repository.NavidromeRepositoryImpl
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
+import com.example.velodrome.domain.repository.AlbumRepository
+import com.example.velodrome.domain.repository.ArtistRepository
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
@@ -34,17 +35,18 @@ class SyncLibraryWorker(
             )
             val artistDao = appEntryPoint.artistDao()
             val albumDao = appEntryPoint.albumDao()
-            val navidromeRepository = appEntryPoint.navidromeRepository()
+            val artistRepository = appEntryPoint.artistRepository()
+            val albumRepository = appEntryPoint.albumRepository()
 
             // Sync artists
-            val artistsResult = syncArtists(artistDao, navidromeRepository)
+            val artistsResult = syncArtists(artistDao, artistRepository)
             if (artistsResult is SyncResult.Error) {
                 Log.e(TAG, "Artist sync failed: ${artistsResult.message}")
                 return@withContext Result.retry()
             }
 
             // Sync albums
-            val albumsResult = syncAlbums(albumDao, navidromeRepository)
+            val albumsResult = syncAlbums(albumDao, albumRepository)
             if (albumsResult is SyncResult.Error) {
                 Log.e(TAG, "Album sync failed: ${albumsResult.message}")
                 return@withContext Result.retry()
@@ -60,7 +62,7 @@ class SyncLibraryWorker(
 
     private suspend fun syncArtists(
         artistDao: ArtistDao,
-        navidromeRepository: NavidromeRepositoryImpl
+        artistRepository: ArtistRepository
     ): SyncResult {
         Log.d(TAG, "Syncing artists...")
         var offset = 0
@@ -68,7 +70,7 @@ class SyncLibraryWorker(
         var totalSynced = 0
 
         while (offset < 10000) {
-            val result = navidromeRepository.getArtists(offset = offset, size = pageSize)
+            val result = artistRepository.getArtists(offset = offset, size = pageSize)
             val artists = result.getOrNull()
             if (artists == null) {
                 return SyncResult.Error(result.exceptionOrNull()?.message ?: "Failed to fetch artists")
@@ -92,7 +94,7 @@ class SyncLibraryWorker(
 
     private suspend fun syncAlbums(
         albumDao: AlbumDao,
-        navidromeRepository: NavidromeRepositoryImpl
+        albumRepository: AlbumRepository
     ): SyncResult {
         Log.d(TAG, "Syncing albums...")
         var offset = 0
@@ -100,7 +102,7 @@ class SyncLibraryWorker(
         var totalSynced = 0
 
         while (offset < 10000) {
-            val result = navidromeRepository.getAllAlbumsFromServer(offset = offset, size = pageSize)
+            val result = albumRepository.getAllAlbumsFromServer(offset = offset, size = pageSize)
             val albums = result.getOrNull()
             if (albums == null) {
                 return SyncResult.Error(result.exceptionOrNull()?.message ?: "Failed to fetch albums")
@@ -152,7 +154,8 @@ class SyncLibraryWorker(
 interface WorkerEntryPoint {
     fun artistDao(): com.example.velodrome.data.local.dao.ArtistDao
     fun albumDao(): com.example.velodrome.data.local.dao.AlbumDao
-    fun navidromeRepository(): com.example.velodrome.data.repository.NavidromeRepositoryImpl
+    fun artistRepository(): com.example.velodrome.domain.repository.ArtistRepository
+    fun albumRepository(): com.example.velodrome.domain.repository.AlbumRepository
 }
 
 sealed class SyncResult {
