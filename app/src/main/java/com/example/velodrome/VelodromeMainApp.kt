@@ -1,7 +1,6 @@
 package com.example.velodrome
 
 import android.app.Application
-import android.util.Log
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
@@ -15,8 +14,6 @@ import kotlinx.coroutines.runBlocking
 import java.io.File
 import javax.inject.Inject
 
-private const val TAG = "VelodromeApp"
-
 @HiltAndroidApp
 class VelodromeApp : Application(), ImageLoaderFactory {
 
@@ -29,13 +26,7 @@ class VelodromeApp : Application(), ImageLoaderFactory {
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
-    override fun onCreate() {
-        super.onCreate()
-        Log.d(TAG, "VelodromeApp onCreate start")
-        Log.d(TAG, "VelodromeApp onCreate end")
-    }
-
-    override fun newImageLoader(): ImageLoader {
+override fun newImageLoader(): ImageLoader {
         // Obtener límite de configuración
         val limitMb = runBlocking {
             settingsRepository.imageCacheSizeMb.first()
@@ -47,6 +38,14 @@ class VelodromeApp : Application(), ImageLoaderFactory {
                     .maxSizePercent(0.25)
                     .build()
             }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(File(cacheDir, "image_cache"))
+                    .maxSizeBytes(limitMb * 1024L * 1024L)
+                    .build()
+            }
+            .build()
+    }
             .diskCache {
                 DiskCache.Builder()
                     .directory(File(cacheDir, "image_cache"))
