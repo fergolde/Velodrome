@@ -2,12 +2,20 @@ package com.example.velodrome.domain.usecase
 
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.domain.repository.TrackRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-class GetTracksUseCase @Inject constructor(
+class ObserveTracksByAlbumUseCase @Inject constructor(
     private val repository: TrackRepository
 ) {
-    suspend operator fun invoke(albumId: String) = repository.getTracks(albumId)
+    operator fun invoke(albumId: String): Flow<List<Track>> = repository.observeTracksByAlbum(albumId)
+}
+
+class SyncTracksForAlbumUseCase @Inject constructor(
+    private val repository: TrackRepository
+) {
+    suspend operator fun invoke(albumId: String): Result<Unit> = repository.syncTracksForAlbum(albumId)
 }
 
 class GetStreamUrlUseCase @Inject constructor(
@@ -42,7 +50,8 @@ class GetRandomSongsUseCase @Inject constructor(
 
 // ========== WRAPPER ==========
 class TrackUseCases @Inject constructor(
-    val getTracks: GetTracksUseCase,
+    val observeTracksByAlbum: ObserveTracksByAlbumUseCase,
+    val syncTracksForAlbum: SyncTracksForAlbumUseCase,
     val getStreamUrl: GetStreamUrlUseCase,
     val getSongsByGenre: GetSongsByGenreUseCase,
     val getRandomSongsByGenre: GetRandomSongsByGenreUseCase,

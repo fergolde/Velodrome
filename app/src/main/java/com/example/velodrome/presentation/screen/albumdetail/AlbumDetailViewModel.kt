@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.domain.usecase.GetAlbumUseCase
-import com.example.velodrome.domain.usecase.GetTracksUseCase
+import com.example.velodrome.domain.usecase.TrackUseCases
 import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +33,7 @@ data class AlbumDetailUiState(
 class AlbumDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getAlbumUseCase: GetAlbumUseCase,
-    private val getTracksUseCase: GetTracksUseCase,
+    private val trackUseCases: TrackUseCases,
     private val playerManager: PlayerManager
 ) : ViewModel() {
 
@@ -84,18 +84,20 @@ class AlbumDetailViewModel @Inject constructor(
                 }
         }
 
+        // Observar tracks desde DB local (instantáneo)
         viewModelScope.launch {
-            // Load tracks - already sorted by track number from API
-            getTracksUseCase(albumId)
-                .onSuccess { tracks ->
-                    // Sort by track number ascending
-                    val sortedTracks = tracks.sortedBy { it.trackNumber }
-                    Log.d(TAG, "Loaded ${tracks.size} tracks")
-                    _uiState.update { it.copy(tracks = sortedTracks, isLoading = false) }
-                }
+            trackUseCases.observeTracksByAlbum(albumId).collect { tracks ->
+                val sortedTracks = tracks.sortedBy { it.trackNumber }
+                Log.d(TAG, "Observed ${tracks.size} tracks from DB")
+                _uiState.update { it.copy(tracks = sortedTracks, isLoading = false) }
+            }
+        }
+
+        // Sincronizar tracks desde API en background
+        viewModelScope.launch {
+            trackUseCases.syncTracksForAlbum(albumId)
                 .onFailure { e ->
-                    Log.e(TAG, "Error loading tracks: ${e.message}")
-                    _uiState.update { it.copy(error = e.message, isLoading = false) }
+                    Log.e(TAG, "Sync error: ${e.message}")
                 }
         }
     }
