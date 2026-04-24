@@ -25,6 +25,14 @@ interface ArtistRepository {
     suspend fun syncArtistsFromServer(): Result<Int>
 
     /**
+     * Sync with pagination support for resume capability.
+     */
+    suspend fun syncArtistsFromServer(
+        startOffset: Int = 0,
+        onPageProcessed: suspend (newOffset: Int) -> Unit
+    ): Result<Int>
+
+    /**
      * Busca artists en la base de datos local por nombre.
      * Uso: búsqueda reactiva con flatMapLatest en el ViewModel.
      */

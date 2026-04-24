@@ -35,4 +35,18 @@ interface AlbumRepository {
      * El repositorio decide si usar caché o red.
      */
     suspend fun syncAlbumsFromServer(): Result<Int>
+
+    /**
+     * Sync with pagination support for resume capability.
+     */
+    suspend fun syncAlbumsFromServer(
+        startOffset: Int = 0,
+        onPageProcessed: suspend (newOffset: Int) -> Unit
+    ): Result<Int>
+
+    /**
+     * Check if server has changed since given timestamp.
+     * Uses ifModifiedSince param in getIndexes API.
+     */
+    suspend fun hasServerChangedSince(timestamp: Long): Boolean
 }

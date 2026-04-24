@@ -118,9 +118,16 @@ class ArtistRepositoryImpl @Inject constructor(
     }
 
     override suspend fun syncArtistsFromServer(): Result<Int> {
+        return syncArtistsFromServer(startOffset = 0) { }
+    }
+
+    override suspend fun syncArtistsFromServer(
+        startOffset: Int,
+        onPageProcessed: suspend (newOffset: Int) -> Unit
+    ): Result<Int> {
         return runCatching {
-            Log.d("ArtistRepo", "=== syncArtistsFromServer ===")
-            var offset = 0
+            Log.d("ArtistRepo", "=== syncArtistsFromServer startOffset=$startOffset ===")
+            var offset = startOffset
             val pageSize = 500
             var totalSynced = 0
 
@@ -138,6 +145,9 @@ class ArtistRepositoryImpl @Inject constructor(
                 localMusicDataSource.insertArtists(entities)
                 totalSynced += artists.size
                 Log.d("ArtistRepo", "Synced ${artists.size} artists (total: $totalSynced)")
+
+                // Notify offset for resume capability
+                onPageProcessed(offset + artists.size)
 
                 if (artists.size < pageSize) break
                 offset += pageSize
