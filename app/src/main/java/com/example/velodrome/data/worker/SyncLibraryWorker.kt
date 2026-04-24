@@ -7,6 +7,8 @@ import androidx.work.WorkerParameters
 import com.example.velodrome.domain.repository.AlbumRepository
 import com.example.velodrome.domain.repository.ArtistRepository
 import com.example.velodrome.domain.repository.SettingsRepository
+import com.example.velodrome.data.local.datasource.LocalMusicDataSource
+import com.example.velodrome.data.local.mapper.toEntity
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +36,7 @@ class SyncLibraryWorker(
             val settingsRepository = appEntryPoint.settingsRepository()
             val artistRepository = appEntryPoint.artistRepository()
             val albumRepository = appEntryPoint.albumRepository()
+            val localMusicDataSource = appEntryPoint.localMusicDataSource()
 
             // Read sync state
             val lastSyncTimestamp = settingsRepository.lastSyncTimestamp.first()
@@ -57,12 +60,16 @@ class SyncLibraryWorker(
                     return@withContext Result.retry()
                 }
 
-                // Save to local DB (repository saves implicitly via observe or we can add save logic)
+                // Save to local DB
                 val latestAlbums = latestResult.getOrNull() ?: emptyList()
                 if (latestAlbums.isNotEmpty()) {
-                    // The getLatestAlbums just fetches; we might want to insert here
-                    // For now assume repository handles caching
-                    Log.d(TAG, "Synced ${latestAlbums.size} latest albums")
+                    // Mapear los modelos de dominio a entidades de base de datos
+                    val entities = latestAlbums.map { it.toEntity() }
+
+                    // Insertar en Room (el DAO usa OnConflictStrategy.REPLACE)
+                    localMusicDataSource.insertAlbums(entities)
+
+                    Log.d(TAG, "Inserted ${entities.size} latest albums into local DB")
                 }
 
                 // Update timestamp
@@ -122,4 +129,5 @@ interface WorkerEntryPoint {
     fun settingsRepository(): SettingsRepository
     fun artistRepository(): ArtistRepository
     fun albumRepository(): AlbumRepository
+    fun localMusicDataSource(): LocalMusicDataSource
 }
