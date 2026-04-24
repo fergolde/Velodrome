@@ -38,6 +38,20 @@ interface SettingsRepository {
      */
     val scrobbleEnabled: Flow<Boolean>
 
+    // --- Sync State ---
+
+    /**
+     * Timestamp of last successful sync (millis since epoch).
+     * Default: 0L (no sync performed yet)
+     */
+    val lastSyncTimestamp: Flow<Long>
+
+    /**
+     * Offset for resuming interrupted album sync.
+     * Default: 0
+     */
+    val lastSyncOffset: Flow<Int>
+
     // --- Actions ---
 
     suspend fun setImageCacheSizeMb(sizeMb: Int)
@@ -47,4 +61,8 @@ interface SettingsRepository {
     suspend fun setAccentColor(hexColor: String)
 
     suspend fun setScrobbleEnabled(enabled: Boolean)
+
+    suspend fun setLastSyncTimestamp(timestamp: Long)
+
+    suspend fun setLastSyncOffset(offset: Int)
 }

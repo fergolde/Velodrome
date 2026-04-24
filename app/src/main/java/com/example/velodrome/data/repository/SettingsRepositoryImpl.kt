@@ -5,6 +5,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -34,6 +36,8 @@ class SettingsRepositoryImpl @Inject constructor(
         val MUSIC_CACHE_SIZE_GB = intPreferencesKey("music_cache_size_gb")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
         val SCROBBLE_ENABLED = booleanPreferencesKey("scrobble_enabled")
+        val LAST_SYNC_TIMESTAMP = longPreferencesKey("last_sync_timestamp")
+        val LAST_SYNC_OFFSET = intPreferencesKey("last_sync_offset")
     }
 
     // --- Default Values ---
@@ -43,6 +47,8 @@ class SettingsRepositoryImpl @Inject constructor(
         const val DEFAULT_MUSIC_CACHE_SIZE_GB = 2
         const val DEFAULT_ACCENT_COLOR = "#B6A0FF"
         const val DEFAULT_SCROBBLE_ENABLED = false
+        const val DEFAULT_LAST_SYNC_TIMESTAMP = 0L
+        const val DEFAULT_LAST_SYNC_OFFSET = 0
     }
 
     // --- Cache Settings ---
@@ -71,6 +77,18 @@ class SettingsRepositoryImpl @Inject constructor(
             preferences[PreferencesKeys.SCROBBLE_ENABLED] ?: DEFAULT_SCROBBLE_ENABLED
         }
 
+    // --- Sync State ---
+
+    override val lastSyncTimestamp: Flow<Long> = context.settingsDataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.LAST_SYNC_TIMESTAMP] ?: DEFAULT_LAST_SYNC_TIMESTAMP
+        }
+
+    override val lastSyncOffset: Flow<Int> = context.settingsDataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.LAST_SYNC_OFFSET] ?: DEFAULT_LAST_SYNC_OFFSET
+        }
+
     // --- Actions ---
 
     override suspend fun setImageCacheSizeMb(sizeMb: Int) {
@@ -94,6 +112,18 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setScrobbleEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[PreferencesKeys.SCROBBLE_ENABLED] = enabled
+        }
+    }
+
+    override suspend fun setLastSyncTimestamp(timestamp: Long) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_SYNC_TIMESTAMP] = timestamp
+        }
+    }
+
+    override suspend fun setLastSyncOffset(offset: Int) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_SYNC_OFFSET] = offset
         }
     }
 }

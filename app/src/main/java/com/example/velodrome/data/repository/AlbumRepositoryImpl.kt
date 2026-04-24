@@ -154,9 +154,16 @@ class AlbumRepositoryImpl @Inject constructor(
     }
 
     override suspend fun syncAlbumsFromServer(): Result<Int> {
+        return syncAlbumsFromServer(startOffset = 0) { }
+    }
+
+    override suspend fun syncAlbumsFromServer(
+        startOffset: Int,
+        onPageProcessed: suspend (newOffset: Int) -> Unit
+    ): Result<Int> {
         return runCatching {
-            Log.d("AlbumRepo", "=== syncAlbumsFromServer ===")
-            var offset = 0
+            Log.d("AlbumRepo", "=== syncAlbumsFromServer startOffset=$startOffset ===")
+            var offset = startOffset
             val pageSize = 500
             var totalSynced = 0
 
@@ -175,12 +182,27 @@ class AlbumRepositoryImpl @Inject constructor(
                 totalSynced += albums.size
                 Log.d("AlbumRepo", "Synced ${albums.size} albums (total: $totalSynced)")
 
+                // Notify offset for resume capability
+                onPageProcessed(offset + albums.size)
+
                 if (albums.size < pageSize) break
                 offset += pageSize
             }
             Log.d("AlbumRepo", "Album sync completed: $totalSynced total")
             totalSynced
         }
+    }
+
+    override suspend fun hasServerChangedSince(timestamp: Long): Boolean {
+        return runCatching {
+            Log.d("AlbumRepo", "=== hasServerChangedSince timestamp=$timestamp ===")
+            val response = api.getIndexes(ifModifiedSince = timestamp)
+            val artistsDto = response.response.artists
+            val hasChanges = artistsDto?.indexes?.isNotEmpty() == true
+                || artistsDto?.artistList?.isNotEmpty() == true
+            Log.d("AlbumRepo", "Server changed since $timestamp: $hasChanges")
+            hasChanges
+        }.getOrDefault(true) // Default to true on error to trigger full sync
     }
 
     override suspend fun searchLocal(query: String): List<Album> {
