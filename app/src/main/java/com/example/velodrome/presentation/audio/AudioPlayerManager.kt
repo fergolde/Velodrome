@@ -39,7 +39,7 @@ class AudioPlayerManager @Inject constructor(
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
-    
+
     private val _currentPosition = MutableStateFlow(0L)
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
 
@@ -121,7 +121,14 @@ class AudioPlayerManager @Inject constructor(
             while (true) {
                 mediaController?.let { controller ->
                     if (controller.isPlaying) {
-                        _currentPosition.value = controller.currentPosition
+                        val pos = controller.currentPosition
+                        _currentPosition.value = pos
+                        // Comprobar si hay que scrobblear (50% de la duración alcanzado)
+                        val dur = controller.duration
+                        val trackId = _currentTrackId.value
+                        if (trackId != null && dur > 0) {
+                            scrobbleManager.checkAndScrobble(trackId, pos, dur)
+                        }
                     }
                 }
                 kotlinx.coroutines.delay(1000L)
@@ -155,10 +162,11 @@ class AudioPlayerManager @Inject constructor(
         val playlist = _playlist.value
         val index = mediaItem.mediaId.toIntOrNull() ?: -1
         if (index in playlist.indices) {
+            val previousId = _currentTrackId.value  // guardar ANTES de actualizar
             _currentIndex.value = index
             _currentTrack.value = playlist[index]
             _currentTrackId.value = playlist[index].id
-            val previousId = _currentTrackId.value
+            // Notificar scrobble solo si realmente cambió la canción
             if (previousId != playlist[index].id) {
                 scrobbleManager.onTrackChanged(playlist[index].id)
                 scrobbleManager.sendNowPlaying(playlist[index].id)
@@ -166,7 +174,7 @@ class AudioPlayerManager @Inject constructor(
         }
     }
 
-fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
+    fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
         _playlist.value = playlist
         _currentIndex.value = startIndex
         _currentTrack.value = track

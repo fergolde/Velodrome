@@ -16,6 +16,9 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,7 +51,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -92,18 +95,17 @@ fun PlayerScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showQueue by remember { mutableStateOf(false) }
 
-    Scaffold(
-        bottomBar = {
-            SharedBottomNavigationBar(
-                currentRoute = "player",
-                onHomeClick = onHomeClick,
-                onExploreClick = onExploreClick,
-                onSettingsClick = onSettingsClick
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // Contenido del player ocupa todo el espacio disponible menos la barra inferior
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
             // Gradient overlay
             Box(
                 modifier = Modifier
@@ -122,7 +124,7 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    .windowInsetsPadding(WindowInsets.statusBars)
                     .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -153,10 +155,19 @@ fun PlayerScreen(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 QueueChip(onClick = { showQueue = true })
-                Spacer(modifier = Modifier.height(1.dp))
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
+
+        // Barra de navegación fija en la parte inferior del player
+        SharedBottomNavigationBar(
+            currentRoute = "player",
+            onHomeClick = onHomeClick,
+            onExploreClick = onExploreClick,
+            onSettingsClick = onSettingsClick
+        )
     }
+
 
     if (showQueue) {
         ModalBottomSheet(
@@ -183,6 +194,7 @@ fun PlayerScreen(
                     showQueue = false
                 }
             )
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
@@ -483,6 +495,7 @@ fun QueueContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .padding(horizontal = 20.dp)
     ) {
         // Header

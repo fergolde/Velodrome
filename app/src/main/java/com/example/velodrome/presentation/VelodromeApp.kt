@@ -95,28 +95,33 @@ fun MainScaffold(
 
     BottomSheetScaffold(
         scaffoldState = sheetState,
-        sheetPeekHeight = 0.dp, // El mini reproductor se gestiona en la bottomBar del Scaffold interno
+        sheetPeekHeight = 0.dp,
+        sheetMaxWidth = Int.MAX_VALUE.dp, // ocupa todo el ancho
+        sheetDragHandle = null, // lo gestionamos dentro de PlayerScreen
+        sheetContainerColor = MaterialTheme.colorScheme.background,
         sheetContent = {
             PlayerScreen(
                 onMinimizeClick = {
                     scope.launch { sheetState.bottomSheetState.partialExpand() }
                 },
-                onHomeClick = { navController.navigate(Routes.Home) },
-                onExploreClick = { navController.navigate(Routes.Explore) },
-                onSettingsClick = { navController.navigate(Routes.Settings) }
+                onHomeClick = {
+                    // Navegamos primero, luego colapsamos: la pantalla destino ya está
+                    // renderizada por debajo mientras el sheet baja — sin flash intermedio
+                    navController.navigate(Routes.Home) { launchSingleTop = true }
+                    scope.launch { sheetState.bottomSheetState.partialExpand() }
+                },
+                onExploreClick = {
+                    navController.navigate(Routes.Explore) { launchSingleTop = true }
+                    scope.launch { sheetState.bottomSheetState.partialExpand() }
+                },
+                onSettingsClick = {
+                    navController.navigate(Routes.Settings) { launchSingleTop = true }
+                    scope.launch { sheetState.bottomSheetState.partialExpand() }
+                }
             )
         },
-        sheetDragHandle = {
-            if (hasSong) {
-                Box(
-                    modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(modifier = Modifier.width(36.dp).height(4.dp).clip(CircleShape).background(Color.Gray.copy(alpha = 0.5f)))
-                }
-            }
-        }
-    ) {
+
+        ) {
         Scaffold(
             bottomBar = {
                 // Solo mostramos la barra si no estamos en la pantalla de Login
@@ -152,7 +157,10 @@ fun MainScaffold(
                 }
             }
         ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
+            // Solo aplicamos el padding inferior (bottom bar + navigation bar).
+            // El padding superior (status bar) lo gestiona cada pantalla a través
+            // de su propia TopAppBar o statusBarsPadding, evitando el hueco doble.
+            Box(modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
                 NavHost(
                     navController = navController,
                     startDestination = startDestination

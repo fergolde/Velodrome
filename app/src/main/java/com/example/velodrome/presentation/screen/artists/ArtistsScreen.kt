@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -58,11 +59,12 @@ fun ArtistsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
         ) {
             if (uiState.isLoading) {
                 Box(
@@ -85,7 +87,7 @@ fun ArtistsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp)
+                        //.padding(horizontal = 16.dp)
                 ) {
                     ArtistsSearchBar(
                         query = uiState.searchQuery,
@@ -131,10 +133,11 @@ fun ArtistsSearchBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .clip(RoundedCornerShape(12.dp)),
+            .clip(RoundedCornerShape(28.dp))
+            .background(MaterialTheme.colorScheme.surface),
         placeholder = { Text(stringResource(R.string.artists_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(28.dp)
     )
 }
 

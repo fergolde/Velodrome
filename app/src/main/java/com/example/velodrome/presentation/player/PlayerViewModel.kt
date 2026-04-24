@@ -34,17 +34,23 @@ class PlayerViewModel @Inject constructor(
                 _uiState.update { it.copy(isPlaying = isPlaying) }
             }
         }
-        // Position is polled by AudioPlayerManager, just collect it here
+        // AudioPlayerManager emite posición en milisegundos → convertir a segundos para la UI
         viewModelScope.launch {
-            playerManager.currentPosition.collect { pos ->
-                _uiState.update { it.copy(currentPosition = pos.toInt()) }
+            playerManager.currentPosition.collect { posMs ->
+                _uiState.update { it.copy(currentPosition = (posMs / 1000).toInt()) }
+            }
+        }
+        // Colectar currentTrack directamente: evita que la info aparezca vacía
+        // cuando el sheet se abre con una canción ya en reproducción
+        viewModelScope.launch {
+            playerManager.currentTrack.collect { track ->
+                _uiState.update { it.copy(currentTrack = track) }
             }
         }
         viewModelScope.launch {
             playerManager.currentIndex.collect { idx ->
                 _uiState.update { state ->
-                    val currentTrack = state.playlist.getOrNull(idx)
-                    state.copy(currentIndex = idx, currentTrack = currentTrack)
+                    state.copy(currentIndex = idx)
                 }
             }
         }

@@ -42,29 +42,21 @@ class ScrobbleManager @Inject constructor(
      */
     fun checkAndScrobble(trackId: String, currentPositionMs: Long, durationMs: Long) {
         if (durationMs <= 0) return
-        // Ignore if this is a different track than what we're tracking
-        if (trackId != currentScrobbleTrackId && currentScrobbleTrackId != null) return
+        // Ya fue scrobbleada esta pista — no repetir
+        if (trackId == currentScrobbleTrackId) return
 
         scope.launch {
             try {
                 val scrobbleEnabled = settingsRepository.scrobbleEnabled.first()
-                if (!scrobbleEnabled) {
-                    return@launch
-                }
+                if (!scrobbleEnabled) return@launch
 
-                // Already scrobbled this track
-                if (trackId == currentScrobbleTrackId) {
-                    return@launch
-                }
+                // Last.fm spec: scrobblear al 50% de duración o a los 4 minutos, lo que ocurra antes
+                val scrobbleThreshold = minOf(durationMs / 2, 4 * 60 * 1000L)
 
-                // Calculate halfway point (50% of duration)
-                val halfwayPoint = durationMs / 2
-
-                // If we've passed the halfway point, scrobble
-                if (currentPositionMs >= halfwayPoint) {
-                    // Mark as about to scrobble to prevent duplicates
+                if (currentPositionMs >= scrobbleThreshold) {
+                    // Marcar inmediatamente para evitar llamadas duplicadas del polling
                     currentScrobbleTrackId = trackId
-                    Log.d(TAG, "Halfway point reached for track: $trackId, position: $currentPositionMs/$durationMs")
+                    Log.d(TAG, "Scrobble threshold reached for track: $trackId, pos: $currentPositionMs/$durationMs")
                     scrobble(trackId)
                 }
             } catch (e: Exception) {

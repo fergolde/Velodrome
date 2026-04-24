@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -60,11 +61,12 @@ fun AlbumsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
         ) {
             if (uiState.isLoading) {
                 Box(
@@ -87,7 +89,6 @@ fun AlbumsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp)
                 ) {
                     AlbumsSearchBar(
                         query = uiState.searchQuery,
@@ -138,10 +139,11 @@ fun AlbumsSearchBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .clip(RoundedCornerShape(12.dp)),
+            .clip(RoundedCornerShape(28.dp))
+            .background(MaterialTheme.colorScheme.surface),
         placeholder = { Text(stringResource(R.string.albums_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(28.dp)
     )
 }
 
