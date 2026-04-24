@@ -95,8 +95,8 @@ class SettingsViewModel @Inject constructor(
                 _pendingMusicCacheGb.value = limitGb
             }
         }
-        // Clean caches on startup based on current settings
-        /*viewModelScope.launch {
+        // Apply cache cleanup when settings change
+        viewModelScope.launch {
             settingsRepository.imageCacheSizeMb.collect { limitMb ->
                 cacheManager.cleanImageCacheIfNeeded(limitMb)
                 refreshCacheSizes()
@@ -107,7 +107,7 @@ class SettingsViewModel @Inject constructor(
                 cacheManager.cleanMusicCacheIfNeeded(limitGb)
                 refreshCacheSizes()
             }
-        }*/
+        }
     }
 
     // --- Actions ---
@@ -133,14 +133,12 @@ class SettingsViewModel @Inject constructor(
      */
     fun confirmChanges() {
         viewModelScope.launch {
-            val imageMb = _pendingImageCacheMb.value
             val musicGb = _pendingMusicCacheGb.value
-
-            settingsRepository.setImageCacheSizeMb(imageMb)
             settingsRepository.setMusicCacheSizeGb(musicGb)
 
-            //cacheManager.cleanImageCacheIfNeeded(imageMb)
-            //cacheManager.cleanMusicCacheIfNeeded(musicGb)
+            // Notificar al SimpleCache del nuevo límite
+            // (requiere guardar referencia al SimpleCache en el ViewModel o en CacheManager)
+            cacheManager.setMusicCacheLimitBytes(musicGb.toLong() * 1024 * 1024 * 1024)
 
             refreshCacheSizes()
             _hasPendingChanges.value = false
