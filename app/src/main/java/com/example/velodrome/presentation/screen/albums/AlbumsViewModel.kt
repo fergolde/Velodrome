@@ -3,9 +3,8 @@ package com.example.velodrome.presentation.screen.albums
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.velodrome.data.local.datasource.LocalMusicDataSource
-import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.domain.model.Album
+import com.example.velodrome.domain.repository.AlbumRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +24,7 @@ data class AlbumsUiState(
 
 @HiltViewModel
 class AlbumsViewModel @Inject constructor(
-    private val localMusicDataSource: LocalMusicDataSource
+    private val albumRepository: AlbumRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AlbumsUiState())
@@ -39,8 +38,8 @@ class AlbumsViewModel @Inject constructor(
 
     private fun observeAlbums() {
         viewModelScope.launch {
-            localMusicDataSource.observeAllAlbums().collect { entities ->
-                allAlbums = entities.map { it.toDomain() }
+            albumRepository.observeAllAlbums().collect { albums ->
+                allAlbums = albums
                 val filtered = filterAlbums(allAlbums, _uiState.value.searchQuery)
                 _uiState.update {
                     it.copy(
