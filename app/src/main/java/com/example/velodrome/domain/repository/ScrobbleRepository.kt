@@ -5,4 +5,5 @@ package com.example.velodrome.domain.repository
  */
 interface ScrobbleRepository {
     suspend fun scrobble(trackId: String, time: Long? = null, submission: Boolean = true): Result<Unit>
+    suspend fun savePendingScrobble(trackId: String, timestamp: Long)
 }

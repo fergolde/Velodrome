@@ -1,8 +1,16 @@
 package com.example.velodrome.presentation.audio
 
+import android.content.Context
 import android.util.Log
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import com.example.velodrome.data.worker.ScrobbleWorker
 import com.example.velodrome.domain.repository.ScrobbleRepository
 import com.example.velodrome.domain.repository.SettingsRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -13,15 +21,17 @@ import javax.inject.Singleton
 
 /**
  * Manager for handling scrobble functionality.
- * Sends scrobble info to the server when enabled.
+ * Saves scrobbles to Room first, then enqueues WorkManager for reliable delivery.
  */
 @Singleton
 class ScrobbleManager @Inject constructor(
     private val scrobbleRepository: ScrobbleRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    @ApplicationContext private val context: Context
 ) {
     private val TAG = "ScrobbleManager"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val workManager = WorkManager.getInstance(context)
 
     // Track the current track being played to avoid duplicate submissions
     private var currentScrobbleTrackId: String? = null
@@ -100,25 +110,45 @@ class ScrobbleManager @Inject constructor(
     }
 
     /**
-     * Perform the scrobble.
+     * Perform the scrobble — save to Room and enqueue WorkManager.
      */
     private suspend fun scrobble(trackId: String) {
+        val timestamp = System.currentTimeMillis()
         try {
-            val result = scrobbleRepository.scrobble(trackId, System.currentTimeMillis(), submission = true)
-            result.fold(
-                onSuccess = {
-                    currentScrobbleTrackId = trackId
-                    Log.d(TAG, "Successfully scrobbled track: $trackId")
-                },
-                onFailure = { error ->
-                    // On failure, reset so we can try again
-                    currentScrobbleTrackId = null
-                    Log.e(TAG, "Failed to scrobble track: $trackId, error: ${error.message}")
-                }
-            )
+            // Step 1: Save to Room immediately
+            scrobbleRepository.savePendingScrobble(trackId, timestamp)
+            Log.d(TAG, "Saved pending scrobble for track: $trackId")
+
+            // Step 2: Enqueue WorkManager for reliable delivery
+            enqueueScrobbleWork()
+
+            // Mark as tracked (don't set currentScrobbleTrackId until WorkManager succeeds)
         } catch (e: Exception) {
-            currentScrobbleTrackId = null
             Log.e(TAG, "Exception during scrobble: ${e.message}")
         }
+    }
+
+    /**
+     * Enqueue a OneTimeWorkRequest to process pending scrobbles.
+     */
+    private fun enqueueScrobbleWork() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val workRequest = OneTimeWorkRequestBuilder<ScrobbleWorker>()
+            .setConstraints(constraints)
+            .build()
+
+        workManager.enqueueUniqueWork(
+            SCROBBLE_WORK_NAME,
+            ExistingWorkPolicy.KEEP,
+            workRequest
+        )
+        Log.d(TAG, "Enqueued ScrobbleWorker")
+    }
+
+    companion object {
+        const val SCROBBLE_WORK_NAME = "scrobble_pending_work"
     }
 }
