@@ -26,7 +26,7 @@ import javax.inject.Singleton
 
 /**
  * Manager for audio playback with MediaController.
- * Uses companion object for static access from AudioPlayerService.
+ * Injected by Hilt - singleton ensures single instance.
  */
 @Singleton
 class AudioPlayerManager @Inject constructor(
@@ -35,28 +35,6 @@ class AudioPlayerManager @Inject constructor(
     private val credentialsManager: CredentialsManager,
     private val cacheDataSourceFactory: CacheDataSource.Factory
 ) {
-    companion object {
-        @Volatile private var self: AudioPlayerManager? = null
-        
-        fun onPlaybackStateChanged(isPlaying: Boolean) {
-            self?.onPlaybackStateChangedInternal(isPlaying)
-        }
-        fun onReady(durationMs: Long) {
-            self?.onReadyInternal(durationMs)
-        }
-        fun onPlaybackCompleted() {
-            self?.onPlaybackCompletedInternal()
-        }
-        fun onBuffering() {
-            self?.onBufferingInternal()
-        }
-        fun onMediaItemChanged(mediaItem: MediaItem) {
-            // no-op for static
-        }
-    }
-    
-    init { self = this }
-
     private val TAG = "AudioPlayerManager"
 
     private val _isPlaying = MutableStateFlow(false)

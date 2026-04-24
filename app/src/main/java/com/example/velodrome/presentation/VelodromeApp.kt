@@ -22,6 +22,7 @@ import com.example.velodrome.presentation.components.MiniPlayer
 import com.example.velodrome.presentation.navigation.Routes
 import com.example.velodrome.presentation.player.PlayerManager
 import com.example.velodrome.presentation.player.PlayerScreen
+import com.example.velodrome.presentation.player.SharedPlayerViewModel
 import com.example.velodrome.presentation.screen.albumdetail.AlbumDetailScreen
 import com.example.velodrome.presentation.screen.albums.AlbumsScreen
 import com.example.velodrome.presentation.screen.artistdetail.ArtistDetailScreen
@@ -33,7 +34,9 @@ import com.example.velodrome.presentation.screen.settings.SettingsScreen
 import kotlinx.coroutines.launch
 
 @Composable
-fun VelodromeMainApp() {
+fun VelodromeMainApp(
+    sharedPlayerViewModel: SharedPlayerViewModel
+) {
     val navController = rememberNavController()
     var isLoggedIn by remember { mutableStateOf<Boolean?>(null) }
 
@@ -58,7 +61,8 @@ fun VelodromeMainApp() {
                 navController = navController,
                 // Si está logueado va a Home, si no a Login (usando objetos de Routes)
                 startDestination = if (isLoggedIn == true) Routes.Home else Routes.Login,
-                onLoginSuccess = { isLoggedIn = true }
+                onLoginSuccess = { isLoggedIn = true },
+                sharedPlayerViewModel = sharedPlayerViewModel
             )
         }
     }
@@ -69,15 +73,16 @@ fun VelodromeMainApp() {
 fun MainScaffold(
     navController: NavHostController,
     startDestination: Any,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    sharedPlayerViewModel: SharedPlayerViewModel
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // Estado del reproductor
-    val currentTrack by PlayerManager.currentTrack.collectAsState()
-    val isPlaying by PlayerManager.isPlaying.collectAsState()
-    val currentPosition by PlayerManager.currentPosition.collectAsState()
+    // Estado del reproductor desde SharedPlayerViewModel
+    val currentTrack by sharedPlayerViewModel.currentTrack.collectAsState()
+    val isPlaying by sharedPlayerViewModel.isPlaying.collectAsState()
+    val currentPosition by sharedPlayerViewModel.currentPosition.collectAsState()
     val hasSong = currentTrack != null
     val scope = rememberCoroutineScope()
 
@@ -124,10 +129,10 @@ fun MainScaffold(
                                 currentTrack = currentTrack,
                                 isPlaying = isPlaying,
                                 currentPosition = currentPosition,
-                                onPlayPauseClick = { PlayerManager.togglePlayPause() },
+                                onPlayPauseClick = { sharedPlayerViewModel.togglePlayPause() },
                                 onClick = { scope.launch { sheetState.bottomSheetState.expand() } },
-                                onNextClick = { PlayerManager.next() },
-                                onPreviousClick = { PlayerManager.previous() }
+                                onNextClick = { sharedPlayerViewModel.next() },
+                                onPreviousClick = { sharedPlayerViewModel.previous() }
                             )
                         }
 
