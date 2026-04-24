@@ -5,20 +5,32 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import com.example.velodrome.data.local.datasource.LocalMusicDataSource
+import com.example.velodrome.data.local.mapper.toDomain
+import com.example.velodrome.data.local.mapper.toEntity
 import com.example.velodrome.data.remote.NavidromeApi
 import com.example.velodrome.data.remote.dto.AlbumDetailDto
 import com.example.velodrome.data.remote.dto.AlbumDto
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.repository.AlbumRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AlbumRepositoryImpl @Inject constructor(
     private val api: NavidromeApi,
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
+    private val localMusicDataSource: LocalMusicDataSource
 ) : AlbumRepository {
+
+    override fun observeAllAlbums(): Flow<List<Album>> {
+        return localMusicDataSource.observeAllAlbums().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
 
     override suspend fun getAlbum(albumId: String): Result<Album> {
         return runCatching {
@@ -138,6 +150,36 @@ class AlbumRepositoryImpl @Inject constructor(
             val genres = response.response.genres?.genres ?: emptyList()
             Log.d("AlbumRepo", "Found ${genres.size} genres")
             genres.mapNotNull { it.value ?: it.name }
+        }
+    }
+
+    override suspend fun syncAlbumsFromServer(): Result<Int> {
+        return runCatching {
+            Log.d("AlbumRepo", "=== syncAlbumsFromServer ===")
+            var offset = 0
+            val pageSize = 500
+            var totalSynced = 0
+
+            while (offset < 10000) {
+                val result = getAllAlbumsFromServer(offset = offset, size = pageSize)
+                val albums = result.getOrNull()
+                    ?: throw result.exceptionOrNull() ?: Exception("Failed to fetch albums")
+
+                if (albums.isEmpty()) {
+                    Log.d("AlbumRepo", "No more albums at offset $offset")
+                    break
+                }
+
+                val entities = albums.map { it.toEntity() }
+                localMusicDataSource.insertAlbums(entities)
+                totalSynced += albums.size
+                Log.d("AlbumRepo", "Synced ${albums.size} albums (total: $totalSynced)")
+
+                if (albums.size < pageSize) break
+                offset += pageSize
+            }
+            Log.d("AlbumRepo", "Album sync completed: $totalSynced total")
+            totalSynced
         }
     }
 }
