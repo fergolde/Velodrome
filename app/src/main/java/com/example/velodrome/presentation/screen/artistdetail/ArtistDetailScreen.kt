@@ -2,19 +2,7 @@ package com.example.velodrome.presentation.screen.artistdetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -24,21 +12,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,79 +30,57 @@ import com.example.velodrome.domain.model.Album
 import com.example.velodrome.presentation.screen.home.AlbumCover
 import com.example.velodrome.presentation.screen.home.ArtistAvatar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArtistDetailScreen(
     artistId: String,
     onBackClick: () -> Unit = {},
     onAlbumClick: (String) -> Unit = {},
-    onExploreClick: () -> Unit = {},
-    onPlayerClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {},
     viewModel: ArtistDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // TopAppBar inline
-        TopAppBar(
-            title = {
-                Text(
-                    text = uiState.artist?.name ?: stringResource(R.string.artist_detail_title),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.nav_back),
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background
-            )
-        )
+    // Usamos Box para que el botón de atrás flote sobre la lista
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
 
-        // Content
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-        ) {
-            when {
-                uiState.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-                uiState.error != null -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = uiState.error ?: stringResource(R.string.error_loading),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-                else -> {
-                    ArtistAlbumsList(
-                        artist = uiState.artist,
-                        albums = uiState.albums,
-                        onAlbumClick = onAlbumClick
-                    )
-                }
+        when {
+            uiState.isLoading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
+            uiState.error != null -> {
+                Text(
+                    text = uiState.error ?: stringResource(R.string.error_loading),
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            else -> {
+                ArtistAlbumsList(
+                    artist = uiState.artist,
+                    albums = uiState.albums,
+                    onAlbumClick = onAlbumClick
+                )
+            }
+        }
+
+        // BOTÓN DE ATRÁS: Flota arriba a la izquierda
+        // Usamos statusBarsPadding() AQUÍ para que no toque el borde físico pero el contenido sí
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier
+                .statusBarsPadding() // Se ajusta debajo del reloj/iconos de sistema
+                .padding(8.dp)
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.3f)) // Fondo sutil para legibilidad
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.nav_back),
+                tint = Color.White
+            )
         }
     }
 }
@@ -133,85 +92,98 @@ private fun ArtistAlbumsList(
     onAlbumClick: (String) -> Unit
 ) {
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 100.dp)
     ) {
-        // Artist Header
+        // HEADER DEL ARTISTA: Ahora es vertical y centrado para aprovechar el borde superior
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp), // Un poco de espacio respecto al borde superior
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Artist image
+                // Imagen circular grande
                 Box(
                     modifier = Modifier
-                        .size(120.dp)
+                        .statusBarsPadding() // Espacio para que la imagen no empiece "dentro" del notch
+                        .padding(top = 24.dp) // Padding extra para que quede debajo del botón de atrás
+                        .size(180.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     ArtistAvatar(
                         coverArtId = artist?.coverUrl,
                         contentDescription = artist?.name,
-                        size = 120.dp
+                        size = 180.dp
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text(
-                        text = stringResource(R.string.artist_detail_albums_count, artist?.albumCount ?: 0),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                        fontSize = 14.sp
-                    )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                    // 🔥 Botones
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                // Nombre del artista
+                Text(
+                    text = artist?.name ?: "",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                Text(
+                    text = stringResource(R.string.artist_detail_albums_count, artist?.albumCount ?: 0).uppercase(),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Botones de acción rápidos
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        onClick = { /* Implementar play all */ },
+                        shape = RoundedCornerShape(24.dp)
                     ) {
-                        FilledIconButton(
-                            onClick = {}//onPlayAllClick
-                        ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = "Play")
-                        }
-
-                        FilledIconButton(
-                            onClick = {}//onShuffleClick
-                        ) {
-                            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle")
-                        }
-
-                        FilledIconButton(
-                            onClick = {}//onAddToQueueClick
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.PlaylistAdd,
-                                contentDescription = "Add to queue"
-                            )
-                        }
+                        Icon(Icons.Default.PlayArrow, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Reproducir")
                     }
 
+                    FilledTonalIconButton(onClick = { /* Shuffle */ }) {
+                        Icon(Icons.Default.Shuffle, contentDescription = null)
+                    }
+
+                    FilledTonalIconButton(onClick = { /* Queue */ }) {
+                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
 
-        // Section header
+        // Título de sección
         item {
             Text(
                 text = stringResource(R.string.artist_detail_albums),
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                modifier = Modifier.padding(vertical = 8.dp)
+                fontSize = 20.sp,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
         }
 
-        // Albums grid (2 columns)
+        // Grid de álbumes (2 columnas)
         val albumPairs = albums.chunked(2)
         items(albumPairs) { rowAlbums ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 rowAlbums.forEach { album ->
@@ -221,7 +193,6 @@ private fun ArtistAlbumsList(
                         modifier = Modifier.weight(1f)
                     )
                 }
-                // Fill empty space if odd number
                 if (rowAlbums.size == 1) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -237,37 +208,34 @@ private fun ArtistAlbumCard(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier
-            .width(160.dp)
-            .clickable(onClick = onClick)
+        modifier = modifier.clickable(onClick = onClick)
     ) {
         Box(
             modifier = Modifier
-                .size(160.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
         ) {
             AlbumCover(
                 coverArtId = album.coverUrl,
                 contentDescription = album.title,
-                size = 160.dp,
-                cornerRadius = 16.dp
+                size = 200.dp,
+                cornerRadius = 12.dp,
+                modifier = Modifier.fillMaxSize()
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = album.title,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             fontSize = 14.sp
         )
-        album.year?.let { year ->
-            Text(
-                text = year.toString(),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-                fontSize = 12.sp
-            )
-        }
+        Text(
+            text = album.year?.toString() ?: "",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp
+        )
     }
 }

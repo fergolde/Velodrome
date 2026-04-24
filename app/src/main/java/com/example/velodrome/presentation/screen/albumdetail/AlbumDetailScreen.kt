@@ -69,7 +69,7 @@ fun AlbumDetailScreen(
     onPlayerClick: () -> Unit = {},
     viewModel: AlbumDetailViewModel = hiltViewModel()
 ) {
-val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val currentTrackId = uiState.currentTrackId
     val isPlaying = uiState.isPlaying
     val currentPosition = uiState.currentPosition
@@ -136,7 +136,7 @@ private fun AlbumContent(
         item {
             AlbumHeader(
                 album = album,
-                trackCount = tracks.size,
+                tracks = tracks,
                 onPlayAllClick = onPlayAllClick,
                 onShuffleClick = onShuffleClick,
                 onAddToQueueClick = onAddToQueueClick,
@@ -166,8 +166,8 @@ private fun AlbumContent(
 
 @Composable
 private fun AlbumHeader(
-    album: com.example.velodrome.domain.model.Album?,
-    trackCount: Int,
+    album: Album?,
+    tracks: List<Track>,
     onPlayAllClick: () -> Unit,
     onShuffleClick: () -> Unit,
     onAddToQueueClick: () -> Unit,
@@ -243,7 +243,7 @@ private fun AlbumHeader(
             }
 
             Text(
-                "$trackCount tracks",
+                "${tracks.size} tracks · ${durationDisk(tracks)} minutos",
                 fontSize = 14.sp
             )
 
@@ -438,4 +438,13 @@ private fun formatDuration(seconds: Int): String {
     val mins = seconds / 60
     val secs = seconds % 60
     return "$mins:${secs.toString().padStart(2, '0')}"
+}
+
+private fun durationDisk(tracks: List<Track>) : Int {
+    var duration = 0
+    for (track in tracks){
+        duration+=track.durationSec
+
+    }
+    return duration/60
 }
