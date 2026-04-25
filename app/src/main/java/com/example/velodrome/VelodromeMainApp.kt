@@ -3,7 +3,6 @@ package com.example.velodrome
 import android.app.Application
 import android.content.Context
 import androidx.work.Configuration
-import androidx.work.WorkManager
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache

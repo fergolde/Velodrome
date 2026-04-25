@@ -82,8 +82,6 @@ import androidx.core.graphics.toColorInt
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
-    onHomeClick: () -> Unit = {},
-    onExploreClick: () -> Unit = {},
 
     ) {
     val uiState by viewModel.uiState.collectAsState()

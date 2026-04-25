@@ -48,11 +48,7 @@ import com.example.velodrome.presentation.screen.home.ArtistAvatar
 @Composable
 fun ArtistsScreen(
     viewModel: ArtistsViewModel = hiltViewModel(),
-    onHomeClick: () -> Unit = {},
-    onExploreClick: () -> Unit = {},
-    onPlayerClick: () -> Unit = {},
     onArtistClick: (Artist) -> Unit = {},
-    onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

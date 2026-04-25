@@ -3,7 +3,6 @@ package com.example.velodrome.data.repository
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.example.velodrome.data.local.datasource.LocalMusicDataSource
-import com.example.velodrome.data.local.entity.ArtistEntity
 import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.data.local.mapper.toEntity
 import com.example.velodrome.data.remote.NavidromeApi

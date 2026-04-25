@@ -106,6 +106,20 @@ class AlbumDetailViewModel @Inject constructor(
         }
     }
 
+    fun playNow(track: Track) {
+        playerManager.playNow(track)
+    }
+
+    fun playNext(track: Track) {
+        if(playerManager.playlist.value.isEmpty())    playNow(track)
+        else    playerManager.playNext(track)
+    }
+
+    fun addToQueue(track: Track) {
+        if(playerManager.playlist.value.isEmpty())    playNow(track)
+        else    playerManager.addToQueue(track)
+    }
+
     fun playAll() {
         val tracks = _uiState.value.tracks
         if (tracks.isEmpty()) return

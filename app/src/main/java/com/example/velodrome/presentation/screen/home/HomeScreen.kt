@@ -40,9 +40,6 @@ import com.example.velodrome.domain.model.Album
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onAlbumClick: (String) -> Unit = {},
-    onExploreClick: () -> Unit = {},
-    onPlayerClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 

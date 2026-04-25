@@ -19,11 +19,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +34,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -57,16 +60,12 @@ import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.screen.home.AlbumCover
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumDetailScreen(
-    albumId: String? = null,
     onBackClick: () -> Unit = {},
-    onHomeClick: () -> Unit = {},
-    onExploreClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {},
-    onPlayerClick: () -> Unit = {},
     viewModel: AlbumDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -114,6 +113,36 @@ fun AlbumDetailScreen(
                     currentTrackId = uiState.currentTrackId
                 )
             }
+        }
+    }
+    if (showTrackOptions && selectedTrack != null) {
+        ModalBottomSheet(
+            onDismissRequest = { showTrackOptions = false },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+        ) {
+            TrackOptionsSheet(
+                track = selectedTrack!!,
+                onPlayNow = {
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        showTrackOptions = false
+                    }
+                    viewModel.playNow(selectedTrack!!)
+                },
+                onPlayNext = {
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        showTrackOptions = false
+                    }
+                    viewModel.playNext(selectedTrack!!)
+                },
+                onAddToQueue = {
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        showTrackOptions = false
+                    }
+                    viewModel.addToQueue(selectedTrack!!)
+                }
+            )
         }
     }
 }
@@ -345,6 +374,7 @@ private fun TrackItem(
 @Composable
 private fun TrackOptionsSheet(
     track: Track,
+    onPlayNow: () -> Unit,
     onPlayNext: () -> Unit,
     onAddToQueue: () -> Unit
 ) {
@@ -353,84 +383,99 @@ private fun TrackOptionsSheet(
             .fillMaxWidth()
             .padding(bottom = 32.dp)
     ) {
-        // Track title
-        Text(
-            text = track.title,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+        // Cabecera con info de la canción
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AlbumCover(
+                coverArtId = track.coverArtId,  // ajusta el nombre del campo si es distinto
+                contentDescription = track.title,
+                size = 44.dp,
+                cornerRadius = 8.dp
+            )
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = track.title,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = track.artistName,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
+
+        Spacer(Modifier.height(8.dp))
+
+        TrackOptionItem(
+            icon = Icons.Default.PlayArrow,
+            iconTint = MaterialTheme.colorScheme.primary,
+            iconBackground = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            title = "Reproducir ahora",
+            subtitle = "Salta a esta canción inmediatamente",
+            onClick = onPlayNow
         )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.padding(horizontal = 16.dp))
+        TrackOptionItem(
+            icon = Icons.Default.SkipNext,
+            iconTint = Color(0xFF0F6E56),
+            iconBackground = Color(0xFF0F6E56).copy(alpha = 0.12f),
+            title = "Reproducir siguiente",
+            subtitle = "Se pone justo después de la actual",
+            onClick = onPlayNext
+        )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        TrackOptionItem(
+            icon = Icons.AutoMirrored.Filled.PlaylistAdd,
+            iconTint = Color(0xFF854F0B),
+            iconBackground = Color(0xFF854F0B).copy(alpha = 0.12f),
+            title = "Añadir al final",
+            subtitle = "Se añade al final de la cola",
+            onClick = onAddToQueue
+        )
+    }
+}
 
-        // Play Next option
-        Row(
+@Composable
+private fun TrackOptionItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color,
+    iconBackground: Color,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onPlayNext)
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(iconBackground),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = stringResource(R.string.track_options_play_next),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
+            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
         }
-
-        // Add to Queue option
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onAddToQueue)
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = stringResource(R.string.track_options_add_to_queue),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
+        Spacer(Modifier.width(16.dp))
+        Column {
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Text(subtitle, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 

@@ -1,5 +1,6 @@
 package com.example.velodrome.presentation.screen.artists
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.domain.model.Artist
@@ -14,6 +15,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val TAG = "ArtistsViewModel"
 
 data class ArtistsUiState(
     val artists: List<Artist> = emptyList(),
@@ -39,13 +42,16 @@ class ArtistsViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeArtists() {
         viewModelScope.launch {
+            Log.d(TAG, "observeArtists: Iniciando observación")
             searchQuery.flatMapLatest { query ->
+                Log.d(TAG, "observeArtists: query=$query")
                 if (query.isBlank()) {
                     artistRepository.observeAllArtists()
                 } else {
                     flowOf(artistRepository.searchLocal(query))
                 }
             }.collect { artists ->
+                Log.d(TAG, "observeArtists: recibidos ${artists.size} artistas")
                 _uiState.update {
                     it.copy(
                         artists = artists,

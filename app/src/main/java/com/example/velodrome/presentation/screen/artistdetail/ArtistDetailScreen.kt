@@ -32,7 +32,6 @@ import com.example.velodrome.presentation.screen.home.ArtistAvatar
 
 @Composable
 fun ArtistDetailScreen(
-    artistId: String,
     onBackClick: () -> Unit = {},
     onAlbumClick: (String) -> Unit = {},
     viewModel: ArtistDetailViewModel = hiltViewModel()

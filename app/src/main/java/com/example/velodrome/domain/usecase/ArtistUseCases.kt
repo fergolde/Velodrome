@@ -3,6 +3,7 @@ package com.example.velodrome.domain.usecase
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.domain.model.ArtistWithAlbums
 import com.example.velodrome.domain.repository.ArtistRepository
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class GetArtistsUseCase @Inject constructor(
@@ -35,9 +36,23 @@ class SearchLocalArtistsUseCase @Inject constructor(
     }
 }
 
+class SyncArtistsUseCase @Inject constructor(
+    private val repository: ArtistRepository
+) {
+    suspend operator fun invoke(): Result<Int> = repository.syncArtistsFromServer()
+}
+
+class ObserveArtistsUseCase @Inject constructor(
+    private val repository: ArtistRepository
+) {
+    operator fun invoke(): Flow<List<Artist>> = repository.observeAllArtists()
+}
+
 // ========== WRAPPER ==========
 class ArtistUseCases @Inject constructor(
-    val getArtists: GetArtistsUseCase,
+    //val getArtists: GetArtistsUseCase,
     val search: SearchUseCase,
-    val searchLocal: SearchLocalArtistsUseCase
+    val searchLocal: SearchLocalArtistsUseCase,
+    val syncArtists: SyncArtistsUseCase,
+    val observeArtists: ObserveArtistsUseCase
 )
