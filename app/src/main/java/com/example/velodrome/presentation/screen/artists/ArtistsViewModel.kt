@@ -3,10 +3,15 @@ package com.example.velodrome.presentation.screen.artists
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.domain.repository.ArtistRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,10 +24,11 @@ import javax.inject.Inject
 private const val TAG = "ArtistsViewModel"
 
 data class ArtistsUiState(
-    val artists: List<Artist> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val searchResults: List<Artist> = emptyList(),
+    val isSearching: Boolean = false
 )
 
 @HiltViewModel
@@ -35,28 +41,33 @@ class ArtistsViewModel @Inject constructor(
 
     private val searchQuery = MutableStateFlow("")
 
+    val pagedArtists: Flow<PagingData<Artist>> = Pager(
+        config = PagingConfig(pageSize = 20, prefetchDistance = 5, enablePlaceholders = false),
+        pagingSourceFactory = { artistRepository.getArtistsPaged() }
+    ).flow.cachedIn(viewModelScope)
+
     init {
-        observeArtists()
+        observeSearch()
+        _uiState.update { it.copy(isLoading = false) }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun observeArtists() {
+    private fun observeSearch() {
         viewModelScope.launch {
-            Log.d(TAG, "observeArtists: Iniciando observación")
+            Log.d(TAG, "observeSearch: Iniciando observación")
             searchQuery.flatMapLatest { query ->
-                Log.d(TAG, "observeArtists: query=$query")
+                Log.d(TAG, "observeSearch: query=$query")
                 if (query.isBlank()) {
-                    artistRepository.observeAllArtists()
+                    flowOf(emptyList())
                 } else {
                     flowOf(artistRepository.searchLocal(query))
                 }
-            }.collect { artists ->
-                Log.d(TAG, "observeArtists: recibidos ${artists.size} artistas")
+            }.collect { results ->
+                Log.d(TAG, "observeSearch: resultados=${results.size}")
                 _uiState.update {
                     it.copy(
-                        artists = artists,
-                        isLoading = false,
-                        error = null
+                        searchResults = results,
+                        isSearching = searchQuery.value.isNotBlank()
                     )
                 }
             }
@@ -65,6 +76,6 @@ class ArtistsViewModel @Inject constructor(
 
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
-        _uiState.update { it.copy(searchQuery = query) }
+        _uiState.update { it.copy(searchQuery = query, isSearching = query.isNotBlank()) }
     }
 }

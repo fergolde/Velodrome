@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
         WorkManager.getInstance(this)
             .enqueueUniqueWork(
                 "sync_library",
-                ExistingWorkPolicy.REPLACE,
+                ExistingWorkPolicy.KEEP,
                 syncRequest
             )
     }

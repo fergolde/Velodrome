@@ -40,11 +40,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.presentation.screen.home.AlbumCover
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +53,7 @@ fun AlbumsScreen(
     onAlbumClick: (Album) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val pagedAlbums = viewModel.pagedAlbums.collectAsLazyPagingItems()
 
     Box(
         modifier = Modifier
@@ -60,43 +61,51 @@ fun AlbumsScreen(
             .statusBarsPadding()
             .padding(horizontal = 16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             if (uiState.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else if (uiState.error != null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = uiState.error!!,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = uiState.error!!, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
+                Column(modifier = Modifier.fillMaxSize()) {
                     AlbumsSearchBar(
                         query = uiState.searchQuery,
                         onQueryChange = viewModel::onSearchQueryChange,
                         onClearClick = { viewModel.onSearchQueryChange("") }
                     )
                     Spacer(modifier = Modifier.height(24.dp))
-                    AlbumsList(
-                        albums = uiState.albums,
-                        onAlbumClick = onAlbumClick
-                    )
-                    Spacer(modifier = Modifier.height(100.dp)) // Space for mini player
+
+                    if (uiState.isSearching) {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 100.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(uiState.searchResults) { album ->
+                                AlbumCard(album = album, onClick = { onAlbumClick(album) })
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 100.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(count = pagedAlbums.itemCount) { index ->
+                                val album = pagedAlbums[index]
+                                if (album != null) {
+                                    AlbumCard(
+                                        album = album,
+                                        onClick = { onAlbumClick(album) }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -117,8 +126,15 @@ fun AlbumsSearchBar(
             .height(56.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(MaterialTheme.colorScheme.surface),
-        placeholder = { Text(stringResource(R.string.albums_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        placeholder = {
+            Text(
+                stringResource(R.string.albums_search_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        leadingIcon = {
+            Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        },
         shape = RoundedCornerShape(28.dp),
         trailingIcon = {
             if (query.isNotEmpty()) {
@@ -132,25 +148,6 @@ fun AlbumsSearchBar(
             }
         }
     )
-}
-
-@Composable
-fun AlbumsList(
-    albums: List<Album>,
-    onAlbumClick: (Album) -> Unit = {}
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 100.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(albums) { album ->
-            AlbumCard(
-                album = album,
-                onClick = { onAlbumClick(album) }
-            )
-        }
-    }
 }
 
 @Composable

@@ -138,7 +138,7 @@ fun PlayerScreen(
                     artist = uiState.currentTrack?.artistName ?: stringResource(R.string.artists_unknown),
                     album = uiState.currentTrack?.albumName ?: stringResource(R.string.albums_unknown_title)
                 )
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(14.dp))
                 SeekBar(
                     currentPosition = uiState.currentPosition,
                     duration = uiState.currentTrack?.durationSec ?: 0,

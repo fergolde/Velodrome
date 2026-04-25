@@ -2,10 +2,15 @@ package com.example.velodrome.presentation.screen.albums
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.repository.AlbumRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,10 +21,11 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class AlbumsUiState(
-    val albums: List<Album> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val searchResults: List<Album> = emptyList(),
+    val isSearching: Boolean = false
 )
 
 @HiltViewModel
@@ -32,25 +38,30 @@ class AlbumsViewModel @Inject constructor(
 
     private val searchQuery = MutableStateFlow("")
 
+    val pagedAlbums: Flow<PagingData<Album>> = Pager(
+        config = PagingConfig(pageSize = 20, prefetchDistance = 5, enablePlaceholders = false),
+        pagingSourceFactory = { albumRepository.getAlbumsPaged() }
+    ).flow.cachedIn(viewModelScope)
+
     init {
-        observeAlbums()
+        observeSearch()
+        _uiState.update { it.copy(isLoading = false) }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun observeAlbums() {
+    private fun observeSearch() {
         viewModelScope.launch {
             searchQuery.flatMapLatest { query ->
                 if (query.isBlank()) {
-                    albumRepository.observeAllAlbums()
+                    flowOf(emptyList())
                 } else {
                     flowOf(albumRepository.searchLocal(query))
                 }
-            }.collect { albums ->
+            }.collect { results ->
                 _uiState.update {
                     it.copy(
-                        albums = albums,
-                        isLoading = false,
-                        error = null
+                        searchResults = results,
+                        isSearching = searchQuery.value.isNotBlank()
                     )
                 }
             }
@@ -59,6 +70,6 @@ class AlbumsViewModel @Inject constructor(
 
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
-        _uiState.update { it.copy(searchQuery = query) }
+        _uiState.update { it.copy(searchQuery = query, isSearching = query.isNotBlank()) }
     }
 }

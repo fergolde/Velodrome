@@ -39,7 +39,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.presentation.screen.home.ArtistAvatar
@@ -51,6 +52,7 @@ fun ArtistsScreen(
     onArtistClick: (Artist) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val pagedArtists = viewModel.pagedArtists.collectAsLazyPagingItems()
 
     Box(
         modifier = Modifier
@@ -58,47 +60,53 @@ fun ArtistsScreen(
             .statusBarsPadding()
             .padding(horizontal = 16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             if (uiState.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else if (uiState.error != null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = uiState.error!!,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = uiState.error!!, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                Column(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-
-                    // Barra de búsqueda con funcionalidad de borrado
+                Column(modifier = Modifier.fillMaxSize()) {
                     ArtistsSearchBar(
                         query = uiState.searchQuery,
                         onQueryChange = viewModel::onSearchQueryChange,
                         onClearClick = { viewModel.onSearchQueryChange("") }
                     )
-
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    ArtistsList(
-                        artists = uiState.artists,
-                        onArtistClick = onArtistClick
-                    )
-
-                    Spacer(modifier = Modifier.height(100.dp)) // Espacio para el MiniPlayer
+                    if (uiState.isSearching) {
+                        // Resultados de búsqueda local
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 100.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(uiState.searchResults) { artist ->
+                                ArtistCard(artist = artist, onClick = { onArtistClick(artist) })
+                            }
+                        }
+                    } else {
+                        // Lista paginada
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 100.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(count = pagedArtists.itemCount) { index ->
+                                val artist = pagedArtists[index]
+                                if (artist != null) {
+                                    ArtistCard(
+                                        artist = artist,
+                                        onClick = { onArtistClick(artist) }
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -148,25 +156,6 @@ fun ArtistsSearchBar(
 }
 
 @Composable
-fun ArtistsList(
-    artists: List<Artist>,
-    onArtistClick: (Artist) -> Unit = {}
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(artists) { artist ->
-            ArtistCard(
-                artist = artist,
-                onClick = { onArtistClick(artist) }
-            )
-        }
-    }
-}
-
-@Composable
 fun ArtistCard(artist: Artist, onClick: () -> Unit = {}) {
     Surface(
         modifier = Modifier
@@ -186,9 +175,7 @@ fun ArtistCard(artist: Artist, onClick: () -> Unit = {}) {
                 contentDescription = artist.name,
                 size = 64.dp
             )
-
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = artist.name,
@@ -204,7 +191,6 @@ fun ArtistCard(artist: Artist, onClick: () -> Unit = {}) {
                     letterSpacing = 0.5.sp
                 )
             }
-
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,

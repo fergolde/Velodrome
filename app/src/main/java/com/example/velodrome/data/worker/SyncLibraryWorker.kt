@@ -14,11 +14,10 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
-/**
- * WorkManager Worker para sincronización de biblioteca en background.
- * Implementa Smart Sync: detección de cambios + resume interrumpido.
- */
 @HiltWorker
 class SyncLibraryWorker @AssistedInject constructor(
     @Assisted context: Context,
@@ -31,63 +30,58 @@ class SyncLibraryWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            // Read sync state
             val lastSyncTimestamp = settingsRepository.lastSyncTimestamp.first()
             val lastSyncOffset = settingsRepository.lastSyncOffset.first()
 
-            // CASE 1: Incremental sync (we have done a full sync before)
             if (lastSyncTimestamp > 0) {
                 val hasChanges = albumRepository.hasServerChangedSince(lastSyncTimestamp)
-                if (!hasChanges) {
-                    return@withContext Result.success()
-                }
+                if (!hasChanges) return@withContext Result.success()
 
-                // Server has changes, fetch latest albums
                 val latestResult = albumRepository.getLatestAlbums(50)
                 if (latestResult.isFailure) {
-                    return@withContext Result.retry()
+                    return@withContext classifyError(latestResult.exceptionOrNull())
                 }
 
-                // Save to local DB
                 val latestAlbums = latestResult.getOrNull() ?: emptyList()
                 if (latestAlbums.isNotEmpty()) {
-                    // Mapear los modelos de dominio a entidades de base de datos
-                    val entities = latestAlbums.map { it.toEntity() }
-
-                    // Insertar en Room (el DAO usa OnConflictStrategy.REPLACE)
-                    localMusicDataSource.insertAlbums(entities)
+                    localMusicDataSource.insertAlbums(latestAlbums.map { it.toEntity() })
                 }
 
-                // Update timestamp
                 settingsRepository.setLastSyncTimestamp(System.currentTimeMillis())
                 return@withContext Result.success()
             }
 
-            // CASE 2: Full sync (first time or recovery)
-            // Sync artists (always full, no pagination needed for artists in current impl)
             val artistsResult = artistRepository.syncArtistsFromServer()
             if (artistsResult.isFailure) {
-                return@withContext Result.retry()
+                return@withContext classifyError(artistsResult.exceptionOrNull())
             }
 
-            // Sync albums with pagination and resume capability
             val albumsResult = albumRepository.syncAlbumsFromServer(
                 startOffset = lastSyncOffset
             ) { newOffset ->
-                // Callback to save offset after each page
                 settingsRepository.setLastSyncOffset(newOffset)
             }
-
             if (albumsResult.isFailure) {
-                return@withContext Result.retry()
+                return@withContext classifyError(albumsResult.exceptionOrNull())
             }
 
-            // Full sync complete: reset offset and set timestamp
             settingsRepository.setLastSyncOffset(0)
             settingsRepository.setLastSyncTimestamp(System.currentTimeMillis())
             Result.success()
-        } catch (_: Exception) {
-            Result.retry()
+
+        } catch (e: Exception) {
+            classifyError(e)
+        }
+    }
+
+    private fun classifyError(e: Throwable?): Result {
+        return when {
+            e is HttpException && e.code() == 401 -> Result.failure()
+            e is HttpException && e.code() == 403 -> Result.failure()
+            e is SocketTimeoutException -> Result.retry()
+            e is UnknownHostException -> Result.retry()
+            e is HttpException -> Result.failure()
+            else -> Result.retry()
         }
     }
 }

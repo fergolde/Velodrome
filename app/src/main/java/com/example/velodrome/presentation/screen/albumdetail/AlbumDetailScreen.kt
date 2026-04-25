@@ -35,6 +35,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -50,13 +54,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.velodrome.R
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.screen.home.AlbumCover
@@ -69,80 +72,104 @@ fun AlbumDetailScreen(
     viewModel: AlbumDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentTrackId = uiState.currentTrackId
-    val isPlaying = uiState.isPlaying
-    val currentPosition = uiState.currentPosition
-
     var showTrackOptions by remember { mutableStateOf(false) }
     var selectedTrack by remember { mutableStateOf<Track?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-    ) {
-
-        when {
-            uiState.isLoading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                Snackbar(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = data.visuals.message,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
-
-            uiState.error != null -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(uiState.error ?: "Error")
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(bottom = paddingValues.calculateBottomPadding())
+        ) {
+            when {
+                uiState.isLoading -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
-            }
-
-            else -> {
-                AlbumContent(
-                    album = uiState.album,
-                    tracks = uiState.tracks,
-                    onTrackClick = { viewModel.playTrack(it) },
-                    onTrackLongClick = {
-                        selectedTrack = it
-                        showTrackOptions = true
-                    },
-                    onPlayAllClick = { viewModel.playAll() },
-                    onShuffleClick = { viewModel.shuffleAll() },
-                    onAddToQueueClick = { viewModel.addAllToQueue() },
-                    onBackClick = onBackClick,
-                    currentTrackId = uiState.currentTrackId
-                )
+                uiState.error != null -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(uiState.error ?: "Error")
+                    }
+                }
+                else -> {
+                    AlbumContent(
+                        album = uiState.album,
+                        tracks = uiState.tracks,
+                        onTrackClick = { viewModel.playTrack(it) },
+                        onTrackLongClick = {
+                            selectedTrack = it
+                            showTrackOptions = true
+                        },
+                        onPlayAllClick = { viewModel.playAll() },
+                        onShuffleClick = { viewModel.shuffleAll() },
+                        onAddToQueueClick = { viewModel.addAllToQueue() },
+                        onBackClick = onBackClick,
+                        currentTrackId = uiState.currentTrackId
+                    )
+                }
             }
         }
-    }
-    if (showTrackOptions && selectedTrack != null) {
-        ModalBottomSheet(
-            onDismissRequest = { showTrackOptions = false },
-            sheetState = sheetState,
-            containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-        ) {
-            TrackOptionsSheet(
-                track = selectedTrack!!,
-                onPlayNow = {
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        showTrackOptions = false
+
+        if (showTrackOptions && selectedTrack != null) {
+            ModalBottomSheet(
+                onDismissRequest = { showTrackOptions = false },
+                sheetState = sheetState,
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+            ) {
+                TrackOptionsSheet(
+                    track = selectedTrack!!,
+                    onPlayNow = {
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            showTrackOptions = false
+                        }
+                        viewModel.playNow(selectedTrack!!)
+                    },
+                    onPlayNext = {
+                        val track = selectedTrack!!
+                        scope.launch {
+                            sheetState.hide()
+                            showTrackOptions = false
+                            viewModel.playNext(track)
+                            snackbarHostState.showSnackbar("Se reproducirá a continuación")
+                        }
+                    },
+                    onAddToQueue = {
+                        val track = selectedTrack!!
+                        scope.launch {
+                            sheetState.hide()
+                            showTrackOptions = false
+                            viewModel.addToQueue(track)
+                            snackbarHostState.showSnackbar("Añadido a la cola")
+                        }
                     }
-                    viewModel.playNow(selectedTrack!!)
-                },
-                onPlayNext = {
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        showTrackOptions = false
-                    }
-                    viewModel.playNext(selectedTrack!!)
-                },
-                onAddToQueue = {
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        showTrackOptions = false
-                    }
-                    viewModel.addToQueue(selectedTrack!!)
-                }
-            )
+                )
+            }
         }
     }
 }
@@ -159,9 +186,7 @@ private fun AlbumContent(
     onBackClick: () -> Unit,
     currentTrackId: String? = null
 ) {
-    LazyColumn(
-        contentPadding = PaddingValues(bottom = 100.dp)
-    ) {
+    LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
         item {
             AlbumHeader(
                 album = album,
@@ -172,7 +197,6 @@ private fun AlbumContent(
                 onBackClick = onBackClick
             )
         }
-
         item {
             Text(
                 text = "Tracks",
@@ -181,7 +205,6 @@ private fun AlbumContent(
                 fontSize = 18.sp
             )
         }
-
         items(tracks) { track ->
             TrackItem(
                 track = track,
@@ -206,36 +229,26 @@ private fun AlbumHeader(
     val headerHeight = screenHeight / 3
 
     Column(modifier = Modifier.fillMaxWidth()) {
-
-        // 🔥 HERO IMAGE
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(headerHeight)
         ) {
-
             AlbumCover(
                 coverArtId = album?.coverUrl,
                 contentDescription = album?.title,
                 modifier = Modifier.fillMaxSize(),
                 cornerRadius = 0.dp
             )
-
-            // Gradient
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
-                            listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.background
-                            )
+                            listOf(Color.Transparent, MaterialTheme.colorScheme.background)
                         )
                     )
             )
-
-            // 🔙 BACK BUTTON
             IconButton(
                 onClick = onBackClick,
                 modifier = Modifier
@@ -252,52 +265,26 @@ private fun AlbumHeader(
             }
         }
 
-        // INFO
         Column(modifier = Modifier.padding(16.dp)) {
-
-            Text(
-                text = album?.title ?: "",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-
+            Text(text = album?.title ?: "", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Text(
                 text = album?.artistName ?: "",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-
-            album?.year?.let {
-                Text(it.toString())
-            }
-
-            Text(
-                "${tracks.size} tracks · ${durationDisk(tracks)} minutos",
-                fontSize = 14.sp
-            )
-
+            album?.year?.let { Text(it.toString()) }
+            Text("${tracks.size} tracks · ${durationDisk(tracks)} minutos", fontSize = 14.sp)
             Spacer(Modifier.height(16.dp))
-
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-
-                Button(
-                    onClick = onPlayAllClick,
-                    modifier = Modifier.weight(1f)
-                ) {
+                Button(onClick = onPlayAllClick, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Play")
                 }
-
-                FilledIconButton(
-                    onClick = onShuffleClick
-                ) {
+                FilledIconButton(onClick = onShuffleClick) {
                     Icon(Icons.Default.Shuffle, contentDescription = null)
                 }
-
-                FilledIconButton(
-                    onClick = onAddToQueueClick
-                ) {
+                FilledIconButton(onClick = onAddToQueueClick) {
                     Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
                 }
             }
@@ -313,23 +300,15 @@ private fun TrackItem(
     onLongClick: () -> Unit
 ) {
     val trackDuration = formatDuration(track.durationSec)
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .background(if (isPlaying) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) else Color.Transparent)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Track number
-        Box(
-            modifier = Modifier.width(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier.width(32.dp), contentAlignment = Alignment.Center) {
             if (isPlaying) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
@@ -345,10 +324,7 @@ private fun TrackItem(
                 )
             }
         }
-
         Spacer(modifier = Modifier.width(12.dp))
-
-        // Track title
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = track.title,
@@ -359,15 +335,8 @@ private fun TrackItem(
                 overflow = TextOverflow.Ellipsis
             )
         }
-
         Spacer(modifier = Modifier.width(12.dp))
-
-        // Duration
-        Text(
-            text = trackDuration,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 14.sp
-        )
+        Text(text = trackDuration, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
     }
 }
 
@@ -383,13 +352,12 @@ private fun TrackOptionsSheet(
             .fillMaxWidth()
             .padding(bottom = 32.dp)
     ) {
-        // Cabecera con info de la canción
         Row(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AlbumCover(
-                coverArtId = track.coverArtId,  // ajusta el nombre del campo si es distinto
+                coverArtId = track.coverArtId,
                 contentDescription = track.title,
                 size = 44.dp,
                 cornerRadius = 8.dp
@@ -414,7 +382,6 @@ private fun TrackOptionsSheet(
         }
 
         HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
-
         Spacer(Modifier.height(8.dp))
 
         TrackOptionItem(
@@ -425,7 +392,6 @@ private fun TrackOptionsSheet(
             subtitle = "Salta a esta canción inmediatamente",
             onClick = onPlayNow
         )
-
         TrackOptionItem(
             icon = Icons.Default.SkipNext,
             iconTint = Color(0xFF0F6E56),
@@ -434,7 +400,6 @@ private fun TrackOptionsSheet(
             subtitle = "Se pone justo después de la actual",
             onClick = onPlayNext
         )
-
         TrackOptionItem(
             icon = Icons.AutoMirrored.Filled.PlaylistAdd,
             iconTint = Color(0xFF854F0B),
@@ -485,11 +450,10 @@ private fun formatDuration(seconds: Int): String {
     return "$mins:${secs.toString().padStart(2, '0')}"
 }
 
-private fun durationDisk(tracks: List<Track>) : Int {
+private fun durationDisk(tracks: List<Track>): Int {
     var duration = 0
-    for (track in tracks){
-        duration+=track.durationSec
-
+    for (track in tracks) {
+        duration += track.durationSec
     }
-    return duration/60
+    return duration / 60
 }
