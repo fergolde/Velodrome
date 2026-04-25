@@ -21,6 +21,8 @@ class PlayerManager @Inject constructor(
     val currentTrack: StateFlow<Track?> = audioPlayerManager.currentTrack
     val currentTrackId: StateFlow<String?> = audioPlayerManager.currentTrackId
     val isBuffering: StateFlow<Boolean> = audioPlayerManager.isBuffering
+    val isShuffleEnabled: StateFlow<Boolean> = audioPlayerManager.isShuffleEnabled
+    val isRepeatEnabled: StateFlow<Boolean> = audioPlayerManager.isRepeatEnabled
 
     fun setPlaylist(tracks: List<Track>, startPlaying: Boolean = true) {
         if (tracks.isNotEmpty()) {
@@ -76,5 +78,13 @@ class PlayerManager @Inject constructor(
         val currentList = audioPlayerManager.playlist.value.toMutableList()
         currentList.add(track)
         audioPlayerManager.setPlaylist(currentList)
+    }
+
+    fun toggleShuffle() {
+        audioPlayerManager.toggleShuffle()
+    }
+
+    fun toggleRepeat() {
+        audioPlayerManager.toggleRepeat()
     }
 }

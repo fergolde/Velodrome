@@ -11,12 +11,8 @@ data class PlayerUiState(
     val currentTrack: Track? = null,
     val playlist: List<Track> = emptyList(),
     val currentIndex: Int = 0,
-    val isShuffle: Boolean = false,
-    val repeatMode: RepeatMode = RepeatMode.OFF,
+    val isShuffleEnabled: Boolean = false,
+    val isRepeatEnabled: Boolean = false,
     val isBuffering: Boolean = false,
     val error: String? = null
 )
-
-enum class RepeatMode {
-    OFF, ALL, ONE
-}
