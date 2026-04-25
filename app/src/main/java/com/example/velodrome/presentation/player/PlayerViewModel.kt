@@ -57,6 +57,16 @@ class PlayerViewModel @Inject constructor(
                 _uiState.update { it.copy(isBuffering = isBuffering) }
             }
         }
+        viewModelScope.launch {
+            playerManager.isShuffleEnabled.collect { isShuffleEnabled ->
+                _uiState.update { it.copy(isShuffleEnabled = isShuffleEnabled) }
+            }
+        }
+        viewModelScope.launch {
+            playerManager.isRepeatEnabled.collect { isRepeatEnabled ->
+                _uiState.update { it.copy(isRepeatEnabled = isRepeatEnabled) }
+            }
+        }
     }
 
     /**
@@ -98,18 +108,13 @@ class PlayerViewModel @Inject constructor(
      * Toggle shuffle mode
      */
     fun toggleShuffle() {
-        _uiState.update { it.copy(isShuffle = !it.isShuffle) }
+        playerManager.toggleShuffle()
     }
 
     /**
-     * Cycle repeat mode
+     * Toggle repeat mode
      */
-    fun cycleRepeat() {
-        val nextMode = when (_uiState.value.repeatMode) {
-            RepeatMode.OFF -> RepeatMode.ALL
-            RepeatMode.ALL -> RepeatMode.ONE
-            RepeatMode.ONE -> RepeatMode.OFF
-        }
-        _uiState.update { it.copy(repeatMode = nextMode) }
+    fun toggleRepeat() {
+        playerManager.toggleRepeat()
     }
 }

@@ -58,6 +58,12 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     private val _currentIndex = MutableStateFlow(0)
     val currentIndex: StateFlow<Int> = _currentIndex.asStateFlow()
 
+    private val _isShuffleEnabled = MutableStateFlow(false)
+    val isShuffleEnabled: StateFlow<Boolean> = _isShuffleEnabled.asStateFlow()
+
+    private val _isRepeatEnabled = MutableStateFlow(false)
+    val isRepeatEnabled: StateFlow<Boolean> = _isRepeatEnabled.asStateFlow()
+
     private var mediaController: MediaController? = null
     private var controllerFuture: ListenableFuture<MediaController>? = null
     var isLoadingMoreCallbackInvoked = false
@@ -133,9 +139,11 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val currentIndex = controller.currentMediaItemIndex
         val totalItems = controller.mediaItemCount
         val remaining = totalItems - currentIndex
+        val shuffle = _isShuffleEnabled.value
+        val repeat = _isRepeatEnabled.value
 
-        // Si quedan menos de 3 y no hemos disparado el callback aún
-        if (remaining <= 3 && !isLoadingMoreCallbackInvoked) {
+        // Si quedan menos de 3, no hemos disparado el callback Y no hay shuffle/repeat activo
+        if (remaining <= 3 && !isLoadingMoreCallbackInvoked && !shuffle && !repeat) {
             isLoadingMoreCallbackInvoked = true
             loadMoreCallback?.invoke()
         }
@@ -178,9 +186,24 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     }
 
     private fun doPlayWithController(mediaItems: List<MediaItem>, startIndex: Int) {
+        // Guardar estados actuales de shuffle/repeat antes de setMediaItems
+        val currentShuffle = _isShuffleEnabled.value
+        val currentRepeat = _isRepeatEnabled.value
+
         // Try to get the controller directly if it's ready
         mediaController?.let { controller ->
             controller.setMediaItems(mediaItems, startIndex, 0L)
+            // Restaurar estados
+            if (currentShuffle) {
+                controller.shuffleModeEnabled = true
+                controller.repeatMode = Player.REPEAT_MODE_ALL
+            } else if (currentRepeat) {
+                controller.shuffleModeEnabled = false
+                controller.repeatMode = Player.REPEAT_MODE_ALL
+            } else {
+                controller.shuffleModeEnabled = false
+                controller.repeatMode = Player.REPEAT_MODE_OFF
+            }
             controller.prepare()
             controller.play()
             return
@@ -247,13 +270,58 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     }
 
     fun togglePlayPause() { mediaController?.let { if (it.isPlaying) it.pause() else it.play() } }
+
+    fun toggleShuffle() {
+        if (!_isShuffleEnabled.value) {
+            // Activar shuffle
+            _isRepeatEnabled.value = false
+            mediaController?.let {
+                it.shuffleModeEnabled = true
+                it.repeatMode = Player.REPEAT_MODE_ALL
+            }
+            _isShuffleEnabled.value = true
+        } else {
+            // Desactivar shuffle
+            mediaController?.let {
+                it.shuffleModeEnabled = false
+                it.repeatMode = Player.REPEAT_MODE_OFF
+            }
+            _isShuffleEnabled.value = false
+        }
+    }
+
+    fun toggleRepeat() {
+        if (!_isRepeatEnabled.value) {
+            // Activar repeat
+            _isShuffleEnabled.value = false
+            mediaController?.let {
+                it.shuffleModeEnabled = false
+                it.repeatMode = Player.REPEAT_MODE_ALL
+            }
+            _isRepeatEnabled.value = true
+        } else {
+            // Desactivar repeat
+            mediaController?.let {
+                it.repeatMode = Player.REPEAT_MODE_OFF
+            }
+            _isRepeatEnabled.value = false
+        }
+    }
     fun seekTo(positionMs: Long) { mediaController?.seekTo(positionMs); _currentPosition.value = positionMs }
     fun next(): Boolean = mediaController?.hasNextMediaItem()?.also { mediaController?.seekToNextMediaItem() } ?: false
     fun previous(): Boolean = mediaController?.hasPreviousMediaItem()?.also { mediaController?.seekToPreviousMediaItem() } ?: false
 
     private fun handlePlaybackEnded() {
-        val has = mediaController?.hasNextMediaItem() == true
-        if (!has) { isLoadingMoreCallbackInvoked = true; loadMoreCallback?.invoke() }
+        val hasNext = mediaController?.hasNextMediaItem() == true
+        val shuffle = _isShuffleEnabled.value
+        val repeat = _isRepeatEnabled.value
+        // Solo cargar más si no hay siguiente Y tanto shuffle como repeat están desactivados
+        val canLoadMore = !hasNext && !shuffle && !repeat
+
+        if (canLoadMore) {
+            isLoadingMoreCallbackInvoked = true
+            loadMoreCallback?.invoke()
+        }
     }
 
     fun setPlaylist(playlist: List<Track>) { _playlist.value = playlist }

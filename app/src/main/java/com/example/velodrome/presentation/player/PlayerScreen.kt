@@ -149,7 +149,11 @@ fun PlayerScreen(
                     isPlaying = uiState.isPlaying,
                     onPlayPauseClick = { viewModel.onPlayPauseClick() },
                     onPreviousClick = { viewModel.onPreviousClick() },
-                    onNextClick = { viewModel.onNextClick() }
+                    onNextClick = { viewModel.onNextClick() },
+                    isShuffleEnabled = uiState.isShuffleEnabled,
+                    isRepeatEnabled = uiState.isRepeatEnabled,
+                    onShuffleClick = { viewModel.toggleShuffle() },
+                    onRepeatClick = { viewModel.toggleRepeat() }
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 QueueChip(onClick = { showQueue = true })
@@ -353,7 +357,11 @@ fun PlaybackControls(
     isPlaying: Boolean = false,
     onPlayPauseClick: () -> Unit = {},
     onPreviousClick: () -> Unit = {},
-    onNextClick: () -> Unit = {}
+    onNextClick: () -> Unit = {},
+    isShuffleEnabled: Boolean = false,
+    isRepeatEnabled: Boolean = false,
+    onShuffleClick: () -> Unit = {},
+    onRepeatClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -361,11 +369,12 @@ fun PlaybackControls(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Shuffle
-        IconButton(onClick = {}) {
+        IconButton(onClick = onShuffleClick) {
             Icon(
                 Icons.Outlined.Shuffle,
                 contentDescription = stringResource(R.string.player_shuffle),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                tint = if (isShuffleEnabled) MaterialTheme.colorScheme.primary 
+                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -403,11 +412,12 @@ fun PlaybackControls(
         }
 
         // Repeat
-        IconButton(onClick = {}) {
+        IconButton(onClick = onRepeatClick) {
             Icon(
                 Icons.Outlined.Repeat,
                 contentDescription = stringResource(R.string.player_repeat),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                tint = if (isRepeatEnabled) MaterialTheme.colorScheme.primary 
+                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.size(22.dp)
             )
         }
