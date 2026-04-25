@@ -1,6 +1,9 @@
 package com.example.velodrome.util
 
 import android.content.Context
+import androidx.media3.common.util.UnstableApi
+import coil.ImageLoader
+import coil.annotation.ExperimentalCoilApi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
@@ -14,11 +17,15 @@ import javax.inject.Singleton
  * - Images: stored in context.cacheDir (internal storage)
  * - Music: stored in context.filesDir/musicCache (app-specific external storage)
  * 
- * Cleanup is LRU (Least Recently Used) - oldest files are deleted first.
+ * Cleanup uses official APIs from Media3 (SimpleCache) and Coil (ImageLoader).
+ * File.deleteRecursively() is NOT used to avoid corrupting Media3's cache index.
  */
+@UnstableApi
 @Singleton
 class CacheManager @Inject constructor(
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    private val simpleCache: androidx.media3.datasource.cache.SimpleCache,
+    private val imageLoader: ImageLoader
 ) {
 
     companion object {
@@ -34,10 +41,6 @@ class CacheManager @Inject constructor(
      */
     val imageCacheDir: File
         get() = File(context.cacheDir, IMAGE_CACHE_DIR).also { it.mkdirs() }
-
-    fun setMusicCacheLimitBytes(bytes: Long) {
-        trimCacheIfNeeded(musicCacheDir, bytes) // ya tienes este método
-    }
 
     /**
      * Directory for music cache (app-specific external storage).
@@ -90,48 +93,26 @@ class CacheManager @Inject constructor(
         return formatSize(getMusicCacheSizeBytes())
     }
 
-    // --- Cleanup ---
+    // --- Cleanup using official APIs ---
 
     /**
-     * Clean image cache if it exceeds the limit.
-     * Deletes oldest files first (LRU strategy).
+     * Clear all image cache using official Coil API.
+     * Uses ImageLoader.diskCache?.clear() and memoryCache?.clear().
      */
-    fun cleanImageCacheIfNeeded(limitMb: Int) {
-        val limitBytes = limitMb.toLong() * 1024 * 1024
-        trimCacheIfNeeded(imageCacheDir, limitBytes)
-    }
-
-    /**
-     * Clean music cache if it exceeds the limit.
-     * Deletes oldest files first (LRU strategy).
-     */
-    fun cleanMusicCacheIfNeeded(limitGb: Int) {
-        val limitBytes = limitGb.toLong() * 1024 * 1024 * 1024
-        trimCacheIfNeeded(musicCacheDir, limitBytes)
-    }
-
-    /**
-     * Clean both caches if they exceed their limits.
-     */
-    fun cleanCachesIfNeeded(imageLimitMb: Int, musicLimitGb: Int) {
-        cleanImageCacheIfNeeded(imageLimitMb)
-        cleanMusicCacheIfNeeded(musicLimitGb)
-    }
-
-    /**
-     * Clear all image cache immediately.
-     */
+    @OptIn(ExperimentalCoilApi::class)
     fun clearImageCache() {
-        deleteRecursively(imageCacheDir)
-        imageCacheDir.mkdirs()
+        imageLoader.diskCache?.clear()
+        imageLoader.memoryCache?.clear()
     }
 
     /**
-     * Clear all music cache immediately.
+     * Clear all music cache using official Media3 SimpleCache API.
+     * Iterates over cache keys and removes each resource safely.
      */
     fun clearMusicCache() {
-        deleteRecursively(musicCacheDir)
-        musicCacheDir.mkdirs()
+        simpleCache.keys.forEach { key ->
+            simpleCache.removeResource(key)
+        }
     }
 
     /**
@@ -164,46 +145,6 @@ class CacheManager @Inject constructor(
             bytes >= 1024 * 1024 -> String.format("%.0f MB", bytes / (1024.0 * 1024))
             bytes >= 1024 -> String.format("%.0f KB", bytes / 1024.0)
             else -> "$bytes B"
-        }
-    }
-
-    /**
-     * Trim cache directory to be under limit bytes by deleting oldest files first.
-     * Uses lastModified() as proxy for "recently used".
-     */
-    private fun trimCacheIfNeeded(directory: File, limitBytes: Long) {
-        if (!directory.exists()) return
-
-        val currentSize = calculateDirectorySize(directory)
-        if (currentSize <= limitBytes) return
-
-        // Get all files sorted by last modified (oldest first)
-        val files = directory.listFiles()
-            ?.filter { it.isFile }
-            ?.sortedBy { it.lastModified() }
-            ?: return
-
-        var bytesToDelete = currentSize - limitBytes
-        for (file in files) {
-            if (bytesToDelete <= 0) break
-            val fileSize = file.length()
-            if (file.delete()) {
-                bytesToDelete -= fileSize
-            }
-        }
-    }
-
-    /**
-     * Recursively delete a directory and all its contents.
-     */
-    private fun deleteRecursively(directory: File) {
-        if (!directory.exists()) return
-        
-        directory.listFiles()?.forEach { file ->
-            if (file.isDirectory) {
-                deleteRecursively(file)
-            }
-            file.delete()
         }
     }
 }

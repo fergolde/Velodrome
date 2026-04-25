@@ -8,8 +8,10 @@ import com.example.velodrome.domain.usecase.ArtistUseCases
 import com.example.velodrome.domain.usecase.TrackUseCases
 import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -192,12 +194,19 @@ class ExploreViewModel @Inject constructor(
                     val genre = selectedGenres.first()
                     songsResult = trackUseCases.getRandomSongsByGenre(genre, size = 10)
                 } else {
+                    // Multiple genres: parallel fetching using structured concurrency
                     val allSongs = mutableListOf<Track>()
-                    repeat(10){
-                        val randomGenre = selectedGenres.random()
-                        val result = trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
-                        result.onSuccess { songs ->
-                            allSongs.addAll(songs)
+                    coroutineScope {
+                        val deferreds = (1..10).map { _ ->
+                            async {
+                                val randomGenre = selectedGenres.random()
+                                trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
+                            }
+                        }
+                        deferreds.awaitAll().forEach { result ->
+                            result.onSuccess { songs ->
+                                allSongs.addAll(songs)
+                            }
                         }
                     }
                     songsResult = Result.success(allSongs)
@@ -251,12 +260,19 @@ class ExploreViewModel @Inject constructor(
                     val genre = currentGenreFilter.first()
                     songsResult = trackUseCases.getRandomSongsByGenre(genre, size = 10)
                 } else {
+                    // Multiple genres: parallel fetching using structured concurrency
                     val allSongs = mutableListOf<Track>()
-                    repeat(10){
-                        val randomGenre = currentGenreFilter.random()
-                        val result = trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
-                        result.onSuccess { songs ->
-                            allSongs.addAll(songs)
+                    coroutineScope {
+                        val deferreds = (1..10).map { _ ->
+                            async {
+                                val randomGenre = currentGenreFilter.random()
+                                trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
+                            }
+                        }
+                        deferreds.awaitAll().forEach { result ->
+                            result.onSuccess { songs ->
+                                allSongs.addAll(songs)
+                            }
                         }
                     }
                     songsResult = Result.success(allSongs)
