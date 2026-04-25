@@ -8,20 +8,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material3.Icon
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import com.example.velodrome.di.CredentialsEntryPoint
+import coil3.compose.AsyncImage
 import com.example.velodrome.ui.theme.SurfaceDark
 import com.example.velodrome.ui.theme.TextSecondary
-import dagger.hilt.android.EntryPointAccessors
 
 @Composable
 fun AlbumCover(
@@ -31,23 +27,6 @@ fun AlbumCover(
     size: Dp = 160.dp,
     cornerRadius: Dp = 12.dp
 ) {
-    val context = LocalContext.current
-
-    // HILT SAFE ACCESS
-    val credentialsManager = remember {
-        EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            CredentialsEntryPoint::class.java
-        ).credentialsManager()
-    }
-
-    // Generate URL from coverArtId
-    val remoteUrl = remember(coverArtId, size) {
-        coverArtId?.let {
-            credentialsManager.getCoverArtUrl(it, size.value.toInt())
-        }
-    }
-
     Box(
         modifier = modifier
             .size(size)
@@ -60,20 +39,15 @@ fun AlbumCover(
                 PlaceholderCover(modifier = Modifier.fillMaxSize())
             }
 
-            !remoteUrl.isNullOrBlank() -> {
+            else -> {
+                // Coil 3 + NavidromeImageInterceptor se encarga de la autenticación
+                // pasando directamente el coverArtId
                 AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(remoteUrl)
-                        .crossfade(true)
-                        .build(),
+                    model = coverArtId,
                     contentDescription = contentDescription,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-            }
-
-            else -> {
-                PlaceholderCover(modifier = Modifier.fillMaxSize())
             }
         }
     }

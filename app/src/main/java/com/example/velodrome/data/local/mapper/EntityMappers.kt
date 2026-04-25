@@ -28,7 +28,9 @@ fun AlbumEntity.toDomain(): Album = Album(
     title = title,
     year = year,
     genre = genre,
-    coverUrl = coverUrl
+    coverUrl = coverUrl,
+    songCount = songCount,
+    duration = duration
 )
 
 fun Album.toEntity(): AlbumEntity = AlbumEntity(
@@ -38,7 +40,9 @@ fun Album.toEntity(): AlbumEntity = AlbumEntity(
     title = title,
     year = year,
     genre = genre,
-    coverUrl = coverUrl
+    coverUrl = coverUrl,
+    songCount = songCount,
+    duration = duration
 )
 
 fun TrackEntity.toDomain(): Track = Track(

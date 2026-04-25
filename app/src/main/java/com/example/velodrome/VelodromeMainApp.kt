@@ -1,23 +1,31 @@
 package com.example.velodrome
 
 import android.app.Application
-import coil.ImageLoader
-import coil.ImageLoaderFactory
-import coil.disk.DiskCache
-import coil.memory.MemoryCache
+import android.content.Context
+import androidx.work.Configuration
+import androidx.work.WorkManager
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.disk.DiskCache
+import coil3.memory.MemoryCache
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.presentation.audio.ScrobbleManager
 import com.example.velodrome.util.CredentialsManager
+import com.example.velodrome.util.NavidromeImageInterceptor
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
+import okio.Path
+import okio.Path.Companion.toOkioPath
 import java.io.File
 import javax.inject.Inject
 
 private const val TAG = "VelodromeApp"
 
 @HiltAndroidApp
-class VelodromeApp : Application(), ImageLoaderFactory {
+class VelodromeApp : Application(), SingletonImageLoader.Factory, Configuration.Provider {
 
     @Inject
     lateinit var scrobbleManager: ScrobbleManager
@@ -26,25 +34,50 @@ class VelodromeApp : Application(), ImageLoaderFactory {
     lateinit var credentialsManager: CredentialsManager
 
     @Inject
+    lateinit var navidromeImageInterceptor: NavidromeImageInterceptor
+
+    @Inject
+    lateinit var okHttpClient: OkHttpClient
+
+    @Inject
     lateinit var settingsRepository: SettingsRepository
 
-    override fun newImageLoader(): ImageLoader {
+    @Inject
+    lateinit var workerFactory: androidx.hilt.work.HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
+
+    override fun newImageLoader(context: Context): ImageLoader {
         // Image cache: usa setting del usuario (en MB)
         val imageLimitMb = runBlocking {
             settingsRepository.imageCacheSizeMb.first()
         }.toLong()
 
-        return ImageLoader.Builder(applicationContext)
-            // Memory cache: 25% RAM (solo acepta porcentaje, no bytes)
+        return ImageLoader.Builder(context)
+            .components {
+                // Añadir el interceptor de autenticación para coverart
+                add(navidromeImageInterceptor)
+                // Añadir el fetcher de red con OkHttp
+                add(
+                    OkHttpNetworkFetcherFactory(
+                        callFactory = { okHttpClient }
+                    )
+                )
+            }
+            // Memory cache: 25% RAM
             .memoryCache {
-                MemoryCache.Builder(applicationContext)
-                    .maxSizePercent(0.25)
+                MemoryCache.Builder()
+                    .maxSizePercent(context, 0.25)
                     .build()
             }
             // Disk cache: usa setting imageCacheSizeMb del usuario (convertido a bytes)
             .diskCache {
+                val cacheDir: Path = File(cacheDir, "image_cache").toOkioPath()
                 DiskCache.Builder()
-                    .directory(File(cacheDir, "image_cache"))
+                    .directory(cacheDir)
                     .maxSizeBytes(imageLimitMb * 1024L * 1024L)
                     .build()
             }

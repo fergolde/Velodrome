@@ -2,12 +2,12 @@ package com.example.velodrome.presentation.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.velodrome.domain.model.Track
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 private const val TAG = "PlayerViewModel"
@@ -17,57 +17,39 @@ class PlayerViewModel @Inject constructor(
     private val playerManager: PlayerManager
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PlayerUiState())
-    val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
-
-    init {
-        // Sync with PlayerManager (position is updated by AudioPlayerManager polling)
-        viewModelScope.launch {
-            playerManager.playlist.collect { playlist ->
-                _uiState.update { it.copy(playlist = playlist) }
-            }
-        }
-        viewModelScope.launch {
-            playerManager.isPlaying.collect { isPlaying ->
-                _uiState.update { it.copy(isPlaying = isPlaying) }
-            }
-        }
-        // AudioPlayerManager emite posición en milisegundos → convertir a segundos para la UI
-        viewModelScope.launch {
-            playerManager.currentPosition.collect { posMs ->
-                _uiState.update { it.copy(currentPosition = (posMs / 1000).toInt()) }
-            }
-        }
-        // Colectar currentTrack directamente: evita que la info aparezca vacía
-        // cuando el sheet se abre con una canción ya en reproducción
-        viewModelScope.launch {
-            playerManager.currentTrack.collect { track ->
-                _uiState.update { it.copy(currentTrack = track) }
-            }
-        }
-        viewModelScope.launch {
-            playerManager.currentIndex.collect { idx ->
-                _uiState.update { state ->
-                    state.copy(currentIndex = idx)
-                }
-            }
-        }
-        viewModelScope.launch {
-            playerManager.isBuffering.collect { isBuffering ->
-                _uiState.update { it.copy(isBuffering = isBuffering) }
-            }
-        }
-        viewModelScope.launch {
-            playerManager.isShuffleEnabled.collect { isShuffleEnabled ->
-                _uiState.update { it.copy(isShuffleEnabled = isShuffleEnabled) }
-            }
-        }
-        viewModelScope.launch {
-            playerManager.isRepeatEnabled.collect { isRepeatEnabled ->
-                _uiState.update { it.copy(isRepeatEnabled = isRepeatEnabled) }
-            }
-        }
-    }
+    /**
+     * Consolidated UI state using combine pattern.
+     * 
+     * Instead of multiple separate collectors (which cause multiple recompositions),
+     * we combine all playerManager flows into a single state emission.
+     */
+    val uiState: StateFlow<PlayerUiState> = combine(
+        playerManager.playlist,
+        playerManager.isPlaying,
+        playerManager.currentPosition,
+        playerManager.currentTrack,
+        playerManager.currentIndex,
+        playerManager.isBuffering,
+        playerManager.isShuffleEnabled,
+        playerManager.isRepeatEnabled
+    ) { values: Array<*> ->
+        @Suppress("UNCHECKED_CAST")
+        PlayerUiState(
+            playlist = values[0] as List<Track>,
+            isPlaying = values[1] as Boolean,
+            // Convert milliseconds to seconds for UI
+            currentPosition = ((values[2] as Long) / 1000).toInt(),
+            currentTrack = values[3] as Track?,
+            currentIndex = values[4] as Int,
+            isBuffering = values[5] as Boolean,
+            isShuffleEnabled = values[6] as Boolean,
+            isRepeatEnabled = values[7] as Boolean
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = PlayerUiState()
+    )
 
     /**
      * Play/Pause toggle

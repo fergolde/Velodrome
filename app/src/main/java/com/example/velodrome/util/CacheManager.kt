@@ -2,9 +2,9 @@ package com.example.velodrome.util
 
 import android.content.Context
 import androidx.media3.common.util.UnstableApi
-import coil.ImageLoader
-import coil.annotation.ExperimentalCoilApi
-import coil.imageLoader
+import coil3.ImageLoader
+import coil3.annotation.ExperimentalCoilApi
+import coil3.imageLoader
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject

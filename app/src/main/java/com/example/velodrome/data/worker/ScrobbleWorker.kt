@@ -1,12 +1,13 @@
 package com.example.velodrome.data.worker
 
 import android.content.Context
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.velodrome.data.local.dao.ScrobbleDao
 import com.example.velodrome.domain.repository.ScrobbleRepository
-import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -14,21 +15,16 @@ import kotlinx.coroutines.withContext
  * Worker que procesa scrobbles pendientes guardados en Room.
  * Se ejecuta cuando hay red disponible.
  */
-class ScrobbleWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class ScrobbleWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val scrobbleDao: ScrobbleDao,
+    private val scrobbleRepository: ScrobbleRepository
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-
         try {
-            val appEntryPoint = EntryPointAccessors.fromApplication(
-                applicationContext,
-                ScrobbleWorkerEntryPoint::class.java
-            )
-            val scrobbleDao = appEntryPoint.scrobbleDao()
-            val scrobbleRepository = appEntryPoint.scrobbleRepository()
-
             val pending = scrobbleDao.getPendingScrobbles()
 
             if (pending.isEmpty()) {
@@ -54,14 +50,4 @@ class ScrobbleWorker(
             Result.retry()
         }
     }
-}
-
-/**
- * Entry point for Hilt injection in ScrobbleWorker.
- */
-@dagger.hilt.EntryPoint
-@dagger.hilt.InstallIn(SingletonComponent::class)
-interface ScrobbleWorkerEntryPoint {
-    fun scrobbleDao(): ScrobbleDao
-    fun scrobbleRepository(): ScrobbleRepository
 }

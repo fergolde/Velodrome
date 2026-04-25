@@ -1,5 +1,6 @@
 package com.example.velodrome.data.local.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -11,6 +12,12 @@ import kotlinx.coroutines.flow.Flow
 interface ArtistDao {
     @Query("SELECT * FROM artists ORDER BY name ASC")
     fun getAllArtists(): Flow<List<ArtistEntity>>
+
+    @Query("SELECT * FROM artists ORDER BY name ASC")
+    fun getArtistsPagingSource(): PagingSource<Int, ArtistEntity>
+
+    @Query("SELECT * FROM artists ORDER BY name ASC LIMIT :limit OFFSET :offset")
+    suspend fun getArtistsPage(offset: Int, limit: Int): List<ArtistEntity>
 
     @Query("SELECT * FROM artists ORDER BY name ASC")
     suspend fun getAllArtistsOnce(): List<ArtistEntity>

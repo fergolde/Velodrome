@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -115,20 +116,25 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     private fun startPositionPolling() {
         playerScope.launch {
-            while (true) {
-                mediaController?.let { controller ->
-                    if (controller.isPlaying) {
-                        val pos = controller.currentPosition
-                        _currentPosition.value = pos
-                        // Comprobar si hay que scrobblear (50% de la duración alcanzado)
-                        val dur = controller.duration
-                        val trackId = _currentTrackId.value
-                        if (trackId != null && dur > 0) {
-                            scrobbleManager.checkAndScrobble(trackId, pos, dur)
+            isPlaying.collectLatest { playing ->
+                if (playing) {
+                    // Solo hacer polling cuando está reproduciendo
+                    while (true) {
+                        mediaController?.let { controller ->
+                            val pos = controller.currentPosition
+                            _currentPosition.value = pos
+                            // Comprobar si hay que scrobblear (50% de la duración alcanzado)
+                            val dur = controller.duration
+                            val trackId = _currentTrackId.value
+                            if (trackId != null && dur > 0) {
+                                scrobbleManager.checkAndScrobble(trackId, pos, dur)
+                            }
                         }
+                        kotlinx.coroutines.delay(1000L)
                     }
                 }
-                kotlinx.coroutines.delay(1000L)
+                // Si no está reproduciendo, la corrutina se suspende automáticamente
+                // y se reactiva cuando isPlaying cambie a true
             }
         }
     }
@@ -167,11 +173,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
         _playlist.value = playlist
-        _currentIndex.value = startIndex
-        _currentTrack.value = track
-        _currentTrackId.value = track.id
-        scrobbleManager.onTrackChanged()
-        scrobbleManager.sendNowPlaying(track.id)
+        // No actualizamos currentIndex/currentTrack aquí - el listener onMediaItemTransition 
+        // del MediaController es la única fuente de verdad
         isLoadingMoreCallbackInvoked = false
 
         val mediaItems = playlist.mapIndexed { index, t ->
