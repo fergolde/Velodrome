@@ -17,6 +17,16 @@ class LoginUseCase @Inject constructor(
         if (serverUrl.isBlank()) {
             return Result.failure(IllegalArgumentException("Server URL cannot be empty"))
         }
-        return repository.login(username, password, serverUrl)
+
+        // Saneamiento inteligente de la URL
+        var cleanUrl = serverUrl.trim()
+        if (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://")) {
+            cleanUrl = "https://$cleanUrl"
+        }
+        if (!cleanUrl.endsWith("/")) {
+            cleanUrl = "$cleanUrl/"
+        }
+
+        return repository.login(username, password, cleanUrl)
     }
 }
