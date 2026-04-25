@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.media3.common.util.UnstableApi
 import coil.ImageLoader
 import coil.annotation.ExperimentalCoilApi
+import coil.imageLoader
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
@@ -24,9 +25,15 @@ import javax.inject.Singleton
 @Singleton
 class CacheManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val simpleCache: androidx.media3.datasource.cache.SimpleCache,
-    private val imageLoader: ImageLoader
+    private val simpleCache: androidx.media3.datasource.cache.SimpleCache
 ) {
+    
+    /**
+     * LazyImageLoader from Coil application context.
+     * Coil sets this via ImageLoaderFactory in VelodromeApp.
+     */
+    private val imageLoader: ImageLoader
+        get() = context.imageLoader
 
     companion object {
         private const val MUSIC_CACHE_DIR = "audioCache"
