@@ -209,16 +209,26 @@ class SettingsViewModel @Inject constructor(
      * List of available accent colors for the user to choose.
      */
     val availableAccentColors = listOf(
-        AccentColorOption("Purple", "#B6A0FF"),
+        AccentColorOption("Velodrome Purple", "#B6A0FF"),
+        AccentColorOption("Red", "#EF5350"),
+        AccentColorOption("Pink", "#F06292"),
+        AccentColorOption("Purple", "#BA68C8"),
+        AccentColorOption("Deep Purple", "#9575CD"),
+        AccentColorOption("Indigo", "#7986CB"),
         AccentColorOption("Blue", "#64B5F6"),
+        AccentColorOption("Light Blue", "#4FC3F7"),
         AccentColorOption("Cyan", "#4DD0E1"),
         AccentColorOption("Teal", "#4DB6AC"),
         AccentColorOption("Green", "#81C784"),
-        AccentColorOption("Yellow", "#FFD54F"),
+        AccentColorOption("Light Green", "#AED581"),
+        AccentColorOption("Lime", "#DCE775"),
+        AccentColorOption("Yellow", "#FFF176"),
+        AccentColorOption("Amber", "#FFD54F"),
         AccentColorOption("Orange", "#FFB74D"),
-        AccentColorOption("Red", "#E57373"),
-        AccentColorOption("Pink", "#F06292"),
-        AccentColorOption("Deep Purple", "#9575CD")
+        AccentColorOption("Deep Orange", "#FF8A65"),
+        AccentColorOption("Brown", "#A1887F"),
+        AccentColorOption("Blue Grey", "#90A4AE"),
+        AccentColorOption("White", "#FFFFFF")
     )
 }
 

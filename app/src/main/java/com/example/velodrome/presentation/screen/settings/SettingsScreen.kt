@@ -9,14 +9,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -33,16 +39,21 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -54,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -169,6 +181,48 @@ fun SettingsScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
+            // --- Appearance Section ---
+            SettingsSection(title = stringResource(R.string.settings_appearance)) {
+                // Accent Color
+                SettingsClickableItem(
+                    title = stringResource(R.string.settings_accent_color),
+                    subtitle = uiState.accentColor,
+                    onClick = { showColorPicker = !showColorPicker },
+                    leadingIcon = {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(parseHexColor(uiState.accentColor))
+                        )
+                    }
+                )
+                if (showColorPicker) {
+                    ColorPickerBottomSheet(
+                        colors = viewModel.availableAccentColors,
+                        selectedColor = uiState.accentColor,
+                        onColorSelected = { color ->
+                            viewModel.setAccentColor(color)
+                        },
+                        onDismiss = { showColorPicker = false }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // --- Scrobble Section ---
+            SettingsSection(title = stringResource(R.string.settings_scrobble)) {
+                SettingsSwitchItem(
+                    title = stringResource(R.string.settings_scrobble_enabled),
+                    subtitle = stringResource(R.string.settings_scrobble_desc),
+                    checked = uiState.scrobbleEnabled,
+                    onCheckedChange = { viewModel.setScrobbleEnabled(it) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             // --- Cache Section ---
             SettingsSection(title = stringResource(R.string.settings_cache)) {
                 // Music Cache with Chips
@@ -223,50 +277,6 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.settings_clear_cache))
                 }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Appearance Section ---
-            SettingsSection(title = stringResource(R.string.settings_appearance)) {
-                // Accent Color
-                SettingsClickableItem(
-                    title = stringResource(R.string.settings_accent_color),
-                    subtitle = uiState.accentColor,
-                    onClick = { showColorPicker = !showColorPicker },
-                    leadingIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(parseHexColor(uiState.accentColor))
-                        )
-                    }
-                )
-
-                if (showColorPicker) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    ColorPickerGrid(
-                        colors = viewModel.availableAccentColors,
-                        selectedColor = uiState.accentColor,
-                        onColorSelected = { color ->
-                            viewModel.setAccentColor(color)
-                            showColorPicker = false
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Scrobble Section ---
-            SettingsSection(title = stringResource(R.string.settings_scrobble)) {
-                SettingsSwitchItem(
-                    title = stringResource(R.string.settings_scrobble_enabled),
-                    subtitle = stringResource(R.string.settings_scrobble_desc),
-                    checked = uiState.scrobbleEnabled,
-                    onCheckedChange = { viewModel.setScrobbleEnabled(it) }
-                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -533,45 +543,119 @@ fun SettingsInfoItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ColorPickerGrid(
+fun ColorPickerBottomSheet(
     colors: List<AccentColorOption>,
     selectedColor: String,
-    onColorSelected: (String) -> Unit
+    onColorSelected: (String) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var customHex by remember { mutableStateOf(selectedColor) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
     ) {
-        items(colors) { colorOption ->
-            val isSelected = colorOption.hexColor.equals(selectedColor, ignoreCase = true)
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(parseHexColor(colorOption.hexColor))
-                    .then(
-                        if (isSelected) {
-                            Modifier.border(2.dp, Color.White, CircleShape)
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .clickable { onColorSelected(colorOption.hexColor) },
-                contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp) // Extra padding for navigation bar
+        ) {
+            Text(
+                text = "Color de Acento",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Grid de colores predefinidos
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 56.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                if (isSelected) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
+                items(colors) { colorOption ->
+                    val isSelected = colorOption.hexColor.equals(selectedColor, ignoreCase = true)
+
+                    Box(
+                        modifier = Modifier
+                            .aspectRatio(1f)
+                            .clip(CircleShape)
+                            .background(parseHexColor(colorOption.hexColor))
+                            .then(
+                                if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+                                else Modifier
+                            )
+                            .clickable { onColorSelected(colorOption.hexColor) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isSelected) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                tint = if (parseHexColor(colorOption.hexColor).luminance() > 0.5f) Color.Black else Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Input para color infinito/personalizado
+            Text(
+                text = "Personalizado (HEX)",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Vista previa del color escrito
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(parseHexColor(customHex))
+                        .border(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                )
+
+                OutlinedTextField(
+                    value = customHex,
+                    onValueChange = { newValue ->
+                        // Permitir solo el hashtag y hasta 6 caracteres hex
+                        if (newValue.length <= 7 && newValue.matches(Regex("^[#a-fA-F0-9]*$"))) {
+                            customHex = newValue
+                            // Si es un hex válido de 7 caracteres (#FFFFFF), aplicarlo en vivo
+                            if (newValue.length == 7) {
+                                onColorSelected(newValue.uppercase())
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
 }
-
 /**
  * Parse hex color string to Compose Color.
  */
