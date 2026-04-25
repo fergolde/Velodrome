@@ -9,21 +9,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,9 +66,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
-import androidx.core.graphics.toColorInt
 
 /**
  * Settings screen with cache configuration, appearance, and stream settings.
@@ -82,8 +78,7 @@ import androidx.core.graphics.toColorInt
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
-
-    ) {
+) {
     val uiState by viewModel.uiState.collectAsState()
     var showColorPicker by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
@@ -284,7 +279,7 @@ fun SettingsScreen(
                 SettingsInfoItem(
                     title = stringResource(R.string.settings_version),
                     subtitle = stringResource(R.string.settings_version_desc),
-                    value = "1.0.0"
+                    value = uiState.appVersion // Dinámico!
                 )
             }
 
@@ -661,7 +656,7 @@ fun parseHexColor(hex: String): Color {
     return try {
         val cleanHex = hex.removePrefix("#")
         Color("#$cleanHex".toColorInt())
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         Color(0xFFB6A0FF) // Default purple
     }
 }

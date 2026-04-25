@@ -2,6 +2,7 @@ package com.example.velodrome.presentation.screen.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.velodrome.BuildConfig
 import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.util.CacheManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,7 +27,8 @@ data class SettingsUiState(
     val isClearingCache: Boolean = false,
     val pendingImageCacheMb: Int = 200,
     val pendingMusicCacheGb: Int = 2,
-    val hasPendingChanges: Boolean = false
+    val hasPendingChanges: Boolean = false,
+    val appVersion: String = BuildConfig.VERSION_NAME
 )
 
 /**
@@ -75,7 +77,8 @@ class SettingsViewModel @Inject constructor(
             isClearingCache = values[5] as Boolean,
             pendingImageCacheMb = values[6] as Int,
             pendingMusicCacheGb = values[7] as Int,
-            hasPendingChanges = values[8] as Boolean
+            hasPendingChanges = values[8] as Boolean,
+            appVersion = BuildConfig.VERSION_NAME
         )
     }.stateIn(
         scope = viewModelScope,
