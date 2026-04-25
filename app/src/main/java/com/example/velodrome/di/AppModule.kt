@@ -17,7 +17,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dev.spght.encryptedprefs.EncryptedSharedPreferences
 import dev.spght.encryptedprefs.MasterKey
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
+import java.io.IOException
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -88,8 +90,11 @@ object AppModule {
                 originalUrl
             }
 
+            val safeHttpUrl = newUrl.toHttpUrlOrNull()
+                ?: throw IOException("URL malformada: $newUrl")
+
             val newRequest = originalRequest.newBuilder()
-                .url(newUrl)
+                .url(safeHttpUrl)
                 .build()
 
             chain.proceed(newRequest)
