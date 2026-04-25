@@ -1,15 +1,16 @@
 package com.example.velodrome.data.worker
 
 import android.content.Context
+import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.example.velodrome.data.local.datasource.LocalMusicDataSource
+import com.example.velodrome.data.local.mapper.toEntity
 import com.example.velodrome.domain.repository.AlbumRepository
 import com.example.velodrome.domain.repository.ArtistRepository
 import com.example.velodrome.domain.repository.SettingsRepository
-import com.example.velodrome.data.local.datasource.LocalMusicDataSource
-import com.example.velodrome.data.local.mapper.toEntity
-import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -18,31 +19,24 @@ import kotlinx.coroutines.withContext
  * WorkManager Worker para sincronización de biblioteca en background.
  * Implementa Smart Sync: detección de cambios + resume interrumpido.
  */
-class SyncLibraryWorker(
-    context: Context,
-    params: WorkerParameters
+@HiltWorker
+class SyncLibraryWorker @AssistedInject constructor(
+    @Assisted context: Context,
+    @Assisted params: WorkerParameters,
+    private val settingsRepository: SettingsRepository,
+    private val artistRepository: ArtistRepository,
+    private val albumRepository: AlbumRepository,
+    private val localMusicDataSource: LocalMusicDataSource
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-
         try {
-            // Get dependencies via Hilt manually (Worker cannot use constructor injection)
-            val appEntryPoint = EntryPointAccessors.fromApplication(
-                applicationContext,
-                WorkerEntryPoint::class.java
-            )
-            val settingsRepository = appEntryPoint.settingsRepository()
-            val artistRepository = appEntryPoint.artistRepository()
-            val albumRepository = appEntryPoint.albumRepository()
-            val localMusicDataSource = appEntryPoint.localMusicDataSource()
-
             // Read sync state
             val lastSyncTimestamp = settingsRepository.lastSyncTimestamp.first()
             val lastSyncOffset = settingsRepository.lastSyncOffset.first()
 
             // CASE 1: Incremental sync (we have done a full sync before)
             if (lastSyncTimestamp > 0) {
-
                 val hasChanges = albumRepository.hasServerChangedSince(lastSyncTimestamp)
                 if (!hasChanges) {
                     return@withContext Result.success()
@@ -62,7 +56,6 @@ class SyncLibraryWorker(
 
                     // Insertar en Room (el DAO usa OnConflictStrategy.REPLACE)
                     localMusicDataSource.insertAlbums(entities)
-
                 }
 
                 // Update timestamp
@@ -97,16 +90,4 @@ class SyncLibraryWorker(
             Result.retry()
         }
     }
-}
-
-/**
- * Entry points for Hilt injection in Workers.
- */
-@dagger.hilt.EntryPoint
-@dagger.hilt.InstallIn(SingletonComponent::class)
-interface WorkerEntryPoint {
-    fun settingsRepository(): SettingsRepository
-    fun artistRepository(): ArtistRepository
-    fun albumRepository(): AlbumRepository
-    fun localMusicDataSource(): LocalMusicDataSource
 }

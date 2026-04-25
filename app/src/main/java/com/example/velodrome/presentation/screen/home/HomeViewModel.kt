@@ -2,16 +2,15 @@ package com.example.velodrome.presentation.screen.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.velodrome.data.local.datasource.LocalMusicDataSource
-import com.example.velodrome.domain.repository.AlbumRepository
-import com.example.velodrome.domain.repository.ArtistRepository
 import com.example.velodrome.domain.usecase.AlbumUseCases
+import com.example.velodrome.domain.usecase.ArtistUseCases
 import com.example.velodrome.domain.usecase.TrackUseCases
 import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,10 +27,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val albumUseCases: AlbumUseCases,
+    private val artistUseCases: ArtistUseCases,
     private val trackUseCases: TrackUseCases,
-    private val albumRepository: AlbumRepository,
-    private val artistRepository: ArtistRepository,
-    private val localMusicDataSource: LocalMusicDataSource,
     private val playerManager: PlayerManager
 ) : ViewModel() {
 
@@ -39,8 +36,22 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
+        syncIfEmpty()
         loadInitialData()
         syncWithPlayerManager()
+    }
+
+    private fun syncIfEmpty() {
+        viewModelScope.launch {
+            val localAlbums = albumUseCases.observeAlbums().first()
+            if (localAlbums.isEmpty()) {
+                albumUseCases.syncAlbums()
+            }
+            val localArtists = artistUseCases.observeArtists().first()
+            if (localArtists.isEmpty()) {
+                artistUseCases.syncArtists()
+            }
+        }
     }
 
     /**

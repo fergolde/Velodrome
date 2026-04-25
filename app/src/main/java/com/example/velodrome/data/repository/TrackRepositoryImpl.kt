@@ -104,20 +104,16 @@ class TrackRepositoryImpl @Inject constructor(
 
     override suspend fun searchRemoteTracks(query: String): Result<List<Track>> {
         return runCatching {
-            // Aumentamos el songCount a 100 para tener un margen mayor antes de filtrar
+            // Aumentamos el songCount a 100 para tener un margen mayor
             val response = api.search3(query = query, songCount = 100)
             val res = response.response
 
-            val rawSongDtos = res.searchResult3?.songs
+            val songDtos = res.searchResult3?.songs
                 ?: res.searchResult2?.songs
                 ?: emptyList()
 
-            // FILTRO ESTRICTO: Solo canciones cuyo título contenga la query
-            val filteredSongDtos = rawSongDtos.filter { song ->
-                song.title.contains(query, ignoreCase = true)
-            }
-
-            filteredSongDtos.map { mapSongDto(it, it.albumId ?: "search_res") }
+            // Confiar en los resultados de la API de Navidrome
+            songDtos.map { mapSongDto(it, it.albumId ?: "search_res") }
         }
     }
 }

@@ -2,6 +2,7 @@ package com.example.velodrome.domain.usecase
 
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.repository.AlbumRepository
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class GetLatestAlbumsUseCase @Inject constructor(
@@ -82,6 +83,18 @@ class SearchLocalAlbumsUseCase @Inject constructor(
     }
 }
 
+class SyncAlbumsUseCase @Inject constructor(
+    private val repository: AlbumRepository
+) {
+    suspend operator fun invoke(): Result<Int> = repository.syncAlbumsFromServer()
+}
+
+class ObserveAlbumsUseCase @Inject constructor(
+    private val repository: AlbumRepository
+) {
+    operator fun invoke(): Flow<List<Album>> = repository.observeAllAlbums()
+}
+
 // ========== WRAPPER ==========
 class AlbumUseCases @Inject constructor(
     val getLatestAlbums: GetLatestAlbumsUseCase,
@@ -89,5 +102,7 @@ class AlbumUseCases @Inject constructor(
     val getGenres: GetGenresUseCase,
     val getRecentlyPlayedAlbums: GetRecentlyPlayedAlbumsUseCase,
     val getRandomAlbums: GetRandomAlbumsUseCase,
-    val searchLocal: SearchLocalAlbumsUseCase
+    val searchLocal: SearchLocalAlbumsUseCase,
+    val syncAlbums: SyncAlbumsUseCase,
+    val observeAlbums: ObserveAlbumsUseCase
 )

@@ -95,6 +95,7 @@ dependencies {
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(libs.room.paging)
     ksp(libs.room.compiler)
 
     // Security - encrypted-shared-preferences fork (post-deprecation)
@@ -114,9 +115,15 @@ dependencies {
 
     // Coil for image loading
     implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     // WorkManager
     implementation(libs.work.manager)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
+    // Paging 3
+    implementation(libs.paging.runtime)
 
     // Testing
     testImplementation(libs.junit)

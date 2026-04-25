@@ -186,9 +186,6 @@ fun MainScaffold(
                     composable<Routes.Home> {
                         HomeScreen(
                             onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) },
-                            onExploreClick = { navController.navigate(Routes.Explore) },
-                            onSettingsClick = { navController.navigate(Routes.Settings) },
-                            onPlayerClick = { scope.launch { sheetState.bottomSheetState.expand() } }
                         )
                     }
 
@@ -223,7 +220,6 @@ fun MainScaffold(
                     composable<Routes.ArtistDetail> { backStackEntry ->
                         val route: Routes.ArtistDetail = backStackEntry.toRoute()
                         ArtistDetailScreen(
-                            artistId = route.artistId,
                             onBackClick = { navController.popBackStack() },
                             onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) }
                         )
@@ -233,9 +229,7 @@ fun MainScaffold(
                     composable<Routes.AlbumDetail> { backStackEntry ->
                         val route: Routes.AlbumDetail = backStackEntry.toRoute()
                         AlbumDetailScreen(
-                            albumId = route.albumId,
                             onBackClick = { navController.popBackStack() },
-                            onHomeClick = { navController.navigate(Routes.Home) }
                         )
                     }
                 }

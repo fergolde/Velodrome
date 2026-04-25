@@ -1,5 +1,6 @@
 package com.example.velodrome.domain.repository
 
+import androidx.paging.PagingSource
 import com.example.velodrome.domain.model.Album
 import kotlinx.coroutines.flow.Flow
 
@@ -12,6 +13,11 @@ interface AlbumRepository {
      * Returns un Flow reactivo que emite actualizaciones.
      */
     fun observeAllAlbums(): Flow<List<Album>>
+
+    /**
+     * Paging source for efficient loading of albums.
+     */
+    fun getAlbumsPaged(): PagingSource<Int, Album>
 
     suspend fun getAlbum(albumId: String): Result<Album>
     suspend fun getLatestAlbums(size: Int = 20): Result<List<Album>>

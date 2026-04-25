@@ -1,5 +1,7 @@
 package com.example.velodrome.data.repository
 
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
 import com.example.velodrome.data.local.datasource.LocalMusicDataSource
 import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.data.local.mapper.toEntity
@@ -25,6 +27,10 @@ class ArtistRepositoryImpl @Inject constructor(
         return localMusicDataSource.observeAllArtists().map { entities ->
             entities.map { it.toDomain() }
         }
+    }
+
+    override fun getArtistsPaged(): PagingSource<Int, Artist> {
+        return ArtistPagingSource(localMusicDataSource)
     }
 
     override suspend fun getArtists(offset: Int, size: Int): Result<List<Artist>> {
@@ -120,12 +126,19 @@ class ArtistRepositoryImpl @Inject constructor(
             val pageSize = 500
             var totalSynced = 0
 
-            while (offset < 10000) {
+            while (true) {
                 val result = getArtists(offset = offset, size = pageSize)
                 val artists = result.getOrNull()
                     ?: throw result.exceptionOrNull() ?: Exception("Failed to fetch artists")
 
-                if (artists.isEmpty()) {
+                if (artists.isEmpty() || artists.size < pageSize) {
+                    // Guardar los últimos resultados si hay alguno
+                    if (artists.isNotEmpty()) {
+                        val entities = artists.map { it.toEntity() }
+                        localMusicDataSource.insertArtists(entities)
+                        totalSynced += artists.size
+                        onPageProcessed(offset + artists.size)
+                    }
                     break
                 }
 
@@ -136,7 +149,6 @@ class ArtistRepositoryImpl @Inject constructor(
                 // Notify offset for resume capability
                 onPageProcessed(offset + artists.size)
 
-                if (artists.size < pageSize) break
                 offset += pageSize
             }
             totalSynced
@@ -145,5 +157,35 @@ class ArtistRepositoryImpl @Inject constructor(
 
     override suspend fun searchLocal(query: String): List<Artist> {
         return localMusicDataSource.searchArtists(query).map { it.toDomain() }
+    }
+}
+
+class ArtistPagingSource(
+    private val localDataSource: LocalMusicDataSource
+) : PagingSource<Int, Artist>() {
+
+    override fun getRefreshKey(state: PagingState<Int, Artist>): Int? {
+        return state.anchorPosition?.let { anchorPosition ->
+            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
+                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
+        }
+    }
+
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Artist> {
+        return try {
+            val page = params.key ?: 0
+            val pageSize = params.loadSize
+            val offset = page * pageSize
+
+            val artists = localDataSource.getArtistsPage(offset = offset, limit = pageSize)
+
+            LoadResult.Page(
+                data = artists.map { it.toDomain() },
+                prevKey = if (page == 0) null else page - 1,
+                nextKey = if (artists.isEmpty()) null else page + 1
+            )
+        } catch (e: Exception) {
+            LoadResult.Error(e)
+        }
     }
 }

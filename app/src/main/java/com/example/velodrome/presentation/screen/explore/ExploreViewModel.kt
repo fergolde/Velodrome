@@ -8,7 +8,6 @@ import com.example.velodrome.domain.usecase.ArtistUseCases
 import com.example.velodrome.domain.usecase.TrackUseCases
 import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -19,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -106,26 +106,19 @@ class ExploreViewModel @Inject constructor(
     }
 
     fun loadContent() {
-        _uiState.update { it.copy(isLoading = true, error = null) }
-
         viewModelScope.launch {
-            artistUseCases.getArtists(offset = 0, size = 20)
-                .onSuccess { artists ->
-                    val shuffledArtists = artists.shuffled()
-                    _uiState.update { it.copy(randomArtists = shuffledArtists) }
-                }
-                .onFailure { e ->
-                    _uiState.update { it.copy(error = e.message) }
-                }
+            // Artistas: ahora desde BD local, aleatorios
+            val localArtists = artistUseCases.observeArtists().first()
+            _uiState.update {
+                it.copy(randomArtists = localArtists.shuffled().take(20))
+            }
         }
 
+        // Álbumes siguen desde API (son endpoints específicos: random, latest...)
         viewModelScope.launch {
             albumUseCases.getRandomAlbums(size = 20)
                 .onSuccess { albums ->
                     _uiState.update { it.copy(randomAlbums = albums) }
-                }
-                .onFailure { e ->
-                    _uiState.update { it.copy(error = e.message) }
                 }
         }
 
@@ -133,9 +126,6 @@ class ExploreViewModel @Inject constructor(
             albumUseCases.getRandomAlbums(size = 10)
                 .onSuccess { albums ->
                     _uiState.update { it.copy(curatedAlbums = albums) }
-                }
-                .onFailure { e ->
-                    _uiState.update { it.copy(error = e.message) }
                 }
         }
 

@@ -1,5 +1,6 @@
 package com.example.velodrome.domain.repository
 
+import androidx.paging.PagingSource
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.domain.model.ArtistWithAlbums
 import kotlinx.coroutines.flow.Flow
@@ -13,6 +14,11 @@ interface ArtistRepository {
      * Returns un Flow reactivo que emite actualizaciones.
      */
     fun observeAllArtists(): Flow<List<Artist>>
+
+    /**
+     * Paging source for efficient loading of artists.
+     */
+    fun getArtistsPaged(): PagingSource<Int, Artist>
 
     suspend fun getArtists(offset: Int = 0, size: Int = 50): Result<List<Artist>>
     suspend fun getArtist(artistId: String): Result<ArtistWithAlbums>

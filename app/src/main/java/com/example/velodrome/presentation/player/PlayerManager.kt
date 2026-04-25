@@ -43,6 +43,23 @@ class PlayerManager @Inject constructor(
         audioPlayerManager.playTrack(track, playlist, index)
     }
 
+    fun playNow(track: Track) {
+        val currentList = audioPlayerManager.playlist.value.toMutableList()
+        val currentIndex = audioPlayerManager.currentIndex.value
+        val insertIndex = (currentIndex + 1).coerceAtMost(currentList.size)
+        currentList.add(insertIndex, track)
+        audioPlayerManager.setPlaylist(currentList)
+        audioPlayerManager.playTrack(track, currentList, insertIndex)
+    }
+
+    fun playNext(track: Track) {
+        val currentList = audioPlayerManager.playlist.value.toMutableList()
+        val currentIndex = audioPlayerManager.currentIndex.value
+        val insertIndex = (currentIndex + 1).coerceAtMost(currentList.size)
+        currentList.add(insertIndex, track)
+        audioPlayerManager.setPlaylist(currentList)
+    }
+
     fun setLoadMoreCallback(callback: () -> Unit) {
         audioPlayerManager.setLoadMoreCallback(callback)
     }

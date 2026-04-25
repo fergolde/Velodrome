@@ -57,12 +57,10 @@ import com.example.velodrome.presentation.screen.home.SectionHeader
 @Composable
 fun ExploreScreen(
     viewModel: ExploreViewModel = hiltViewModel(),
-    onHomeClick: () -> Unit = {},
     onArtistsViewAllClick: () -> Unit = {},
     onAlbumsViewAllClick: () -> Unit = {},
     onArtistClick: (String) -> Unit = {},
-    onAlbumClick: (String) -> Unit = {},
-    onSettingsClick: () -> Unit = {}
+    onAlbumClick: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

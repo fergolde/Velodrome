@@ -1,5 +1,7 @@
 package com.example.velodrome.data.repository
 
+import androidx.paging.PagingSource
+import androidx.paging.PagingState
 import com.example.velodrome.data.local.datasource.LocalMusicDataSource
 import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.data.local.mapper.toEntity
@@ -23,6 +25,10 @@ class AlbumRepositoryImpl @Inject constructor(
         return localMusicDataSource.observeAllAlbums().map { entities ->
             entities.map { it.toDomain() }
         }
+    }
+
+    override fun getAlbumsPaged(): PagingSource<Int, Album> {
+        return AlbumPagingSource(localMusicDataSource)
     }
 
     override suspend fun getAlbum(albumId: String): Result<Album> {
@@ -144,12 +150,19 @@ class AlbumRepositoryImpl @Inject constructor(
             val pageSize = 500
             var totalSynced = 0
 
-            while (offset < 10000) {
+            while (true) {
                 val result = getAllAlbumsFromServer(offset = offset, size = pageSize)
                 val albums = result.getOrNull()
                     ?: throw result.exceptionOrNull() ?: Exception("Failed to fetch albums")
 
-                if (albums.isEmpty()) {
+                if (albums.isEmpty() || albums.size < pageSize) {
+                    // Guardar los últimos resultados si hay alguno
+                    if (albums.isNotEmpty()) {
+                        val entities = albums.map { it.toEntity() }
+                        localMusicDataSource.insertAlbums(entities)
+                        totalSynced += albums.size
+                        onPageProcessed(offset + albums.size)
+                    }
                     break
                 }
 
@@ -160,7 +173,6 @@ class AlbumRepositoryImpl @Inject constructor(
                 // Notify offset for resume capability
                 onPageProcessed(offset + albums.size)
 
-                if (albums.size < pageSize) break
                 offset += pageSize
             }
             totalSynced
@@ -179,5 +191,40 @@ class AlbumRepositoryImpl @Inject constructor(
 
     override suspend fun searchLocal(query: String): List<Album> {
         return localMusicDataSource.searchAlbums(query).map { it.toDomain() }
+    }
+}
+
+/**
+ * PagingSource that maps AlbumEntity to Album domain model.
+ */
+class AlbumPagingSource(
+    private val localDataSource: LocalMusicDataSource
+) : PagingSource<Int, Album>() {
+
+    override fun getRefreshKey(state: PagingState<Int, Album>): Int? {
+        return state.anchorPosition?.let { anchorPosition ->
+            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
+                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
+        }
+    }
+
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Album> {
+        return try {
+            val page = params.key ?: 0
+            val pageSize = params.loadSize
+            // offset real = página * tamaño de página
+            val offset = page * pageSize
+
+            // getAlbumsPage devuelve List<AlbumEntity>, no un Flow
+            val albums = localDataSource.getAlbumsPage(offset = offset, limit = pageSize)
+
+            LoadResult.Page(
+                data = albums.map { it.toDomain() },
+                prevKey = if (page == 0) null else page - 1,
+                nextKey = if (albums.isEmpty()) null else page + 1
+            )
+        } catch (e: Exception) {
+            LoadResult.Error(e)
+        }
     }
 }
