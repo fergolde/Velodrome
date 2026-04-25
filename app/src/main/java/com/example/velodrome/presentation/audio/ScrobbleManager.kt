@@ -29,7 +29,7 @@ class ScrobbleManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val workManager = WorkManager.getInstance(context)
+    private val workManager by lazy { WorkManager.getInstance(context) }
 
     // Track the current track being played to avoid duplicate submissions
     private var currentScrobbleTrackId: String? = null

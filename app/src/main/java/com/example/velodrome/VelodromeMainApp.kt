@@ -45,9 +45,14 @@ class VelodromeApp : Application(), SingletonImageLoader.Factory, Configuration.
     lateinit var workerFactory: androidx.hilt.work.HiltWorkerFactory
 
     override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
+        get() {
+            check(::workerFactory.isInitialized) {
+                "workerFactory no inicializado — posible ciclo de dependencias"
+            }
+            return Configuration.Builder()
+                .setWorkerFactory(workerFactory)
+                .build()
+        }
 
     override fun newImageLoader(context: Context): ImageLoader {
         // Image cache: usa setting del usuario (en MB)

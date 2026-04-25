@@ -156,16 +156,39 @@ fun MainScaffold(
                         }
 
                         SharedBottomNavigationBar(
-                            // Comprobamos la ruta actual de forma segura
                             currentRoute = when {
                                 currentDestination?.hasRoute<Routes.Home>() == true -> "home"
                                 currentDestination?.hasRoute<Routes.Explore>() == true -> "explore"
                                 currentDestination?.hasRoute<Routes.Settings>() == true -> "settings"
                                 else -> ""
                             },
-                            onHomeClick = { navController.navigate(Routes.Home) { launchSingleTop = true } },
-                            onExploreClick = { navController.navigate(Routes.Explore) { launchSingleTop = true } },
-                            onSettingsClick = { navController.navigate(Routes.Settings) { launchSingleTop = true } }
+                            onHomeClick = {
+                                if (currentDestination?.hasRoute<Routes.Home>() != true) {
+                                    navController.navigate(Routes.Home) {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    }
+                                }
+                            },
+                            onExploreClick = {
+                                if (currentDestination?.hasRoute<Routes.Explore>() != true) {
+                                    navController.navigate(Routes.Explore) {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    }
+                                }
+                            },
+                            onSettingsClick = {
+                                if (currentDestination?.hasRoute<Routes.Settings>() != true) {
+                                    navController.navigate(Routes.Settings) {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    }
+                                }
+                            }
                         )
                     }
                 }
