@@ -31,7 +31,15 @@ class AuthRepositoryImpl @Inject constructor(
                 }
             } catch (e: Exception) {
                 credentialsManager.clearCredentials()
-                AuthResult(success = false, error = e.message ?: "Unknown error")
+                val userMessage = when (e) {
+                    is java.net.UnknownHostException,
+                    is java.net.ConnectException -> "No se puede conectar al servidor. Comprueba la URL y tu conexión."
+                    is java.net.SocketTimeoutException -> "El servidor tarda mucho en responder. Comprueba tu conexión."
+                    is java.io.IOException,
+                    is IllegalArgumentException -> "La URL proporcionada no tiene un formato válido."
+                    else -> "Error de red: Usuario o contraseña incorrectos, o servidor inaccesible."
+                }
+                AuthResult(success = false, error = userMessage)
             }
         }
     }

@@ -2,15 +2,19 @@ package com.example.velodrome.presentation.screen.login
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -151,12 +155,30 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             if (uiState.error != null) {
-                Text(
-                    text = uiState.error!!,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = uiState.error!!,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
 
             Button(
