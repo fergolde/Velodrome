@@ -288,4 +288,16 @@ class ExploreViewModel @Inject constructor(
     fun playSearchedTrack(track: Track) {
         playerManager.playTrack(track)
     }
+
+    fun onPlayTrackNow(track: Track) {
+        playerManager.playNow(track)
+    }
+
+    fun onPlayTrackNext(track: Track) {
+        playerManager.playNext(track)
+    }
+
+    fun onAddTrackToQueue(track: Track) {
+        playerManager.addToQueue(track)
+    }
 }

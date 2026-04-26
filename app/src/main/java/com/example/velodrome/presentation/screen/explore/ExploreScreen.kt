@@ -2,6 +2,7 @@ package com.example.velodrome.presentation.screen.explore
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,12 +29,17 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +58,7 @@ import com.example.velodrome.presentation.screen.home.AlbumCover
 import com.example.velodrome.presentation.screen.home.ArtistAvatar
 import com.example.velodrome.presentation.screen.home.RecentAlbumsRow
 import com.example.velodrome.presentation.screen.home.SectionHeader
+import com.example.velodrome.presentation.components.UniversalOptionsSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,6 +95,9 @@ item {
                         onArtistClick = onArtistClick,
                         onAlbumClick = onAlbumClick,
                         onPlayTrackClick = viewModel::playSearchedTrack,
+                        onPlayTrackNow = viewModel::onPlayTrackNow,
+                        onPlayTrackNext = viewModel::onPlayTrackNext,
+                        onAddTrackToQueue = viewModel::onAddTrackToQueue,
                         onClearSearch = viewModel::clearSearch
                     )
                 }
@@ -347,8 +357,15 @@ fun SearchResultsView(
     onArtistClick: (String) -> Unit = {},
     onAlbumClick: (String) -> Unit = {},
     onPlayTrackClick: (Track) -> Unit = {},
+    onPlayTrackNow: (Track) -> Unit = {},
+    onPlayTrackNext: (Track) -> Unit = {},
+    onAddTrackToQueue: (Track) -> Unit = {},
     onClearSearch: () -> Unit = {}
 ) {
+    var showOptions by remember { mutableStateOf(false) }
+    var selectedTrack by remember { mutableStateOf<Track?>(null) }
+    val sheetState = rememberModalBottomSheetState()
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -397,11 +414,43 @@ fun SearchResultsView(
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         searchResults.tracks.take(25).forEach { track ->
-                            TrackRow(track = track, onClick = { onPlayTrackClick(track) })
+                            TrackRow(
+                                track = track,
+                                onClick = { onPlayTrackClick(track) },
+                                onLongClick = {
+                                    selectedTrack = track
+                                    showOptions = true
+                                }
+                            )
                         }
                     }
                 }
             }
+        }
+    }
+
+    if (showOptions && selectedTrack != null) {
+        ModalBottomSheet(
+            onDismissRequest = { showOptions = false },
+            sheetState = sheetState
+        ) {
+            UniversalOptionsSheet(
+                title = selectedTrack!!.title,
+                subtitle = selectedTrack!!.artistName,
+                coverArtId = selectedTrack!!.coverArtId,
+                onPlayNow = {
+                    onPlayTrackNow(selectedTrack!!)
+                    showOptions = false
+                },
+                onPlayNext = {
+                    onPlayTrackNext(selectedTrack!!)
+                    showOptions = false
+                },
+                onAddToQueue = {
+                    onAddTrackToQueue(selectedTrack!!)
+                    showOptions = false
+                }
+            )
         }
     }
 }
@@ -427,12 +476,15 @@ fun AlbumGridItem(album: Album, onClick: () -> Unit = {}) {
 }
 
 @Composable
-fun TrackRow(track: Track, onClick: () -> Unit = {}) {
+fun TrackRow(track: Track, onClick: () -> Unit = {}, onLongClick: () -> Unit = {}) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
     ) {
         Row(
