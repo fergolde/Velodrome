@@ -33,7 +33,9 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -56,6 +58,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -500,6 +503,15 @@ fun QueueContent(
     onTrackClick: (Int) -> Unit
 
 ) {
+    val listState = rememberLazyListState()
+
+    // Auto-scroll to current song when playlist changes or currentIndex changes
+    LaunchedEffect(currentIndex) {
+        if (playlist.isNotEmpty() && currentIndex in playlist.indices) {
+            listState.animateScrollToItem(currentIndex)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -537,7 +549,7 @@ fun QueueContent(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             itemsIndexed(playlist) { index, track ->
                 QueueTrackItem(
                     track = track,
