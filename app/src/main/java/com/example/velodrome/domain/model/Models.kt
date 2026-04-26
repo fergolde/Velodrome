@@ -29,6 +29,7 @@ data class Track(
     val sizeBytes: Long,
     val bitrate: Int,
     val trackNumber: Int,
+    val year: Int? = null,
     val isCached: Boolean = false,
     val coverArtId: String? = null
 )

@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val TAG = "ExploreViewModel"
 
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
@@ -107,6 +108,15 @@ class ExploreViewModel @Inject constructor(
 
     fun loadContent() {
         viewModelScope.launch {
+            try {
+                val minYear = albumUseCases.getMinYear()
+                _uiState.update { it.copy(minYear = if (minYear > 0) minYear else 1950) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(minYear = 1950) }
+            }
+        }
+
+        viewModelScope.launch {
             // Artistas: ahora desde BD local, aleatorios
             val localArtists = artistUseCases.observeArtists().first()
             _uiState.update {
@@ -162,44 +172,51 @@ class ExploreViewModel @Inject constructor(
 
     fun onPlayGenres() {
         val selectedGenres = _uiState.value.selectedGenres
+        val yearRange = _uiState.value.selectedYearRange
 
         _uiState.update { it.copy(isLoading = true) }
 
         playlist.clear()
         currentPlaylistPosition = 0
 
-        currentGenreFilter = if (selectedGenres.isEmpty()) {
-            emptyList()
-        } else {
-            selectedGenres.toList()
-        }
+        currentGenreFilter = if (selectedGenres.isEmpty()) emptyList() else selectedGenres.toList()
+
+        val fromYear = yearRange?.first
+        val toYear = yearRange?.last
 
         viewModelScope.launch {
             try {
                 val songsResult: Result<List<Track>>
 
-                if (selectedGenres.isEmpty()) {
+                if (selectedGenres.isEmpty() && yearRange == null) {
                     songsResult = trackUseCases.getRandomSongs(size = 10)
+                } else if (selectedGenres.isEmpty() && yearRange != null) {
+                    songsResult = trackUseCases.getRandomSongs(size = 10, fromYear = fromYear, toYear = toYear)
+                } else if (selectedGenres.size == 1 && yearRange != null) {
+                    val genre = selectedGenres.first()
+                    songsResult = trackUseCases.getRandomSongs(size = 10, genre = genre, fromYear = fromYear, toYear = toYear)
                 } else if (selectedGenres.size == 1) {
                     val genre = selectedGenres.first()
-                    songsResult = trackUseCases.getRandomSongsByGenre(genre, size = 10)
+                    songsResult = trackUseCases.getRandomSongs(size = 10, genre = genre)
                 } else {
-                    // Multiple genres: parallel fetching using structured concurrency
+                    // FIX: múltiples géneros — pedir 10 por género y mezclar
                     val allSongs = mutableListOf<Track>()
                     coroutineScope {
-                        val deferreds = (1..10).map { _ ->
+                        val deferreds = selectedGenres.map { genre ->
                             async {
-                                val randomGenre = selectedGenres.random()
-                                trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
+                                trackUseCases.getRandomSongs(
+                                    size = 10,
+                                    genre = genre,
+                                    fromYear = fromYear,
+                                    toYear = toYear
+                                )
                             }
                         }
                         deferreds.awaitAll().forEach { result ->
-                            result.onSuccess { songs ->
-                                allSongs.addAll(songs)
-                            }
+                            result.onSuccess { songs -> allSongs.addAll(songs) }
                         }
                     }
-                    songsResult = Result.success(allSongs)
+                    songsResult = Result.success(allSongs.distinctBy { it.id }.shuffled().take(10))
                 }
 
                 songsResult.onSuccess { songs ->
@@ -214,19 +231,13 @@ class ExploreViewModel @Inject constructor(
                 val initialTracks = playlist.take(10)
                 currentPlaylistPosition = 10
 
-                _uiState.update { it.copy(
-                    isLoading = false,
-                    dynamicPlaylist = initialTracks
-                ) }
+                _uiState.update { it.copy(isLoading = false, dynamicPlaylist = initialTracks) }
 
-                playerManager.setLoadMoreCallback {
-                    checkAndLoadMore()
-                }
+                playerManager.setLoadMoreCallback { checkAndLoadMore() }
 
                 if (initialTracks.isNotEmpty()) {
                     playerManager.setPlaylist(initialTracks, startPlaying = true)
                 }
-
 
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message, isLoading = false) }
@@ -299,5 +310,9 @@ class ExploreViewModel @Inject constructor(
 
     fun onAddTrackToQueue(track: Track) {
         playerManager.addToQueue(track)
+    }
+
+    fun onYearRangeSelected(range: IntRange?) {
+        _uiState.update { it.copy(selectedYearRange = range) }
     }
 }

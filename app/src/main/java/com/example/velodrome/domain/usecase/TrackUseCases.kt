@@ -42,8 +42,21 @@ class GetRandomSongsByGenreUseCase @Inject constructor(
 class GetRandomSongsUseCase @Inject constructor(
     private val repository: TrackRepository
 ) {
-    suspend operator fun invoke(size: Int = 50): Result<List<Track>> {
-        return repository.getRandomSongs(size)
+    suspend operator fun invoke(
+        size: Int = 50,
+        genre: String? = null,
+        fromYear: Int? = null,
+        toYear: Int? = null
+    ): Result<List<Track>> {
+        return repository.getRandomSongs(size, genre, fromYear, toYear)
+    }
+}
+
+class GetRandomSongsByYearUseCase @Inject constructor(
+    private val repository: TrackRepository
+) {
+    suspend operator fun invoke(size: Int = 50, fromYear: Int? = null, toYear: Int? = null): Result<List<Track>> {
+        return repository.getRandomSongs(size, null, fromYear, toYear)
     }
 }
 
@@ -61,5 +74,6 @@ class TrackUseCases @Inject constructor(
     val syncTracksForAlbum: SyncTracksForAlbumUseCase,
     val getRandomSongsByGenre: GetRandomSongsByGenreUseCase,
     val getRandomSongs: GetRandomSongsUseCase,
+    val getRandomSongsByYear: GetRandomSongsByYearUseCase,
     val searchRemoteTracks: SearchRemoteTracksUseCase
 )

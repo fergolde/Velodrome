@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,10 +32,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -138,8 +142,8 @@ item {
                         title = stringResource(R.string.explore_genres),
                         subtitle = stringResource(R.string.explore_all_genres),
                         onViewAllClick = null,
-                        showActionText = stringResource(R.string.play),
-                        onActionClick = viewModel::onPlayGenres
+                        showActionText = null,
+                        onActionClick = {}
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     GenresRow(
@@ -147,6 +151,70 @@ item {
                         selectedGenres = uiState.selectedGenres,
                         onGenreToggle = viewModel::onGenreToggle
                     )
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Year Filter Slider (without play button - combined with genres)
+                    YearFilterRow(
+                        minYear = uiState.minYear,
+                        currentYear = uiState.currentYear,
+                        selectedRange = uiState.selectedYearRange,
+                        onRangeChange = viewModel::onYearRangeSelected
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Unified Play button for both genre + year filters
+                    val hasGenres = uiState.selectedGenres.isNotEmpty()
+                    val hasYearRange = uiState.selectedYearRange != null
+                    val buttonEnabled = hasGenres || hasYearRange
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .clickable(enabled = buttonEnabled) { viewModel.onPlayGenres() },
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (buttonEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                tint = if (buttonEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = buildString {
+                                    append("Play")
+                                    if (hasGenres && hasYearRange) {
+                                        append(" (")
+                                        append(uiState.selectedGenres.size)
+                                        append(" genres, ")
+                                        append(uiState.selectedYearRange?.start)
+                                        append("-")
+                                        append(uiState.selectedYearRange?.endInclusive)
+                                        append(")")
+                                    } else if (hasGenres) {
+                                        append(" (")
+                                        append(uiState.selectedGenres.size)
+                                        append(" genres)")
+                                    } else if (hasYearRange) {
+                                        append(" (")
+                                        append(uiState.selectedYearRange?.start)
+                                        append("-")
+                                        append(uiState.selectedYearRange?.endInclusive)
+                                        append(")")
+                                    }
+                                },
+                                color = if (buttonEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(32.dp))
                 }
             }
@@ -319,6 +387,110 @@ private fun GenreChipPlaceholder() {
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
     )
+}
+
+@Composable
+fun YearFilterRow(
+    minYear: Int,
+    currentYear: Int,
+    selectedRange: IntRange?,
+    onRangeChange: (IntRange?) -> Unit
+) {
+    var sliderPosition by remember {
+        mutableStateOf(minYear.toFloat()..currentYear.toFloat())
+    }
+
+    LaunchedEffect(minYear) {
+        if (minYear > 0) {
+            sliderPosition = if (selectedRange != null) {
+                selectedRange.first.toFloat()..selectedRange.last.toFloat()
+            } else {
+                minYear.toFloat()..currentYear.toFloat()
+            }
+        }
+    }
+
+    val isFiltered = selectedRange != null &&
+            (selectedRange.first > minYear || selectedRange.last < currentYear)
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "TODOS LOS AÑOS",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    text = "Años",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+            if (isFiltered) {
+                IconButton(
+                    onClick = {
+                        sliderPosition = minYear.toFloat()..currentYear.toFloat()
+                        onRangeChange(null)
+                    },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Quitar filtro de año",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        RangeSlider(
+            value = sliderPosition,
+            onValueChange = { range -> sliderPosition = range },
+            onValueChangeFinished = {
+                val from = sliderPosition.start.toInt()
+                val to = sliderPosition.endInclusive.toInt()
+                if (from == minYear && to == currentYear) {
+                    onRangeChange(null)
+                } else {
+                    onRangeChange(from..to)
+                }
+            },
+            valueRange = minYear.toFloat()..currentYear.toFloat(),
+            steps = (currentYear - minYear - 1).coerceAtLeast(0),
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "${sliderPosition.start.toInt()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "${sliderPosition.endInclusive.toInt()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 @Composable

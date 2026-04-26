@@ -3,6 +3,7 @@ package com.example.velodrome.presentation.screen.explore
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.domain.model.Track
+import java.util.Calendar
 
 /**
  * UI State for Explore Screen
@@ -19,7 +20,10 @@ data class ExploreUiState(
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val searchResults: SearchResults = SearchResults(),
-    val dynamicPlaylist: List<Track> = emptyList()
+    val dynamicPlaylist: List<Track> = emptyList(),
+    val minYear: Int = 0, // Will be loaded from DB
+    val currentYear: Int = Calendar.getInstance().get(Calendar.YEAR),
+    val selectedYearRange: IntRange? = null
 )
 
 data class SearchResults(

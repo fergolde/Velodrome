@@ -84,7 +84,9 @@ interface NavidromeApi {
     @GET("rest/getRandomSongs.view")
     suspend fun getRandomSongs(
         @Query("size") size: Int = 50,
-        @Query("genre") genre: String? = null
+        @Query("genre") genre: String? = null,
+        @Query("fromYear") fromYear: Int? = null,
+        @Query("toYear") toYear: Int? = null
     ): SubsonicResponse
 
     @GET("rest/getMusicDirectory.view")

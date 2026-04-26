@@ -73,6 +73,7 @@ class TrackRepositoryImpl @Inject constructor(
             sizeBytes = dto.size ?: 0L,
             bitrate = dto.bitRate ?: 0,
             trackNumber = dto.track ?: 0,
+            year = dto.year,
             isCached = false,
             coverArtId = effectiveCoverArtId
         )
@@ -94,9 +95,9 @@ class TrackRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getRandomSongs(size: Int): Result<List<Track>> {
+    override suspend fun getRandomSongs(size: Int, genre: String?, fromYear: Int?, toYear: Int?): Result<List<Track>> {
         return runCatching {
-            val response = api.getRandomSongs(size, null)
+            val response = api.getRandomSongs(size, genre, fromYear, toYear)
             val songDtos = response.response.randomSongs?.song ?: emptyList()
             songDtos.map { mapSongDto(it, it.albumId ?: "") }
         }
