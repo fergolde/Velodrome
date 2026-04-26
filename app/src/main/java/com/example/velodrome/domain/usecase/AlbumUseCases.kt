@@ -95,6 +95,12 @@ class ObserveAlbumsUseCase @Inject constructor(
     operator fun invoke(): Flow<List<Album>> = repository.observeAllAlbums()
 }
 
+class GetMinYearUseCase @Inject constructor(
+    private val repository: AlbumRepository
+) {
+    suspend operator fun invoke(): Int = repository.getMinYear()
+}
+
 // ========== WRAPPER ==========
 class AlbumUseCases @Inject constructor(
     val getLatestAlbums: GetLatestAlbumsUseCase,
@@ -104,5 +110,6 @@ class AlbumUseCases @Inject constructor(
     val getRandomAlbums: GetRandomAlbumsUseCase,
     val searchLocal: SearchLocalAlbumsUseCase,
     val syncAlbums: SyncAlbumsUseCase,
-    val observeAlbums: ObserveAlbumsUseCase
+    val observeAlbums: ObserveAlbumsUseCase,
+    val getMinYear: GetMinYearUseCase
 )

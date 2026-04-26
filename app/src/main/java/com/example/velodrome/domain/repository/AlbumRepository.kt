@@ -55,4 +55,9 @@ interface AlbumRepository {
      * Uses ifModifiedSince param in getIndexes API.
      */
     suspend fun hasServerChangedSince(timestamp: Long): Boolean
+
+    /**
+     * Get the minimum year from albums in the database.
+     */
+    suspend fun getMinYear(): Int
 }

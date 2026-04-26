@@ -34,6 +34,8 @@ class LocalMusicDataSource @Inject constructor(
 
     suspend fun searchAlbums(query: String): List<AlbumEntity> = albumDao.searchAlbums(query)
 
+    suspend fun getMinYear(): Int? = albumDao.getMinYear()
+
     suspend fun insertAlbums(albums: List<AlbumEntity>) = albumDao.insertAlbums(albums)
 
 }

@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +32,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -146,6 +149,16 @@ item {
                         genres = uiState.genres,
                         selectedGenres = uiState.selectedGenres,
                         onGenreToggle = viewModel::onGenreToggle
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Year Filter Slider
+                    YearFilterRow(
+                        minYear = uiState.minYear,
+                        currentYear = uiState.currentYear,
+                        selectedRange = uiState.selectedYearRange,
+                        onRangeChange = viewModel::onYearRangeSelected,
+                        onPlay = viewModel::onPlayWithYearFilter
                     )
                     Spacer(modifier = Modifier.height(32.dp))
                 }
@@ -319,6 +332,98 @@ private fun GenreChipPlaceholder() {
             .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
     )
+}
+
+@Composable
+fun YearFilterRow(
+    minYear: Int,
+    currentYear: Int,
+    selectedRange: IntRange?,
+    onRangeChange: (IntRange?) -> Unit,
+    onPlay: () -> Unit
+) {
+    var sliderPosition by remember {
+        mutableStateOf(
+            if (selectedRange != null) {
+                selectedRange.start.toFloat()..selectedRange.endInclusive.toFloat()
+            } else {
+                minYear.toFloat()..currentYear.toFloat()
+            }
+        )
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "Filter by Year",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        RangeSlider(
+            value = sliderPosition,
+            onValueChange = { range ->
+                sliderPosition = range
+            },
+            onValueChangeFinished = {
+                onRangeChange(sliderPosition.start.toInt()..sliderPosition.endInclusive.toInt())
+            },
+            valueRange = minYear.toFloat()..currentYear.toFloat(),
+            steps = ((currentYear - minYear) / 5).coerceAtLeast(1),
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary
+            )
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "${sliderPosition.start.toInt()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "${sliderPosition.endInclusive.toInt()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Play button
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .clickable(onClick = onPlay),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.primary
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Play from ${sliderPosition.start.toInt()} - ${sliderPosition.endInclusive.toInt()}",
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
 }
 
 @Composable

@@ -192,6 +192,10 @@ class AlbumRepositoryImpl @Inject constructor(
     override suspend fun searchLocal(query: String): List<Album> {
         return localMusicDataSource.searchAlbums(query).map { it.toDomain() }
     }
+
+    override suspend fun getMinYear(): Int {
+        return localMusicDataSource.getMinYear() ?: 1950
+    }
 }
 
 /**

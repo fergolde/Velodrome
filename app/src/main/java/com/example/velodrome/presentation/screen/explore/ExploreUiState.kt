@@ -19,7 +19,10 @@ data class ExploreUiState(
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val searchResults: SearchResults = SearchResults(),
-    val dynamicPlaylist: List<Track> = emptyList()
+    val dynamicPlaylist: List<Track> = emptyList(),
+    val minYear: Int = 1950,
+    val currentYear: Int = 2026,
+    val selectedYearRange: IntRange? = null
 )
 
 data class SearchResults(

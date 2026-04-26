@@ -102,6 +102,14 @@ class TrackRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getRandomSongs(size: Int, fromYear: Int?, toYear: Int?): Result<List<Track>> {
+        return runCatching {
+            val response = api.getRandomSongs(size, null, fromYear, toYear)
+            val songDtos = response.response.randomSongs?.song ?: emptyList()
+            songDtos.map { mapSongDto(it, it.albumId ?: "") }
+        }
+    }
+
     override suspend fun searchRemoteTracks(query: String): Result<List<Track>> {
         return runCatching {
             // Aumentamos el songCount a 100 para tener un margen mayor

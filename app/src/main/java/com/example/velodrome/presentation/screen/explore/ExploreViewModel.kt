@@ -107,6 +107,12 @@ class ExploreViewModel @Inject constructor(
 
     fun loadContent() {
         viewModelScope.launch {
+            // Load minYear from local database
+            val minYear = albumUseCases.getMinYear()
+            _uiState.update { it.copy(minYear = minYear) }
+        }
+
+        viewModelScope.launch {
             // Artistas: ahora desde BD local, aleatorios
             val localArtists = artistUseCases.observeArtists().first()
             _uiState.update {
@@ -299,5 +305,54 @@ class ExploreViewModel @Inject constructor(
 
     fun onAddTrackToQueue(track: Track) {
         playerManager.addToQueue(track)
+    }
+
+    fun onYearRangeSelected(range: IntRange?) {
+        _uiState.update { it.copy(selectedYearRange = range) }
+    }
+
+    fun onPlayWithYearFilter() {
+        val yearRange = _uiState.value.selectedYearRange
+
+        _uiState.update { it.copy(isLoading = true) }
+
+        playlist.clear()
+        currentPlaylistPosition = 0
+
+        viewModelScope.launch {
+            try {
+                val fromYear = yearRange?.start
+                val toYear = yearRange?.endInclusive
+
+                val songsResult = trackUseCases.getRandomSongsByYear(size = 50, fromYear = fromYear, toYear = toYear)
+
+                songsResult.onSuccess { songs ->
+                    playlist.addAll(songs)
+                }.onFailure { error ->
+                    _uiState.update { it.copy(error = error.message, isLoading = false) }
+                    return@launch
+                }
+
+                playlist.shuffle()
+
+                val initialTracks = playlist.take(10)
+                currentPlaylistPosition = 10
+
+                _uiState.update { it.copy(
+                    isLoading = false,
+                    dynamicPlaylist = initialTracks
+                ) }
+
+                playerManager.setLoadMoreCallback {
+                    checkAndLoadMore()
+                }
+
+                if (initialTracks.isNotEmpty()) {
+                    playerManager.setPlaylist(initialTracks, startPlaying = true)
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message, isLoading = false) }
+            }
+        }
     }
 }
