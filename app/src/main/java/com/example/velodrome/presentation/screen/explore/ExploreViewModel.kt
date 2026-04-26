@@ -168,6 +168,7 @@ class ExploreViewModel @Inject constructor(
 
     fun onPlayGenres() {
         val selectedGenres = _uiState.value.selectedGenres
+        val yearRange = _uiState.value.selectedYearRange
 
         _uiState.update { it.copy(isLoading = true) }
 
@@ -180,17 +181,51 @@ class ExploreViewModel @Inject constructor(
             selectedGenres.toList()
         }
 
+        val fromYear = yearRange?.start
+        val toYear = yearRange?.endInclusive
+
         viewModelScope.launch {
             try {
                 val songsResult: Result<List<Track>>
 
-                if (selectedGenres.isEmpty()) {
+                if (selectedGenres.isEmpty() && yearRange == null) {
+                    // No filters - get completely random
                     songsResult = trackUseCases.getRandomSongs(size = 10)
+                } else if (selectedGenres.isEmpty() && yearRange != null) {
+                    // Only year filter
+                    songsResult = trackUseCases.getRandomSongsByYear(size = 50, fromYear = fromYear, toYear = toYear)
+                } else if (selectedGenres.size == 1 && yearRange != null) {
+                    // Single genre + year filter
+                    val genre = selectedGenres.first()
+                    songsResult = trackUseCases.getRandomSongsByGenre(genre, size = 50)
                 } else if (selectedGenres.size == 1) {
+                    // Single genre only
                     val genre = selectedGenres.first()
                     songsResult = trackUseCases.getRandomSongsByGenre(genre, size = 10)
+                } else if (yearRange != null) {
+                    // Multiple genres + year filter - parallel fetching
+                    val allSongs = mutableListOf<Track>()
+                    coroutineScope {
+                        val deferreds = (1..10).map { _ ->
+                            async {
+                                val randomGenre = selectedGenres.random()
+                                trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
+                            }
+                        }
+                        deferreds.awaitAll().forEach { result ->
+                            result.onSuccess { songs ->
+                                allSongs.addAll(songs)
+                            }
+                        }
+                    }
+                    // Filter by year
+                    val filteredSongs = allSongs.filter { track ->
+                        val trackYear = track.year
+                        trackYear != null && trackYear in yearRange
+                    }
+                    songsResult = Result.success(filteredSongs)
                 } else {
-                    // Multiple genres: parallel fetching using structured concurrency
+                    // Multiple genres only - parallel fetching
                     val allSongs = mutableListOf<Track>()
                     coroutineScope {
                         val deferreds = (1..10).map { _ ->
@@ -309,50 +344,5 @@ class ExploreViewModel @Inject constructor(
 
     fun onYearRangeSelected(range: IntRange?) {
         _uiState.update { it.copy(selectedYearRange = range) }
-    }
-
-    fun onPlayWithYearFilter() {
-        val yearRange = _uiState.value.selectedYearRange
-
-        _uiState.update { it.copy(isLoading = true) }
-
-        playlist.clear()
-        currentPlaylistPosition = 0
-
-        viewModelScope.launch {
-            try {
-                val fromYear = yearRange?.start
-                val toYear = yearRange?.endInclusive
-
-                val songsResult = trackUseCases.getRandomSongsByYear(size = 50, fromYear = fromYear, toYear = toYear)
-
-                songsResult.onSuccess { songs ->
-                    playlist.addAll(songs)
-                }.onFailure { error ->
-                    _uiState.update { it.copy(error = error.message, isLoading = false) }
-                    return@launch
-                }
-
-                playlist.shuffle()
-
-                val initialTracks = playlist.take(10)
-                currentPlaylistPosition = 10
-
-                _uiState.update { it.copy(
-                    isLoading = false,
-                    dynamicPlaylist = initialTracks
-                ) }
-
-                playerManager.setLoadMoreCallback {
-                    checkAndLoadMore()
-                }
-
-                if (initialTracks.isNotEmpty()) {
-                    playerManager.setPlaylist(initialTracks, startPlaying = true)
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message, isLoading = false) }
-            }
-        }
     }
 }

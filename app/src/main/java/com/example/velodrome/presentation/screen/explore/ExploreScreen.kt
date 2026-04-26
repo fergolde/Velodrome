@@ -141,8 +141,8 @@ item {
                         title = stringResource(R.string.explore_genres),
                         subtitle = stringResource(R.string.explore_all_genres),
                         onViewAllClick = null,
-                        showActionText = stringResource(R.string.play),
-                        onActionClick = viewModel::onPlayGenres
+                        showActionText = null,
+                        onActionClick = {}
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     GenresRow(
@@ -152,14 +152,68 @@ item {
                     )
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Year Filter Slider
+                    // Year Filter Slider (without play button - combined with genres)
                     YearFilterRow(
                         minYear = uiState.minYear,
                         currentYear = uiState.currentYear,
                         selectedRange = uiState.selectedYearRange,
-                        onRangeChange = viewModel::onYearRangeSelected,
-                        onPlay = viewModel::onPlayWithYearFilter
+                        onRangeChange = viewModel::onYearRangeSelected
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Unified Play button for both genre + year filters
+                    val hasGenres = uiState.selectedGenres.isNotEmpty()
+                    val hasYearRange = uiState.selectedYearRange != null
+                    val buttonEnabled = hasGenres || hasYearRange
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .clickable(enabled = buttonEnabled) { viewModel.onPlayGenres() },
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (buttonEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                tint = if (buttonEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = buildString {
+                                    append("Play")
+                                    if (hasGenres && hasYearRange) {
+                                        append(" (")
+                                        append(uiState.selectedGenres.size)
+                                        append(" genres, ")
+                                        append(uiState.selectedYearRange?.start)
+                                        append("-")
+                                        append(uiState.selectedYearRange?.endInclusive)
+                                        append(")")
+                                    } else if (hasGenres) {
+                                        append(" (")
+                                        append(uiState.selectedGenres.size)
+                                        append(" genres)")
+                                    } else if (hasYearRange) {
+                                        append(" (")
+                                        append(uiState.selectedYearRange?.start)
+                                        append("-")
+                                        append(uiState.selectedYearRange?.endInclusive)
+                                        append(")")
+                                    }
+                                },
+                                color = if (buttonEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(32.dp))
                 }
             }
@@ -339,8 +393,7 @@ fun YearFilterRow(
     minYear: Int,
     currentYear: Int,
     selectedRange: IntRange?,
-    onRangeChange: (IntRange?) -> Unit,
-    onPlay: () -> Unit
+    onRangeChange: (IntRange?) -> Unit
 ) {
     var sliderPosition by remember {
         mutableStateOf(
@@ -391,37 +444,6 @@ fun YearFilterRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Play button
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .clickable(onClick = onPlay),
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.primary
-        ) {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Play from ${sliderPosition.start.toInt()} - ${sliderPosition.endInclusive.toInt()}",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
     }
 }
