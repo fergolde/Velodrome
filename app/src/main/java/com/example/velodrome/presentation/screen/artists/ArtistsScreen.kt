@@ -2,6 +2,7 @@ package com.example.velodrome.presentation.screen.artists
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,12 +27,17 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +49,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Artist
+import com.example.velodrome.presentation.components.UniversalOptionsSheet
 import com.example.velodrome.presentation.screen.home.ArtistAvatar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,6 +60,10 @@ fun ArtistsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pagedArtists = viewModel.pagedArtists.collectAsLazyPagingItems()
+
+    var showOptions by remember { mutableStateOf(false) }
+    var selectedArtist by remember { mutableStateOf<Artist?>(null) }
+    val sheetState = rememberModalBottomSheetState()
 
     Box(
         modifier = Modifier
@@ -86,7 +97,14 @@ fun ArtistsScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(uiState.searchResults) { artist ->
-                                ArtistCard(artist = artist, onClick = { onArtistClick(artist) })
+                                ArtistCard(
+                                    artist = artist,
+                                    onClick = { onArtistClick(artist) },
+                                    onLongClick = {
+                                        selectedArtist = artist
+                                        showOptions = true
+                                    }
+                                )
                             }
                         }
                     } else {
@@ -101,13 +119,42 @@ fun ArtistsScreen(
                                 if (artist != null) {
                                     ArtistCard(
                                         artist = artist,
-                                        onClick = { onArtistClick(artist) }
+                                        onClick = { onArtistClick(artist) },
+                                        onLongClick = {
+                                            selectedArtist = artist
+                                            showOptions = true
+                                        }
                                     )
                                 }
                             }
                         }
                     }
                 }
+            }
+        }
+
+        if (showOptions && selectedArtist != null) {
+            ModalBottomSheet(
+                onDismissRequest = { showOptions = false },
+                sheetState = sheetState
+            ) {
+                UniversalOptionsSheet(
+                    title = selectedArtist!!.name,
+                    subtitle = "Artist - ${selectedArtist!!.albumCount} albums",
+                    coverArtId = selectedArtist!!.coverUrl,
+                    onPlayNow = {
+                        viewModel.onPlayArtistNow(selectedArtist!!)
+                        showOptions = false
+                    },
+                    onPlayNext = {
+                        viewModel.onPlayArtistNext(selectedArtist!!)
+                        showOptions = false
+                    },
+                    onAddToQueue = {
+                        viewModel.onAddArtistToQueue(selectedArtist!!)
+                        showOptions = false
+                    }
+                )
             }
         }
     }
@@ -156,12 +203,15 @@ fun ArtistsSearchBar(
 }
 
 @Composable
-fun ArtistCard(artist: Artist, onClick: () -> Unit = {}) {
+fun ArtistCard(artist: Artist, onClick: () -> Unit = {}, onLongClick: () -> Unit = {}) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
     ) {
         Row(

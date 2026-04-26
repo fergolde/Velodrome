@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Track
+import com.example.velodrome.presentation.components.UniversalOptionsSheet
 import com.example.velodrome.presentation.screen.home.AlbumCover
 import kotlinx.coroutines.launch
 
@@ -142,8 +143,10 @@ fun AlbumDetailScreen(
                 containerColor = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
             ) {
-                TrackOptionsSheet(
-                    track = selectedTrack!!,
+                UniversalOptionsSheet(
+                    title = selectedTrack!!.title,
+                    subtitle = selectedTrack!!.artistName,
+                    coverArtId = selectedTrack!!.coverArtId,
                     onPlayNow = {
                         scope.launch { sheetState.hide() }.invokeOnCompletion {
                             showTrackOptions = false
@@ -337,110 +340,6 @@ private fun TrackItem(
         }
         Spacer(modifier = Modifier.width(12.dp))
         Text(text = trackDuration, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-    }
-}
-
-@Composable
-private fun TrackOptionsSheet(
-    track: Track,
-    onPlayNow: () -> Unit,
-    onPlayNext: () -> Unit,
-    onAddToQueue: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 32.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AlbumCover(
-                coverArtId = track.coverArtId,
-                contentDescription = track.title,
-                size = 44.dp,
-                cornerRadius = 8.dp
-            )
-            Spacer(Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = track.title,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 15.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = track.artistName,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp))
-        Spacer(Modifier.height(8.dp))
-
-        TrackOptionItem(
-            icon = Icons.Default.PlayArrow,
-            iconTint = MaterialTheme.colorScheme.primary,
-            iconBackground = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-            title = "Reproducir ahora",
-            subtitle = "Salta a esta canción inmediatamente",
-            onClick = onPlayNow
-        )
-        TrackOptionItem(
-            icon = Icons.Default.SkipNext,
-            iconTint = Color(0xFF0F6E56),
-            iconBackground = Color(0xFF0F6E56).copy(alpha = 0.12f),
-            title = "Reproducir siguiente",
-            subtitle = "Se pone justo después de la actual",
-            onClick = onPlayNext
-        )
-        TrackOptionItem(
-            icon = Icons.AutoMirrored.Filled.PlaylistAdd,
-            iconTint = Color(0xFF854F0B),
-            iconBackground = Color(0xFF854F0B).copy(alpha = 0.12f),
-            title = "Añadir al final",
-            subtitle = "Se añade al final de la cola",
-            onClick = onAddToQueue
-        )
-    }
-}
-
-@Composable
-private fun TrackOptionItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    iconTint: Color,
-    iconBackground: Color,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(iconBackground),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
-        }
-        Spacer(Modifier.width(16.dp))
-        Column {
-            Text(title, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            Text(subtitle, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
     }
 }
 

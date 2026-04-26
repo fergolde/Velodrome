@@ -60,6 +60,32 @@ class PlayerManager @Inject constructor(
         audioPlayerManager.setPlaylist(currentList)
     }
 
+    fun addToQueue(track: Track) {
+        val currentList = audioPlayerManager.playlist.value.toMutableList()
+        currentList.add(track)
+        audioPlayerManager.setPlaylist(currentList)
+    }
+
+    fun playNow(tracks: List<Track>) {
+        if (tracks.isEmpty()) return
+        setPlaylist(tracks, startIndex = 0, startPlaying = true)
+    }
+
+    fun playNext(tracks: List<Track>) {
+        if (tracks.isEmpty()) return
+        val currentList = playlist.value.toMutableList()
+        val insertIndex = (currentIndex.value + 1).coerceAtMost(currentList.size)
+        currentList.addAll(insertIndex, tracks)
+        audioPlayerManager.setPlaylist(currentList)
+    }
+
+    fun addToQueue(tracks: List<Track>) {
+        if (tracks.isEmpty()) return
+        val currentList = playlist.value.toMutableList()
+        currentList.addAll(tracks)
+        audioPlayerManager.setPlaylist(currentList)
+    }
+
     fun setLoadMoreCallback(callback: () -> Unit) {
         audioPlayerManager.setLoadMoreCallback(callback)
     }
@@ -91,11 +117,7 @@ class PlayerManager @Inject constructor(
         audioPlayerManager.seekTo(positionMs)
     }
 
-    fun addToQueue(track: Track) {
-        val currentList = audioPlayerManager.playlist.value.toMutableList()
-        currentList.add(track)
-        audioPlayerManager.setPlaylist(currentList)
-    }
+
 
     fun toggleShuffle() {
         audioPlayerManager.toggleShuffle()
