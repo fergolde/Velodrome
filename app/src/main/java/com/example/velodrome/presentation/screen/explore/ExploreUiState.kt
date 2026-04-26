@@ -21,7 +21,7 @@ data class ExploreUiState(
     val isSearching: Boolean = false,
     val searchResults: SearchResults = SearchResults(),
     val dynamicPlaylist: List<Track> = emptyList(),
-    val minYear: Int = 1950,
+    val minYear: Int = 0, // Will be loaded from DB
     val currentYear: Int = Calendar.getInstance().get(Calendar.YEAR),
     val selectedYearRange: IntRange? = null
 )

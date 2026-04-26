@@ -192,46 +192,24 @@ class ExploreViewModel @Inject constructor(
                     // No filters - get completely random
                     songsResult = trackUseCases.getRandomSongs(size = 10)
                 } else if (selectedGenres.isEmpty() && yearRange != null) {
-                    // Only year filter
-                    songsResult = trackUseCases.getRandomSongsByYear(size = 50, fromYear = fromYear, toYear = toYear)
+                    // Only year filter using API
+                    songsResult = trackUseCases.getRandomSongs(size = 10, fromYear = fromYear, toYear = toYear)
                 } else if (selectedGenres.size == 1 && yearRange != null) {
-                    // Single genre + year filter
+                    // Single genre + year filter using API
                     val genre = selectedGenres.first()
-                    songsResult = trackUseCases.getRandomSongsByGenre(genre, size = 50)
+                    songsResult = trackUseCases.getRandomSongs(size = 10, genre = genre, fromYear = fromYear, toYear = toYear)
                 } else if (selectedGenres.size == 1) {
-                    // Single genre only
+                    // Single genre only using API
                     val genre = selectedGenres.first()
-                    songsResult = trackUseCases.getRandomSongsByGenre(genre, size = 10)
-                } else if (yearRange != null) {
-                    // Multiple genres + year filter - parallel fetching
-                    val allSongs = mutableListOf<Track>()
-                    coroutineScope {
-                        val deferreds = (1..10).map { _ ->
-                            async {
-                                val randomGenre = selectedGenres.random()
-                                trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
-                            }
-                        }
-                        deferreds.awaitAll().forEach { result ->
-                            result.onSuccess { songs ->
-                                allSongs.addAll(songs)
-                            }
-                        }
-                    }
-                    // Filter by year
-                    val filteredSongs = allSongs.filter { track ->
-                        val trackYear = track.year
-                        trackYear != null && trackYear in yearRange
-                    }
-                    songsResult = Result.success(filteredSongs)
+                    songsResult = trackUseCases.getRandomSongs(size = 10, genre = genre)
                 } else {
-                    // Multiple genres only - parallel fetching
+                    // Multiple genres - use parallel fetching with API + year filter
                     val allSongs = mutableListOf<Track>()
                     coroutineScope {
                         val deferreds = (1..10).map { _ ->
                             async {
                                 val randomGenre = selectedGenres.random()
-                                trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
+                                trackUseCases.getRandomSongs(size = 1, genre = randomGenre, fromYear = fromYear, toYear = toYear)
                             }
                         }
                         deferreds.awaitAll().forEach { result ->
