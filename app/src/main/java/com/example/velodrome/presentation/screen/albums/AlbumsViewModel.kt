@@ -8,12 +8,15 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.repository.AlbumRepository
+import com.example.velodrome.domain.usecase.TrackUseCases
+import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
@@ -30,7 +33,9 @@ data class AlbumsUiState(
 
 @HiltViewModel
 class AlbumsViewModel @Inject constructor(
-    private val albumRepository: AlbumRepository
+    private val albumRepository: AlbumRepository,
+    private val playerManager: PlayerManager,
+    private val trackUseCases: TrackUseCases
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AlbumsUiState())
@@ -71,5 +76,32 @@ class AlbumsViewModel @Inject constructor(
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
         _uiState.update { it.copy(searchQuery = query, isSearching = query.isNotBlank()) }
+    }
+
+    fun onPlayAlbumNow(album: Album) {
+        viewModelScope.launch {
+            trackUseCases.syncTracksForAlbum(album.id)
+            trackUseCases.observeTracksByAlbum(album.id).first().let { tracks ->
+                playerManager.playNow(tracks.sortedBy { it.trackNumber })
+            }
+        }
+    }
+
+    fun onPlayAlbumNext(album: Album) {
+        viewModelScope.launch {
+            trackUseCases.syncTracksForAlbum(album.id)
+            trackUseCases.observeTracksByAlbum(album.id).first().let { tracks ->
+                playerManager.playNext(tracks.sortedBy { it.trackNumber })
+            }
+        }
+    }
+
+    fun onAddAlbumToQueue(album: Album) {
+        viewModelScope.launch {
+            trackUseCases.syncTracksForAlbum(album.id)
+            trackUseCases.observeTracksByAlbum(album.id).first().let { tracks ->
+                playerManager.addToQueue(tracks.sortedBy { it.trackNumber })
+            }
+        }
     }
 }
