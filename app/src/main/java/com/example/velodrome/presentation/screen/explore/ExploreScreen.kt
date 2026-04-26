@@ -349,6 +349,7 @@ fun GenreChip(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchResultsView(
     searchQuery: String,
