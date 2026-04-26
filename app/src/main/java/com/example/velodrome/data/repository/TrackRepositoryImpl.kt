@@ -73,6 +73,7 @@ class TrackRepositoryImpl @Inject constructor(
             sizeBytes = dto.size ?: 0L,
             bitrate = dto.bitRate ?: 0,
             trackNumber = dto.track ?: 0,
+            year = dto.year,
             isCached = false,
             coverArtId = effectiveCoverArtId
         )
