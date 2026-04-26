@@ -2,7 +2,6 @@ package com.example.velodrome.presentation.screen.explore
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import android.util.Log
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.domain.usecase.AlbumUseCases
 import com.example.velodrome.domain.usecase.ArtistUseCases
@@ -111,10 +110,8 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val minYear = albumUseCases.getMinYear()
-                Log.d(TAG, "loadContent: getMinYear() returned: $minYear")
                 _uiState.update { it.copy(minYear = if (minYear > 0) minYear else 1950) }
             } catch (e: Exception) {
-                Log.e(TAG, "loadContent: getMinYear() failed", e)
                 _uiState.update { it.copy(minYear = 1950) }
             }
         }

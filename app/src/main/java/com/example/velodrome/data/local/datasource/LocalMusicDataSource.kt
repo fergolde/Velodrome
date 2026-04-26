@@ -17,8 +17,6 @@ class LocalMusicDataSource @Inject constructor(
     // Artists
     fun observeAllArtists(): Flow<List<ArtistEntity>> = artistDao.getAllArtists()
 
-    fun getArtistsPagingSource(): PagingSource<Int, ArtistEntity> = artistDao.getArtistsPagingSource()
-
     suspend fun getArtistsPage(offset: Int, limit: Int): List<ArtistEntity> = artistDao.getArtistsPage(offset, limit)
 
     suspend fun searchArtists(query: String): List<ArtistEntity> = artistDao.searchArtists(query)
@@ -27,8 +25,6 @@ class LocalMusicDataSource @Inject constructor(
 
     // Albums
     fun observeAllAlbums(): Flow<List<AlbumEntity>> = albumDao.getAllAlbums()
-
-    fun getAlbumsPagingSource(): PagingSource<Int, AlbumEntity> = albumDao.getAlbumsPagingSource()
 
     suspend fun getAlbumsPage(offset: Int, limit: Int): List<AlbumEntity> = albumDao.getAlbumsPage(offset, limit)
 

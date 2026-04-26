@@ -194,7 +194,8 @@ class AlbumRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getMinYear(): Int {
-        return localMusicDataSource.getMinYear() ?: 1950
+        val min = localMusicDataSource.getMinYear()
+        return if (min != null && min > 0) min else 1950
     }
 }
 
