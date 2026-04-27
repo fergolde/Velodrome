@@ -1,15 +1,12 @@
 package com.example.velodrome.presentation.screen.artists
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
-import com.example.velodrome.domain.model.Track
 import com.example.velodrome.domain.repository.ArtistRepository
 import com.example.velodrome.domain.usecase.GetArtistUseCase
 import com.example.velodrome.domain.usecase.TrackUseCases
@@ -65,16 +62,13 @@ class ArtistsViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeSearch() {
         viewModelScope.launch {
-            Log.d(TAG, "observeSearch: Iniciando observación")
             searchQuery.flatMapLatest { query ->
-                Log.d(TAG, "observeSearch: query=$query")
                 if (query.isBlank()) {
                     flowOf(emptyList())
                 } else {
                     flowOf(artistRepository.searchLocal(query))
                 }
             }.collect { results ->
-                Log.d(TAG, "observeSearch: resultados=${results.size}")
                 _uiState.update {
                     it.copy(
                         searchResults = results,

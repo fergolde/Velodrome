@@ -127,8 +127,18 @@ fun AlbumDetailScreen(
                             showTrackOptions = true
                         },
                         onPlayAllClick = { viewModel.playAll() },
-                        onShuffleClick = { viewModel.shuffleAll() },
-                        onAddToQueueClick = { viewModel.addAllToQueue() },
+                        onShuffleClick = {
+                            viewModel.shuffleAll()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Reproducción aleatoria iniciada")
+                            }
+                        },
+                        onAddToQueueClick = {
+                            viewModel.addAllToQueue()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Álbum añadido a la cola")
+                            }
+                        },
                         onBackClick = onBackClick,
                         currentTrackId = uiState.currentTrackId
                     )
@@ -268,7 +278,12 @@ private fun AlbumHeader(
             }
         }
 
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             Text(text = album?.title ?: "", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Text(
                 text = album?.artistName ?: "",
@@ -278,16 +293,31 @@ private fun AlbumHeader(
             album?.year?.let { Text(it.toString()) }
             Text("${tracks.size} tracks · ${durationDisk(tracks)} minutos", fontSize = 14.sp)
             Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onPlayAllClick, modifier = Modifier.weight(1f)) {
+            Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                Button(
+                    onClick = onPlayAllClick,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.height(48.dp)
+                ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Play")
                 }
-                FilledIconButton(onClick = onShuffleClick) {
+                Button(
+                    onClick = onShuffleClick,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.height(48.dp)
+                ) {
                     Icon(Icons.Default.Shuffle, contentDescription = null)
                 }
-                FilledIconButton(onClick = onAddToQueueClick) {
+                Button(
+                    onClick = onAddToQueueClick,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.height(48.dp)
+                ) {
                     Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
                 }
             }
