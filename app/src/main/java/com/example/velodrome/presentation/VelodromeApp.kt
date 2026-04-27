@@ -157,15 +157,15 @@ fun MainScaffold(
 
                         SharedBottomNavigationBar(
                             currentRoute = when {
-                                currentDestination?.hasRoute<Routes.Home>() == true -> "home"
-                                currentDestination?.hasRoute<Routes.Explore>() == true ||
-                                currentDestination?.hasRoute<Routes.Artists>() == true ||
-                                currentDestination?.hasRoute<Routes.Albums>() == true -> "explore"
-                                currentDestination?.hasRoute<Routes.Settings>() == true -> "settings"
+                                currentDestination?.route?.startsWith("Home") == true -> "home"
+                                currentDestination?.route?.startsWith("Explore") == true ||
+                                currentDestination?.route?.startsWith("Artists") == true ||
+                                currentDestination?.route?.startsWith("Albums") == true -> "explore"
+                                currentDestination?.route?.startsWith("Settings") == true -> "settings"
                                 else -> ""
                             },
                             onHomeClick = {
-                                if (currentDestination?.hasRoute<Routes.Home>() != true) {
+                                if (currentDestination?.route != "Home") {
                                     navController.navigate(Routes.Home) {
                                         launchSingleTop = true
                                         restoreState = true
@@ -175,7 +175,8 @@ fun MainScaffold(
                             },
                             onExploreClick = {
                                 // Solo navegar si NO estamos ya en la raíz de Explore
-                                if (currentDestination?.hasRoute<Routes.Explore>() != true) {
+                                val currentRoute = currentDestination?.route
+                                if (currentRoute != "Explore") {
                                     navController.navigate(Routes.Explore) {
                                         launchSingleTop = true
                                         restoreState = true
@@ -184,7 +185,7 @@ fun MainScaffold(
                                 }
                             },
                             onSettingsClick = {
-                                if (currentDestination?.hasRoute<Routes.Settings>() != true) {
+                                if (currentDestination?.route != "Settings") {
                                     navController.navigate(Routes.Settings) {
                                         launchSingleTop = true
                                         restoreState = true
