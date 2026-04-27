@@ -199,7 +199,8 @@ fun ArtistAlbumsList(
                     Button(
                         onClick = onPlayAllClick,
                         shape = RoundedCornerShape(24.dp),
-                        enabled = !isPreparingPlayback
+                        enabled = !isPreparingPlayback,
+                        modifier = Modifier.height(48.dp)
                     ) {
                         if (isPreparingPlayback) {
                             CircularProgressIndicator(
@@ -211,19 +212,23 @@ fun ArtistAlbumsList(
                             Icon(Icons.Default.PlayArrow, contentDescription = null)
                         }
                         Spacer(Modifier.width(8.dp))
-                        Text("Reproducir")
+                        Text("Play")
                     }
 
-                    FilledTonalIconButton(
+                    Button(
                         onClick = onShuffleAllClick,
-                        enabled = !isPreparingPlayback
+                        shape = RoundedCornerShape(24.dp),
+                        enabled = !isPreparingPlayback,
+                        modifier = Modifier.height(48.dp)
                     ) {
                         Icon(Icons.Default.Shuffle, contentDescription = null)
                     }
 
-                    FilledTonalIconButton(
+                    Button(
                         onClick = onAddToQueueClick,
-                        enabled = !isPreparingPlayback
+                        shape = RoundedCornerShape(24.dp),
+                        enabled = !isPreparingPlayback,
+                        modifier = Modifier.height(48.dp)
                     ) {
                         Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
                     }
