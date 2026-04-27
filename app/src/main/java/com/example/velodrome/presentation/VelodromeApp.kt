@@ -158,7 +158,9 @@ fun MainScaffold(
                         SharedBottomNavigationBar(
                             currentRoute = when {
                                 currentDestination?.hasRoute<Routes.Home>() == true -> "home"
-                                currentDestination?.hasRoute<Routes.Explore>() == true -> "explore"
+                                currentDestination?.hasRoute<Routes.Explore>() == true ||
+                                currentDestination?.hasRoute<Routes.Artists>() == true ||
+                                currentDestination?.hasRoute<Routes.Albums>() == true -> "explore"
                                 currentDestination?.hasRoute<Routes.Settings>() == true -> "settings"
                                 else -> ""
                             },
@@ -172,7 +174,10 @@ fun MainScaffold(
                                 }
                             },
                             onExploreClick = {
-                                if (currentDestination?.hasRoute<Routes.Explore>() != true) {
+                                val isInExploreSection = currentDestination?.hasRoute<Routes.Explore>() == true ||
+                                        currentDestination?.hasRoute<Routes.Artists>() == true ||
+                                        currentDestination?.hasRoute<Routes.Albums>() == true
+                                if (!isInExploreSection) {
                                     navController.navigate(Routes.Explore) {
                                         launchSingleTop = true
                                         restoreState = true
