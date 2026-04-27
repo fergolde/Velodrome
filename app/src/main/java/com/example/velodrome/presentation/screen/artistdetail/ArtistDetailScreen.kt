@@ -16,8 +16,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -37,8 +40,36 @@ fun ArtistDetailScreen(
     viewModel: ArtistDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                Snackbar(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = data.visuals.message,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(bottom = it.calculateBottomPadding())
+        ) {
 
         when {
             uiState.isLoading -> {
@@ -60,9 +91,24 @@ fun ArtistDetailScreen(
                     albums = uiState.albums,
                     isPreparingPlayback = uiState.isPreparingPlayback,
                     onAlbumClick = onAlbumClick,
-                    onPlayAllClick = viewModel::playAll,
-                    onShuffleAllClick = viewModel::shuffleAll,
-                    onAddToQueueClick = viewModel::addToQueue
+                    onPlayAllClick = {
+                        viewModel.playAll()
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Reproducción iniciada")
+                        }
+                    },
+                    onShuffleAllClick = {
+                        viewModel.shuffleAll()
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Reproducción aleatoria iniciada")
+                        }
+                    },
+                    onAddToQueueClick = {
+                        viewModel.addToQueue()
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Álbumes añadidos a la cola")
+                        }
+                    }
                 )
             }
         }
