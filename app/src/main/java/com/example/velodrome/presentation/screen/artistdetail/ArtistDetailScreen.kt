@@ -71,46 +71,46 @@ fun ArtistDetailScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(bottom = it.calculateBottomPadding())
         ) {
-
-        when {
-            uiState.isLoading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            uiState.error != null -> {
-                Text(
-                    text = uiState.error ?: stringResource(R.string.error_loading),
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            else -> {
-                ArtistAlbumsList(
-                    artist = uiState.artist,
-                    albums = uiState.albums,
-                    isPreparingPlayback = uiState.isPreparingPlayback,
-                    onAlbumClick = onAlbumClick,
-                    onPlayAllClick = {
-                        viewModel.playAll()
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Reproducción iniciada")
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                uiState.error != null -> {
+                    Text(
+                        text = uiState.error ?: stringResource(R.string.error_loading),
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                else -> {
+                    ArtistAlbumsList(
+                        artist = uiState.artist,
+                        albums = uiState.albums,
+                        isPreparingPlayback = uiState.isPreparingPlayback,
+                        onAlbumClick = onAlbumClick,
+                        onPlayAllClick = {
+                            viewModel.playAll()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Reproducción iniciada")
+                            }
+                        },
+                        onShuffleAllClick = {
+                            viewModel.shuffleAll()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Reproducción aleatoria iniciada")
+                            }
+                        },
+                        onAddToQueueClick = {
+                            viewModel.addToQueue()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Álbumes añadidos a la cola")
+                            }
                         }
-                    },
-                    onShuffleAllClick = {
-                        viewModel.shuffleAll()
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Reproducción aleatoria iniciada")
-                        }
-                    },
-                    onAddToQueueClick = {
-                        viewModel.addToQueue()
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Álbumes añadidos a la cola")
-                        }
-                    }
-                )
+                    )
+                }
             }
         }
 
@@ -138,7 +138,7 @@ fun ArtistDetailScreen(
 }
 
 @Composable
-private fun ArtistAlbumsList(
+fun ArtistAlbumsList(
     artist: com.example.velodrome.domain.model.Artist?,
     albums: List<Album>,
     isPreparingPlayback: Boolean,
@@ -267,7 +267,7 @@ private fun ArtistAlbumsList(
 }
 
 @Composable
-private fun ArtistAlbumCard(
+fun ArtistAlbumCard(
     album: Album,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
