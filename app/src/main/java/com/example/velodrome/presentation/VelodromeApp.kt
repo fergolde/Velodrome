@@ -1,5 +1,6 @@
 package com.example.velodrome.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -135,7 +136,28 @@ fun MainScaffold(
             )
         },
 
-        ) {
+        // Handle back press: from Explore or Settings go to Home, from Home exit app
+        BackHandler(enabled = true) {
+            val currentRoute = currentDestination?.route
+            when {
+                currentRoute == "Home" -> {
+                    // Exit app from Home
+                    (context as? android.app.Activity)?.finish()
+                }
+                currentRoute == "Explore" || currentRoute == "Settings" -> {
+                    // Go to Home from Explore or Settings
+                    navController.navigate(Routes.Home) {
+                        launchSingleTop = true
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
+                }
+                else -> {
+                    // For detail screens, just go back normally
+                    navController.popBackStack()
+                }
+            }
+        }
+
         Scaffold(
             bottomBar = {
                 // Solo mostramos la barra si no estamos en la pantalla de Login
