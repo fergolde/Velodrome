@@ -166,7 +166,7 @@ fun MainScaffold(
                             },
                             onHomeClick = {
                                 if (currentDestination?.route != "Home") {
-                                    navController.navigate("Home") {
+                                    navController.navigate(Routes.Home) {
                                         launchSingleTop = true
                                         restoreState = true
                                     }
@@ -176,7 +176,7 @@ fun MainScaffold(
                                 // Navegar a Explore raíz siempre que no estés ya ahí
                                 val currentRoute = currentDestination?.route
                                 if (currentRoute != "Explore") {
-                                    navController.navigate("Explore") {
+                                    navController.navigate(Routes.Explore) {
                                         launchSingleTop = true
                                         restoreState = true
                                     }
@@ -184,7 +184,7 @@ fun MainScaffold(
                             },
                             onSettingsClick = {
                                 if (currentDestination?.route != "Settings") {
-                                    navController.navigate("Settings") {
+                                    navController.navigate(Routes.Settings) {
                                         launchSingleTop = true
                                         restoreState = true
                                     }
