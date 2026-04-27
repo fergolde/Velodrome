@@ -289,15 +289,27 @@ private fun AlbumHeader(
             Text("${tracks.size} tracks · ${durationDisk(tracks)} minutos", fontSize = 14.sp)
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onPlayAllClick, modifier = Modifier.weight(1f)) {
+                Button(
+                    onClick = onPlayAllClick,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.height(48.dp)
+                ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Play")
                 }
-                FilledIconButton(onClick = onShuffleClick) {
+                Button(
+                    onClick = onShuffleClick,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.height(48.dp)
+                ) {
                     Icon(Icons.Default.Shuffle, contentDescription = null)
                 }
-                FilledIconButton(onClick = onAddToQueueClick) {
+                Button(
+                    onClick = onAddToQueueClick,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.height(48.dp)
+                ) {
                     Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
                 }
             }
