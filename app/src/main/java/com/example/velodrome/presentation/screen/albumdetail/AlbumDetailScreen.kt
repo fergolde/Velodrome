@@ -288,7 +288,10 @@ private fun AlbumHeader(
             album?.year?.let { Text(it.toString()) }
             Text("${tracks.size} tracks · ${durationDisk(tracks)} minutos", fontSize = 14.sp)
             Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 Button(
                     onClick = onPlayAllClick,
                     shape = RoundedCornerShape(24.dp),
