@@ -16,12 +16,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -37,56 +41,104 @@ fun ArtistDetailScreen(
     viewModel: ArtistDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-
-        when {
-            uiState.isLoading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
-                )
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                Snackbar(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = data.visuals.message,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
-            uiState.error != null -> {
-                Text(
-                    text = uiState.error ?: stringResource(R.string.error_loading),
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            else -> {
-                ArtistAlbumsList(
-                    artist = uiState.artist,
-                    albums = uiState.albums,
-                    isPreparingPlayback = uiState.isPreparingPlayback,
-                    onAlbumClick = onAlbumClick,
-                    onPlayAllClick = viewModel::playAll,
-                    onShuffleAllClick = viewModel::shuffleAll,
-                    onAddToQueueClick = viewModel::addToQueue
-                )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(bottom = it.calculateBottomPadding())
+        ) {
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                uiState.error != null -> {
+                    Text(
+                        text = uiState.error ?: stringResource(R.string.error_loading),
+                        modifier = Modifier.align(Alignment.Center),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                else -> {
+                    ArtistAlbumsList(
+                        artist = uiState.artist,
+                        albums = uiState.albums,
+                        isPreparingPlayback = uiState.isPreparingPlayback,
+                        onAlbumClick = onAlbumClick,
+                        onPlayAllClick = {
+                            viewModel.playAll()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Reproducción iniciada")
+                            }
+                        },
+                        onShuffleAllClick = {
+                            viewModel.shuffleAll()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Reproducción aleatoria iniciada")
+                            }
+                        },
+                        onAddToQueueClick = {
+                            viewModel.addToQueue()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Álbumes añadidos a la cola")
+                            }
+                        }
+                    )
+                }
             }
         }
 
-        IconButton(
-            onClick = onBackClick,
+        Box(
             modifier = Modifier
+                .fillMaxSize()
                 .statusBarsPadding()
                 .padding(8.dp)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.3f))
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.nav_back),
-                tint = Color.White
-            )
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.3f))
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.nav_back),
+                    tint = Color.White
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ArtistAlbumsList(
+fun ArtistAlbumsList(
     artist: com.example.velodrome.domain.model.Artist?,
     albums: List<Album>,
     isPreparingPlayback: Boolean,
@@ -147,7 +199,8 @@ private fun ArtistAlbumsList(
                     Button(
                         onClick = onPlayAllClick,
                         shape = RoundedCornerShape(24.dp),
-                        enabled = !isPreparingPlayback
+                        enabled = !isPreparingPlayback,
+                        modifier = Modifier.height(48.dp)
                     ) {
                         if (isPreparingPlayback) {
                             CircularProgressIndicator(
@@ -159,19 +212,23 @@ private fun ArtistAlbumsList(
                             Icon(Icons.Default.PlayArrow, contentDescription = null)
                         }
                         Spacer(Modifier.width(8.dp))
-                        Text("Reproducir")
+                        Text("Play")
                     }
 
-                    FilledTonalIconButton(
+                    Button(
                         onClick = onShuffleAllClick,
-                        enabled = !isPreparingPlayback
+                        shape = RoundedCornerShape(24.dp),
+                        enabled = !isPreparingPlayback,
+                        modifier = Modifier.height(48.dp)
                     ) {
                         Icon(Icons.Default.Shuffle, contentDescription = null)
                     }
 
-                    FilledTonalIconButton(
+                    Button(
                         onClick = onAddToQueueClick,
-                        enabled = !isPreparingPlayback
+                        shape = RoundedCornerShape(24.dp),
+                        enabled = !isPreparingPlayback,
+                        modifier = Modifier.height(48.dp)
                     ) {
                         Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
                     }
@@ -215,7 +272,7 @@ private fun ArtistAlbumsList(
 }
 
 @Composable
-private fun ArtistAlbumCard(
+fun ArtistAlbumCard(
     album: Album,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
