@@ -101,6 +101,7 @@ fun MainScaffold(
     val hasSong = currentTrack != null
     val scope = rememberCoroutineScope()
 
+    val localContext = LocalContext.current
     // Configuración del BottomSheet para el Player
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -139,7 +140,7 @@ fun MainScaffold(
             val currentRoute = currentDestination?.route
             when {
                 currentRoute == "Home" -> {
-                    (context as? android.app.Activity)?.finish()
+                    (localContext as? android.app.Activity)?.finish()
                 }
                 currentRoute == "Explore" || currentRoute == "Settings" -> {
                     navController.navigate(Routes.Home) {
