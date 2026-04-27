@@ -128,7 +128,12 @@ fun AlbumDetailScreen(
                         },
                         onPlayAllClick = { viewModel.playAll() },
                         onShuffleClick = { viewModel.shuffleAll() },
-                        onAddToQueueClick = { viewModel.addAllToQueue() },
+                        onAddToQueueClick = {
+                            viewModel.addAllToQueue()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Álbum añadido a la cola")
+                            }
+                        },
                         onBackClick = onBackClick,
                         currentTrackId = uiState.currentTrackId
                     )
