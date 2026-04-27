@@ -278,7 +278,12 @@ private fun AlbumHeader(
             }
         }
 
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
             Text(text = album?.title ?: "", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             Text(
                 text = album?.artistName ?: "",
