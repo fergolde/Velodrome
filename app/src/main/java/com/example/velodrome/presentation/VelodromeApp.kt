@@ -139,10 +139,10 @@ fun MainScaffold(
         BackHandler(enabled = true) {
             val currentRoute = currentDestination?.route
             when {
-                currentRoute == "Home" -> {
+                currentRoute?.contains("Home") == true -> {
                     (localContext as? android.app.Activity)?.finish()
                 }
-                currentRoute == "Explore" || currentRoute == "Settings" -> {
+                currentRoute?.contains("Explore") == true || currentRoute?.contains("Settings") == true -> {
                     navController.navigate(Routes.Home) {
                         launchSingleTop = true
                         popUpTo(navController.graph.startDestinationId) { inclusive = true }
