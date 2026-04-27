@@ -166,30 +166,27 @@ fun MainScaffold(
                             },
                             onHomeClick = {
                                 if (currentDestination?.route != "Home") {
-                                    navController.navigate(Routes.Home) {
+                                    navController.navigate("Home") {
                                         launchSingleTop = true
                                         restoreState = true
-                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
                                     }
                                 }
                             },
                             onExploreClick = {
-                                // Solo navegar si NO estamos ya en la raíz de Explore
+                                // Navegar a Explore raíz siempre que no estés ya ahí
                                 val currentRoute = currentDestination?.route
                                 if (currentRoute != "Explore") {
-                                    navController.navigate(Routes.Explore) {
+                                    navController.navigate("Explore") {
                                         launchSingleTop = true
                                         restoreState = true
-                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
                                     }
                                 }
                             },
                             onSettingsClick = {
                                 if (currentDestination?.route != "Settings") {
-                                    navController.navigate(Routes.Settings) {
+                                    navController.navigate("Settings") {
                                         launchSingleTop = true
                                         restoreState = true
-                                        popUpTo(navController.graph.startDestinationId) { saveState = true }
                                     }
                                 }
                             }
