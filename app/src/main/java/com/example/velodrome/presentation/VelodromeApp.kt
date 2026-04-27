@@ -165,29 +165,21 @@ fun MainScaffold(
                                 else -> ""
                             },
                             onHomeClick = {
-                                if (currentDestination?.route != "Home") {
-                                    navController.navigate(Routes.Home) {
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                navController.navigate(Routes.Home) {
+                                    launchSingleTop = true
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
                                 }
                             },
                             onExploreClick = {
-                                // Navegar a Explore raíz siempre que no estés ya ahí
-                                val currentRoute = currentDestination?.route
-                                if (currentRoute != "Explore") {
-                                    navController.navigate(Routes.Explore) {
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                navController.navigate(Routes.Explore) {
+                                    launchSingleTop = true
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
                                 }
                             },
                             onSettingsClick = {
-                                if (currentDestination?.route != "Settings") {
-                                    navController.navigate(Routes.Settings) {
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                navController.navigate(Routes.Settings) {
+                                    launchSingleTop = true
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
                                 }
                             }
                         )
