@@ -174,10 +174,8 @@ fun MainScaffold(
                                 }
                             },
                             onExploreClick = {
-                                val isInExploreSection = currentDestination?.hasRoute<Routes.Explore>() == true ||
-                                        currentDestination?.hasRoute<Routes.Artists>() == true ||
-                                        currentDestination?.hasRoute<Routes.Albums>() == true
-                                if (!isInExploreSection) {
+                                // Solo navegar si NO estamos ya en la raíz de Explore
+                                if (currentDestination?.hasRoute<Routes.Explore>() != true) {
                                     navController.navigate(Routes.Explore) {
                                         launchSingleTop = true
                                         restoreState = true
