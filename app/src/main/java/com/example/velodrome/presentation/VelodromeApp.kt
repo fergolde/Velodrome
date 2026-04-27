@@ -54,7 +54,6 @@ fun VelodromeMainApp(
 ) {
     val navController = rememberNavController()
     var isLoggedIn by remember { mutableStateOf<Boolean?>(null) }
-
     val context = LocalContext.current
     val credentialsManager = remember {
         EntryPointAccessors.fromApplication(
@@ -74,7 +73,6 @@ fun VelodromeMainApp(
         if (isLoggedIn != null) {
             MainScaffold(
                 navController = navController,
-                // Si está logueado va a Home, si no a Login (usando objetos de Routes)
                 startDestination = if (isLoggedIn == true) Routes.Home else Routes.Login,
                 onLoginSuccess = { isLoggedIn = true },
                 sharedPlayerViewModel = sharedPlayerViewModel
@@ -93,21 +91,43 @@ fun MainScaffold(
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-
-    // Estado del reproductor desde SharedPlayerViewModel
     val currentTrack by sharedPlayerViewModel.currentTrack.collectAsState()
     val isPlaying by sharedPlayerViewModel.isPlaying.collectAsState()
     val currentPosition by sharedPlayerViewModel.currentPosition.collectAsState()
     val hasSong = currentTrack != null
     val scope = rememberCoroutineScope()
-
     val localContext = LocalContext.current
-    // Configuración del BottomSheet para el Player
+
+    val isHome = currentDestination?.hasRoute<Routes.Home>() == true
+    val isExplore = currentDestination?.hasRoute<Routes.Explore>() == true
+    val isSettings = currentDestination?.hasRoute<Routes.Settings>() == true
+    val isArtists = currentDestination?.hasRoute<Routes.Artists>() == true
+    val isAlbums = currentDestination?.hasRoute<Routes.Albums>() == true
+    val isLogin = currentDestination?.hasRoute<Routes.Login>() == true
+
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
             initialValue = SheetValue.PartiallyExpanded
         )
     )
+
+    // Interceptar botón atrás
+    BackHandler(enabled = !isLogin) {
+        when {
+            isHome -> {
+                (localContext as? android.app.Activity)?.finish()
+            }
+            isExplore || isSettings -> {
+                navController.navigate(Routes.Home) {
+                    launchSingleTop = true
+                    popUpTo(Routes.Home) { inclusive = false }
+                }
+            }
+            else -> {
+                navController.popBackStack()
+            }
+        }
+    }
 
     BottomSheetScaffold(
         scaffoldState = sheetState,
@@ -135,33 +155,12 @@ fun MainScaffold(
             )
         }
     ) { innerPadding ->
-        // Handle back press: from Explore or Settings go to Home, from Home exit app
-        BackHandler(enabled = true) {
-            val currentRoute = currentDestination?.route
-            when {
-                currentRoute?.contains("Home") == true -> {
-                    (localContext as? android.app.Activity)?.finish()
-                }
-                currentRoute?.contains("Explore") == true || currentRoute?.contains("Settings") == true -> {
-                    navController.navigate(Routes.Home) {
-                        launchSingleTop = true
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                    }
-                }
-                else -> {
-                    navController.popBackStack()
-                }
-            }
-        }
-
         Box(modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
             Scaffold(
                 bottomBar = {
-                    // Solo mostramos la barra si no estamos en la pantalla de Login
-                    val showBars = currentDestination?.hasRoute<Routes.Login>() == false
+                    val showBars = !isLogin
                     if (showBars) {
                         Column {
-                            // MiniPlayer: Solo si hay canción y el BottomSheet está colapsado
                             if (hasSong && sheetState.bottomSheetState.currentValue != SheetValue.Expanded) {
                                 MiniPlayer(
                                     currentTrack = currentTrack,
@@ -173,34 +172,37 @@ fun MainScaffold(
                                     onPreviousClick = { sharedPlayerViewModel.previous() }
                                 )
                             }
-
                             SharedBottomNavigationBar(
                                 currentRoute = when {
-                                    currentDestination?.route?.startsWith("Home") == true -> "home"
-                                    currentDestination?.route?.startsWith("Explore") == true ||
-                                    currentDestination?.route?.startsWith("Artists") == true ||
-                                    currentDestination?.route?.startsWith("Albums") == true -> "explore"
-                                    currentDestination?.route?.startsWith("Settings") == true -> "settings"
+                                    isHome -> "home"
+                                    isExplore || isArtists || isAlbums -> "explore"
+                                    isSettings -> "settings"
                                     else -> ""
                                 },
                                 onHomeClick = {
-                                    navController.navigate(Routes.Home) {
-                                        launchSingleTop = true
-                                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                    if (!isHome) {
+                                        navController.navigate(Routes.Home) {
+                                            launchSingleTop = true
+                                            popUpTo(Routes.Home) { inclusive = false }
+                                        }
                                     }
                                 },
                                 onExploreClick = {
-                                    navController.navigate(Routes.Explore) {
-                                        launchSingleTop = true
-                                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                    if (!isExplore) {
+                                        navController.navigate(Routes.Explore) {
+                                            launchSingleTop = true
+                                            popUpTo(Routes.Home) { inclusive = false }
+                                        }
                                     }
                                 },
                                 onSettingsClick = {
-                                    navController.navigate(Routes.Settings) {
-                                        launchSingleTop = true
-                                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                    if (!isSettings) {
+                                        navController.navigate(Routes.Settings) {
+                                            launchSingleTop = true
+                                            popUpTo(Routes.Home) { inclusive = false }
+                                        }
                                     }
-                                }
+                                },
                             )
                         }
                     }
@@ -214,13 +216,11 @@ fun MainScaffold(
                         composable<Routes.Login> {
                             LoginScreen(onLoginSuccess = onLoginSuccess)
                         }
-
                         composable<Routes.Home> {
                             HomeScreen(
-                                onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) },
+                                onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) }
                             )
                         }
-
                         composable<Routes.Explore> {
                             ExploreScreen(
                                 onArtistClick = { id -> navController.navigate(Routes.ArtistDetail(id)) },
@@ -229,25 +229,21 @@ fun MainScaffold(
                                 onAlbumsViewAllClick = { navController.navigate(Routes.Albums) }
                             )
                         }
-
                         composable<Routes.Artists> {
                             ArtistsScreen(
                                 onArtistClick = { artist -> navController.navigate(Routes.ArtistDetail(artist.id)) }
                             )
                         }
-
                         composable<Routes.Albums> {
                             AlbumsScreen(
                                 onAlbumClick = { album -> navController.navigate(Routes.AlbumDetail(album.id)) }
                             )
                         }
-
                         composable<Routes.Settings> {
                             SettingsScreen(
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
-
                         composable<Routes.ArtistDetail> { backStackEntry ->
                             val route: Routes.ArtistDetail = backStackEntry.toRoute()
                             ArtistDetailScreen(
@@ -255,11 +251,10 @@ fun MainScaffold(
                                 onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) }
                             )
                         }
-
                         composable<Routes.AlbumDetail> { backStackEntry ->
                             val route: Routes.AlbumDetail = backStackEntry.toRoute()
                             AlbumDetailScreen(
-                                onBackClick = { navController.popBackStack() },
+                                onBackClick = { navController.popBackStack() }
                             )
                         }
                     }
