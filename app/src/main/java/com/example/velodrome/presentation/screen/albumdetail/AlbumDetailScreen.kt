@@ -127,7 +127,12 @@ fun AlbumDetailScreen(
                             showTrackOptions = true
                         },
                         onPlayAllClick = { viewModel.playAll() },
-                        onShuffleClick = { viewModel.shuffleAll() },
+                        onShuffleClick = {
+                            viewModel.shuffleAll()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Reproducción aleatoria iniciada")
+                            }
+                        },
                         onAddToQueueClick = {
                             viewModel.addAllToQueue()
                             scope.launch {
