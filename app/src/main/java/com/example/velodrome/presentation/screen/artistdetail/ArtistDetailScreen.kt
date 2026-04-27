@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -113,20 +114,25 @@ fun ArtistDetailScreen(
             }
         }
 
-        IconButton(
-            onClick = onBackClick,
+        Box(
             modifier = Modifier
+                .fillMaxSize()
                 .statusBarsPadding()
                 .padding(8.dp)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.3f))
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.nav_back),
-                tint = Color.White
-            )
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.3f))
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.nav_back),
+                    tint = Color.White
+                )
+            }
         }
     }
 }
