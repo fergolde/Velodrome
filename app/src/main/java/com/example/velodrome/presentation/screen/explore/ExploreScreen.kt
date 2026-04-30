@@ -165,7 +165,7 @@ item {
                     // Unified Play button for both genre + year filters
                     val hasGenres = uiState.selectedGenres.isNotEmpty()
                     val hasYearRange = uiState.selectedYearRange != null
-                    val buttonEnabled = hasGenres || hasYearRange
+                    val buttonEnabled = true
 
                     Surface(
                         modifier = Modifier
@@ -173,7 +173,7 @@ item {
                             .height(48.dp)
                             .clickable(enabled = buttonEnabled) { viewModel.onPlayGenres() },
                         shape = RoundedCornerShape(24.dp),
-                        color = if (buttonEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                        color = MaterialTheme.colorScheme.primary
                     ) {
                         Row(
                             modifier = Modifier.fillMaxSize(),
@@ -183,7 +183,7 @@ item {
                             Icon(
                                 imageVector = Icons.Default.PlayArrow,
                                 contentDescription = null,
-                                tint = if (buttonEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -208,9 +208,11 @@ item {
                                         append("-")
                                         append(uiState.selectedYearRange?.endInclusive)
                                         append(")")
+                                    } else {
+                                        append(" (shuffle)")
                                     }
                                 },
-                                color = if (buttonEnabled) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 fontWeight = FontWeight.Bold
                             )
                         }
