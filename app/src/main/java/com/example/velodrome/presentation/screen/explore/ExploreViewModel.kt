@@ -3,6 +3,7 @@ package com.example.velodrome.presentation.screen.explore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.domain.model.Track
+import com.example.velodrome.domain.shuffle.SmartShuffleManager
 import com.example.velodrome.domain.usecase.AlbumUseCases
 import com.example.velodrome.domain.usecase.ArtistUseCases
 import com.example.velodrome.domain.usecase.TrackUseCases
@@ -30,7 +31,8 @@ class ExploreViewModel @Inject constructor(
     private val albumUseCases: AlbumUseCases,
     private val artistUseCases: ArtistUseCases,
     private val trackUseCases: TrackUseCases,
-    private val playerManager: PlayerManager
+    private val playerManager: PlayerManager,
+    private val smartShuffleManager: SmartShuffleManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExploreUiState())
@@ -178,6 +180,7 @@ class ExploreViewModel @Inject constructor(
 
         playlist.clear()
         currentPlaylistPosition = 0
+        smartShuffleManager.startNewSession()
 
         currentGenreFilter = if (selectedGenres.isEmpty()) emptyList() else selectedGenres.toList()
 
@@ -221,12 +224,16 @@ class ExploreViewModel @Inject constructor(
 
                 songsResult.onSuccess { songs ->
                     playlist.addAll(songs)
+
+                    val filtered = smartShuffleManager.filterNew(playlist.toList())
+                    val ordered = smartShuffleManager.applyArtistSpacing(filtered, null)
+                    playlist.clear()
+                    playlist.addAll(ordered)
+
                 }.onFailure { error ->
                     _uiState.update { it.copy(error = error.message, isLoading = false) }
                     return@launch
                 }
-
-                playlist.shuffle()
 
                 val initialTracks = playlist.take(10)
                 currentPlaylistPosition = 10
@@ -236,6 +243,7 @@ class ExploreViewModel @Inject constructor(
                 playerManager.setLoadMoreCallback { checkAndLoadMore() }
 
                 if (initialTracks.isNotEmpty()) {
+                    smartShuffleManager.registerTracks(initialTracks)
                     playerManager.setPlaylist(initialTracks, startPlaying = true)
                 }
 
@@ -281,7 +289,11 @@ class ExploreViewModel @Inject constructor(
 
                 songsResult.onSuccess { newSongs ->
                     if (newSongs.isNotEmpty()) {
-                        playerManager.appendToPlaylist(newSongs)
+                        val filtered = smartShuffleManager.filterNew(newSongs)
+                        val lastArtist = playerManager.playlist.value.lastOrNull()?.artistName
+                        val ordered = smartShuffleManager.applyArtistSpacing(filtered, lastArtist)
+                        smartShuffleManager.registerTracks(ordered)
+                        playerManager.appendToPlaylist(ordered)
                     }
                 }
 
