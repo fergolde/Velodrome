@@ -2,6 +2,7 @@ package com.example.velodrome.presentation.screen.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.velodrome.domain.shuffle.SmartShuffleManager
 import com.example.velodrome.domain.usecase.AlbumUseCases
 import com.example.velodrome.domain.usecase.ArtistUseCases
 import com.example.velodrome.domain.usecase.TrackUseCases
@@ -29,7 +30,8 @@ class HomeViewModel @Inject constructor(
     private val albumUseCases: AlbumUseCases,
     private val artistUseCases: ArtistUseCases,
     private val trackUseCases: TrackUseCases,
-    private val playerManager: PlayerManager
+    private val playerManager: PlayerManager,
+    private val smartShuffleManager: SmartShuffleManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -195,19 +197,26 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                smartShuffleManager.startNewSession()
+
                 val songsResult = trackUseCases.getRandomSongs(size = 10)
 
                 songsResult.onSuccess { songs ->
 
                     if (songs.isNotEmpty()) {
-                        val shuffledSongs = songs.shuffled().take(10)
+                        val filtered = smartShuffleManager.filterNew(songs)
+                        val lastArtist: String? = null
+                        val ordered = smartShuffleManager.applyArtistSpacing(filtered, lastArtist)
+                        val finalTracks = ordered.take(10)
+
+                        smartShuffleManager.registerTracks(finalTracks)
 
                         playerManager.setLoadMoreCallback {
 
                             loadMoreRandomSongs()
                         }
 
-                        playerManager.setPlaylist(shuffledSongs, startPlaying = true)
+                        playerManager.setPlaylist(finalTracks, startPlaying = true)
 
                     }
 
@@ -232,7 +241,11 @@ class HomeViewModel @Inject constructor(
                 val songsResult = trackUseCases.getRandomSongs(size = 10)
                 songsResult.onSuccess { songs ->
                     if (songs.isNotEmpty()) {
-                        playerManager.appendToPlaylist(songs)
+                        val filtered = smartShuffleManager.filterNew(songs)
+                        val lastArtist = playerManager.playlist.value.lastOrNull()?.artistName
+                        val ordered = smartShuffleManager.applyArtistSpacing(filtered, lastArtist)
+                        smartShuffleManager.registerTracks(ordered)
+                        playerManager.appendToPlaylist(ordered)
 
                     }
                 }
