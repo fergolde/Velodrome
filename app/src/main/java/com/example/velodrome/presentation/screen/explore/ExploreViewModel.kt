@@ -3,10 +3,11 @@ package com.example.velodrome.presentation.screen.explore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.velodrome.domain.model.Track
-import com.example.velodrome.domain.shuffle.SmartShuffleManager
 import com.example.velodrome.domain.usecase.AlbumUseCases
 import com.example.velodrome.domain.usecase.ArtistUseCases
 import com.example.velodrome.domain.usecase.TrackUseCases
+import com.example.velodrome.presentation.audio.RadioContext
+import com.example.velodrome.presentation.audio.SmartRadioEngine
 import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
@@ -32,19 +33,13 @@ class ExploreViewModel @Inject constructor(
     private val artistUseCases: ArtistUseCases,
     private val trackUseCases: TrackUseCases,
     private val playerManager: PlayerManager,
-    private val smartShuffleManager: SmartShuffleManager
+    private val smartRadioEngine: SmartRadioEngine
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExploreUiState())
     val uiState: StateFlow<ExploreUiState> = _uiState.asStateFlow()
 
     private val searchQueryFlow = MutableStateFlow("")
-
-    // Dynamic playlist state
-    private val playlist = mutableListOf<Track>()
-    private var currentPlaylistPosition = 0
-    private var isLoadingMore = false
-    private var currentGenreFilter: List<String> = emptyList()
 
     init {
         loadContent()
@@ -173,139 +168,25 @@ class ExploreViewModel @Inject constructor(
     }
 
     fun onPlayGenres() {
-        val selectedGenres = _uiState.value.selectedGenres
+        val selectedGenres = _uiState.value.selectedGenres.toList()
         val yearRange = _uiState.value.selectedYearRange
 
         _uiState.update { it.copy(isLoading = true) }
 
-        playlist.clear()
-        currentPlaylistPosition = 0
-        smartShuffleManager.startNewSession()
-
-        currentGenreFilter = if (selectedGenres.isEmpty()) emptyList() else selectedGenres.toList()
-
-        val fromYear = yearRange?.first
-        val toYear = yearRange?.last
+        val context = if (selectedGenres.isEmpty() && yearRange == null) {
+            RadioContext.Random
+        } else {
+            RadioContext.GenreAndYear(
+                genres = selectedGenres,
+                fromYear = yearRange?.first,
+                toYear = yearRange?.last
+            )
+        }
 
         viewModelScope.launch {
-            try {
-                val songsResult: Result<List<Track>>
-
-                if (selectedGenres.isEmpty() && yearRange == null) {
-                    songsResult = trackUseCases.getRandomSongs(size = 10)
-                } else if (selectedGenres.isEmpty() && yearRange != null) {
-                    songsResult = trackUseCases.getRandomSongs(size = 10, fromYear = fromYear, toYear = toYear)
-                } else if (selectedGenres.size == 1 && yearRange != null) {
-                    val genre = selectedGenres.first()
-                    songsResult = trackUseCases.getRandomSongs(size = 10, genre = genre, fromYear = fromYear, toYear = toYear)
-                } else if (selectedGenres.size == 1) {
-                    val genre = selectedGenres.first()
-                    songsResult = trackUseCases.getRandomSongs(size = 10, genre = genre)
-                } else {
-                    // FIX: múltiples géneros — pedir 10 por género y mezclar
-                    val allSongs = mutableListOf<Track>()
-                    coroutineScope {
-                        val deferreds = selectedGenres.map { genre ->
-                            async {
-                                trackUseCases.getRandomSongs(
-                                    size = 10,
-                                    genre = genre,
-                                    fromYear = fromYear,
-                                    toYear = toYear
-                                )
-                            }
-                        }
-                        deferreds.awaitAll().forEach { result ->
-                            result.onSuccess { songs -> allSongs.addAll(songs) }
-                        }
-                    }
-                    songsResult = Result.success(allSongs.distinctBy { it.id }.shuffled().take(10))
-                }
-
-                songsResult.onSuccess { songs ->
-                    playlist.addAll(songs)
-
-                    val filtered = smartShuffleManager.filterNew(playlist.toList())
-                    val ordered = smartShuffleManager.applyArtistSpacing(filtered, null)
-                    playlist.clear()
-                    playlist.addAll(ordered)
-
-                }.onFailure { error ->
-                    _uiState.update { it.copy(error = error.message, isLoading = false) }
-                    return@launch
-                }
-
-                val initialTracks = playlist.take(10)
-                currentPlaylistPosition = 10
-
-                _uiState.update { it.copy(isLoading = false, dynamicPlaylist = initialTracks) }
-
-                playerManager.setLoadMoreCallback { checkAndLoadMore() }
-
-                if (initialTracks.isNotEmpty()) {
-                    smartShuffleManager.registerTracks(initialTracks)
-                    playerManager.setPlaylist(initialTracks, startPlaying = true)
-                }
-
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message, isLoading = false) }
-            }
+            smartRadioEngine.startRadio(context)
+            _uiState.update { it.copy(isLoading = false) }
         }
-    }
-
-    fun loadMoreTracks() {
-        if (isLoadingMore) {
-            return
-        }
-
-        isLoadingMore = true
-        viewModelScope.launch {
-            try {
-                val songsResult: Result<List<Track>>
-
-                if (currentGenreFilter.isEmpty()) {
-                    songsResult = trackUseCases.getRandomSongs(size = 10)
-                } else if (currentGenreFilter.size == 1) {
-                    val genre = currentGenreFilter.first()
-                    songsResult = trackUseCases.getRandomSongsByGenre(genre, size = 10)
-                } else {
-                    // Multiple genres: parallel fetching using structured concurrency
-                    val allSongs = mutableListOf<Track>()
-                    coroutineScope {
-                        val deferreds = (1..10).map { _ ->
-                            async {
-                                val randomGenre = currentGenreFilter.random()
-                                trackUseCases.getRandomSongsByGenre(randomGenre, size = 1)
-                            }
-                        }
-                        deferreds.awaitAll().forEach { result ->
-                            result.onSuccess { songs ->
-                                allSongs.addAll(songs)
-                            }
-                        }
-                    }
-                    songsResult = Result.success(allSongs)
-                }
-
-                songsResult.onSuccess { newSongs ->
-                    if (newSongs.isNotEmpty()) {
-                        val filtered = smartShuffleManager.filterNew(newSongs)
-                        val lastArtist = playerManager.playlist.value.lastOrNull()?.artistName
-                        val ordered = smartShuffleManager.applyArtistSpacing(filtered, lastArtist)
-                        smartShuffleManager.registerTracks(ordered)
-                        playerManager.appendToPlaylist(ordered)
-                    }
-                }
-
-            } catch (_: Exception) {
-            } finally {
-                isLoadingMore = false
-            }
-        }
-    }
-
-    fun checkAndLoadMore() {
-        loadMoreTracks()
     }
 
     fun playSearchedTrack(track: Track) {

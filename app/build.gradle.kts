@@ -9,9 +9,7 @@ plugins {
 android {
     namespace = "com.example.velodrome"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
@@ -19,7 +17,7 @@ android {
         minSdk = 34
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0.5"
+        versionName = "1.0.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

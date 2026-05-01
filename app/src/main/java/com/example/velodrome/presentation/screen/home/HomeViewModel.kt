@@ -2,10 +2,11 @@ package com.example.velodrome.presentation.screen.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.velodrome.domain.shuffle.SmartShuffleManager
 import com.example.velodrome.domain.usecase.AlbumUseCases
 import com.example.velodrome.domain.usecase.ArtistUseCases
 import com.example.velodrome.domain.usecase.TrackUseCases
+import com.example.velodrome.presentation.audio.RadioContext
+import com.example.velodrome.presentation.audio.SmartRadioEngine
 import com.example.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +32,7 @@ class HomeViewModel @Inject constructor(
     private val artistUseCases: ArtistUseCases,
     private val trackUseCases: TrackUseCases,
     private val playerManager: PlayerManager,
-    private val smartShuffleManager: SmartShuffleManager
+    private val smartRadioEngine: SmartRadioEngine
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -190,68 +191,13 @@ class HomeViewModel @Inject constructor(
 
     /**
      * Plays a random playlist from all available albums.
-     * Uses API to get random songs directly with infinite scroll.
+     * Uses SmartRadioEngine for shuffle logic.
      */
     fun playShuffle() {
         _uiState.update { it.copy(isLoading = true) }
-
         viewModelScope.launch {
-            try {
-                smartShuffleManager.startNewSession()
-
-                val songsResult = trackUseCases.getRandomSongs(size = 10)
-
-                songsResult.onSuccess { songs ->
-
-                    if (songs.isNotEmpty()) {
-                        val filtered = smartShuffleManager.filterNew(songs)
-                        val lastArtist: String? = null
-                        val ordered = smartShuffleManager.applyArtistSpacing(filtered, lastArtist)
-                        val finalTracks = ordered.take(10)
-
-                        smartShuffleManager.registerTracks(finalTracks)
-
-                        playerManager.setLoadMoreCallback {
-
-                            loadMoreRandomSongs()
-                        }
-
-                        playerManager.setPlaylist(finalTracks, startPlaying = true)
-
-                    }
-
-                    _uiState.update { it.copy(isLoading = false, isPlaying = true) }
-                }.onFailure { error ->
-
-                    _uiState.update { it.copy(isLoading = false) }
-                }
-            } catch (_: Exception) {
-
-                _uiState.update { it.copy(isLoading = false) }
-            }
-        }
-    }
-
-    /**
-     * Load more random songs for infinite scroll
-     */
-    private fun loadMoreRandomSongs() {
-        viewModelScope.launch {
-            try {
-                val songsResult = trackUseCases.getRandomSongs(size = 10)
-                songsResult.onSuccess { songs ->
-                    if (songs.isNotEmpty()) {
-                        val filtered = smartShuffleManager.filterNew(songs)
-                        val lastArtist = playerManager.playlist.value.lastOrNull()?.artistName
-                        val ordered = smartShuffleManager.applyArtistSpacing(filtered, lastArtist)
-                        smartShuffleManager.registerTracks(ordered)
-                        playerManager.appendToPlaylist(ordered)
-
-                    }
-                }
-            } catch (_: Exception) {
-
-            }
+            smartRadioEngine.startRadio(RadioContext.Random)
+            _uiState.update { it.copy(isLoading = false, isPlaying = true) }
         }
     }
 }
