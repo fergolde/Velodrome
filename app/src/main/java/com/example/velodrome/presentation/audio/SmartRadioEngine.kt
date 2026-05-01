@@ -21,16 +21,14 @@ class SmartRadioEngine @Inject constructor(
 
     private var currentContext: RadioContext? = null
     private val pool = mutableListOf<Track>()
-    private val recentIds = ArrayDeque<String>()
-    private val maxRecent = 50
-
+    private val sessionPlayedIds = mutableSetOf<String>()
     private var isRefilling = false
 
     fun startRadio(context: RadioContext) {
         engineScope.launch {
             currentContext = context
             pool.clear()
-            recentIds.clear()
+            sessionPlayedIds.clear()
 
             refillPool()
 
@@ -67,7 +65,7 @@ class SmartRadioEngine @Inject constructor(
         }
 
         for (i in 0 until count) {
-            var available = pool.filter { it.id !in recentIds }
+            var available = pool.filter { it.id !in sessionPlayedIds }
             if (available.isEmpty()) available = pool.toList()
             if (available.isEmpty()) break
 
@@ -75,8 +73,7 @@ class SmartRadioEngine @Inject constructor(
             pool.remove(track)
             selected.add(track)
 
-            recentIds.addLast(track.id)
-            if (recentIds.size > maxRecent) recentIds.removeFirst()
+            sessionPlayedIds.add(track.id)
         }
         return selected
     }
@@ -89,14 +86,14 @@ class SmartRadioEngine @Inject constructor(
 
             val newSongs = when (ctx) {
                 is RadioContext.Random -> {
-                    trackUseCases.getRandomSongs(size = 200).getOrDefault(emptyList())
+                    trackUseCases.getRandomSongs(size = 50).getOrDefault(emptyList())
                 }
                 is RadioContext.GenreAndYear -> {
                     val songs = mutableListOf<Track>()
                     if (ctx.genres.isEmpty()) {
-                        songs.addAll(trackUseCases.getRandomSongs(size = 200, fromYear = ctx.fromYear, toYear = ctx.toYear).getOrDefault(emptyList()))
+                        songs.addAll(trackUseCases.getRandomSongs(size = 50, fromYear = ctx.fromYear, toYear = ctx.toYear).getOrDefault(emptyList()))
                     } else {
-                        val limitPerGenre = 200 / ctx.genres.size
+                        val limitPerGenre = 50 / ctx.genres.size
                         coroutineScope {
                             val deferreds = ctx.genres.map { genre ->
                                 async { trackUseCases.getRandomSongs(size = limitPerGenre, genre = genre, fromYear = ctx.fromYear, toYear = ctx.toYear).getOrDefault(emptyList()) }
