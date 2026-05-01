@@ -74,6 +74,5 @@ class TrackUseCases @Inject constructor(
     val syncTracksForAlbum: SyncTracksForAlbumUseCase,
     val getRandomSongsByGenre: GetRandomSongsByGenreUseCase,
     val getRandomSongs: GetRandomSongsUseCase,
-    val getRandomSongsByYear: GetRandomSongsByYearUseCase,
     val searchRemoteTracks: SearchRemoteTracksUseCase
 )
