@@ -123,53 +123,28 @@ class SmartRadioEngine @Inject constructor(
     private fun pickNext(count: Int): List<Track> {
         val selected = mutableListOf<Track>()
 
-        // Preparación: obtener lastArtist y lastGenre del playlist actual
+        // Asegurar que recentArtists tiene los 2 últimos artistas del playlist actual
         val currentPlaylist = playerManager.playlist.value
-        var lastArtist: String? = currentPlaylist.lastOrNull()?.artistName
-        var lastGenre: String? = currentPlaylist.lastOrNull()?.genre
-
-        // Asegurar que recentArtists tiene los 2 últimos artistas
         if (recentArtists.isEmpty() && currentPlaylist.isNotEmpty()) {
-            val lastTwo = currentPlaylist.takeLast(2)
-            lastTwo.forEach { recentArtists.addLast(it.artistName) }
+            currentPlaylist.takeLast(2).forEach { recentArtists.addLast(it.artistName) }
         }
 
         for (i in 0 until count) {
             if (pool.isEmpty()) break
 
-            // Aplicar las 3 reglas con penalizaciones por prioridad
-            val idealCandidates = pool.filter { track ->
-                track.artistName != lastArtist && track.genre != lastGenre
-            }
-
-            val acceptableCandidates = if (idealCandidates.isEmpty()) {
-                pool.filter { track ->
-                    track.artistName != lastArtist
-                }
+            // Regla: no repetir artista (ventana de 2). Si no hay alternativa, usar todo el pool.
+            val candidates = pool.filter { it.artistName !in recentArtists }
+            val chosen = if (candidates.isNotEmpty()) {
+                candidates.random()
             } else {
-                emptyList()
-            }
-
-            val fallbackCandidates = if (idealCandidates.isEmpty() && acceptableCandidates.isEmpty()) {
-                pool.toList()
-            } else {
-                emptyList()
-            }
-
-            val chosen = when {
-                idealCandidates.isNotEmpty() -> idealCandidates.random()
-                acceptableCandidates.isNotEmpty() -> acceptableCandidates.random()
-                fallbackCandidates.isNotEmpty() -> fallbackCandidates.random()
-                else -> pool.random()
+                pool.random()
             }
 
             pool.remove(chosen)
             sessionPlayedIds.add(chosen.id)
             selected.add(chosen)
 
-            // Actualizar lastArtist, lastGenre y recentArtists
-            lastArtist = chosen.artistName
-            lastGenre = chosen.genre
+            // Actualizar recentArtists (ventana de 2)
             recentArtists.addLast(chosen.artistName)
             if (recentArtists.size > 2) {
                 recentArtists.removeFirst()
