@@ -23,32 +23,45 @@ class SmartRadioEngine @Inject constructor(
     private val pool = mutableListOf<Track>()
     private val sessionPlayedIds = mutableSetOf<String>()
     private var isRefilling = false
+    private val recentArtists = ArrayDeque<String>(2)
 
+    // Subfase 2.2 — startRadio(context: RadioContext)
     fun startRadio(context: RadioContext) {
         engineScope.launch {
             currentContext = context
             pool.clear()
             sessionPlayedIds.clear()
+            recentArtists.clear()
+            isRefilling = false
 
+            // Awaiteado — el pool debe estar listo antes de continuar
             refillPool()
+
+            // Inicializar recentArtists con los 2 últimos artistas del playlist actual
+            val currentPlaylist = playerManager.playlist.value
+            if (currentPlaylist.isNotEmpty()) {
+                val lastTwo = currentPlaylist.takeLast(2)
+                lastTwo.forEach { recentArtists.addLast(it.artistName) }
+            }
 
             val initialTracks = pickNext(10)
             if (initialTracks.isNotEmpty()) {
                 withContext(Dispatchers.Main) {
                     playerManager.setPlaylist(initialTracks, startPlaying = true)
-                    playerManager.setLoadMoreCallback { checkAndLoadMore() }
+                    playerManager.setLoadMoreCallback { onLoadMoreRequested() }
                 }
             }
         }
     }
 
-    private fun checkAndLoadMore() {
+    // Subfase 2.3 — onLoadMoreRequested()
+    private fun onLoadMoreRequested() {
         engineScope.launch {
-            if (pool.size < 10) {
+            if (pool.size < 15) {
                 refillPool()
             }
 
-            val nextTracks = pickNext(5)
+            val nextTracks = pickNext(10)
             if (nextTracks.isNotEmpty()) {
                 withContext(Dispatchers.Main) {
                     playerManager.appendToPlaylist(nextTracks)
@@ -57,30 +70,11 @@ class SmartRadioEngine @Inject constructor(
         }
     }
 
-    private fun pickNext(count: Int): List<Track> {
-        val selected = mutableListOf<Track>()
-
-        if (pool.size < count) {
-            engineScope.launch { refillPool() }
-        }
-
-        for (i in 0 until count) {
-            var available = pool.filter { it.id !in sessionPlayedIds }
-            if (available.isEmpty()) available = pool.toList()
-            if (available.isEmpty()) break
-
-            val track = available.random()
-            pool.remove(track)
-            selected.add(track)
-
-            sessionPlayedIds.add(track.id)
-        }
-        return selected
-    }
-
+    // Subfase 2.4 — refillPool()
     private suspend fun refillPool() {
         if (isRefilling) return
         isRefilling = true
+
         try {
             val ctx = currentContext ?: return
 
@@ -92,6 +86,8 @@ class SmartRadioEngine @Inject constructor(
                     val songs = mutableListOf<Track>()
                     if (ctx.genres.isEmpty()) {
                         songs.addAll(trackUseCases.getRandomSongs(size = 50, fromYear = ctx.fromYear, toYear = ctx.toYear).getOrDefault(emptyList()))
+                    } else if (ctx.genres.size == 1) {
+                        songs.addAll(trackUseCases.getRandomSongs(size = 50, genre = ctx.genres.first(), fromYear = ctx.fromYear, toYear = ctx.toYear).getOrDefault(emptyList()))
                     } else {
                         val limitPerGenre = 50 / ctx.genres.size
                         coroutineScope {
@@ -105,11 +101,81 @@ class SmartRadioEngine @Inject constructor(
                 }
             }
 
-            val existingIds = pool.map { it.id }.toSet()
-            pool.addAll(newSongs.filter { it.id !in existingIds })
+            // Filtrar las que ya están en sessionPlayedIds y las que ya están en pool
+            val existingPoolIds = pool.map { it.id }.toSet()
+            val newFiltered = newSongs.filter { it.id !in sessionPlayedIds && it.id !in existingPoolIds }
+
+            // Caso especial — sesión agotada: si no se añadió ninguna canción nueva,
+            // desactivar el filtro y añadir todas ignorando sessionPlayedIds
+            if (newFiltered.isNotEmpty()) {
+                pool.addAll(newFiltered)
+            } else if (newSongs.isNotEmpty()) {
+                // Sesión agotada — añadir todas las recibidas ignorando sessionPlayedIds
+                pool.addAll(newSongs.filter { it.id !in existingPoolIds })
+            }
 
         } finally {
             isRefilling = false
         }
+    }
+
+    // Subfase 2.5 — pickNext(count: Int): List<Track>
+    private fun pickNext(count: Int): List<Track> {
+        val selected = mutableListOf<Track>()
+
+        // Preparación: obtener lastArtist y lastGenre del playlist actual
+        val currentPlaylist = playerManager.playlist.value
+        var lastArtist: String? = currentPlaylist.lastOrNull()?.artistName
+        var lastGenre: String? = currentPlaylist.lastOrNull()?.genre
+
+        // Asegurar que recentArtists tiene los 2 últimos artistas
+        if (recentArtists.isEmpty() && currentPlaylist.isNotEmpty()) {
+            val lastTwo = currentPlaylist.takeLast(2)
+            lastTwo.forEach { recentArtists.addLast(it.artistName) }
+        }
+
+        for (i in 0 until count) {
+            if (pool.isEmpty()) break
+
+            // Aplicar las 3 reglas con penalizaciones por prioridad
+            val idealCandidates = pool.filter { track ->
+                track.artistName != lastArtist && track.genre != lastGenre
+            }
+
+            val acceptableCandidates = if (idealCandidates.isEmpty()) {
+                pool.filter { track ->
+                    track.artistName != lastArtist
+                }
+            } else {
+                emptyList()
+            }
+
+            val fallbackCandidates = if (idealCandidates.isEmpty() && acceptableCandidates.isEmpty()) {
+                pool.toList()
+            } else {
+                emptyList()
+            }
+
+            val chosen = when {
+                idealCandidates.isNotEmpty() -> idealCandidates.random()
+                acceptableCandidates.isNotEmpty() -> acceptableCandidates.random()
+                fallbackCandidates.isNotEmpty() -> fallbackCandidates.random()
+                else -> pool.random()
+            }
+
+            pool.remove(chosen)
+            sessionPlayedIds.add(chosen.id)
+            selected.add(chosen)
+
+            // Actualizar lastArtist, lastGenre y recentArtists
+            lastArtist = chosen.artistName
+            lastGenre = chosen.genre
+            recentArtists.addLast(chosen.artistName)
+            if (recentArtists.size > 2) {
+                recentArtists.removeFirst()
+            }
+        }
+
+        return selected
     }
 }
