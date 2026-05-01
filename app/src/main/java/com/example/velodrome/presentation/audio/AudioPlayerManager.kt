@@ -32,7 +32,7 @@ import javax.inject.Singleton
 @Singleton
 class AudioPlayerManager @OptIn(UnstableApi::class)
 @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val scrobbleManager: ScrobbleManager,
     private val credentialsManager: CredentialsManager,
 ) {
