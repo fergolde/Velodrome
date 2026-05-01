@@ -478,13 +478,13 @@ fun QueueChip(onClick: () -> Unit) {
             Icon(
                 Icons.AutoMirrored.Filled.QueueMusic,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = stringResource(R.string.player_next_up).uppercase(),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.5.sp
