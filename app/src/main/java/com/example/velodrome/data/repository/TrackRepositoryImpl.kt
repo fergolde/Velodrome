@@ -136,20 +136,19 @@ class TrackRepositoryImpl @Inject constructor(
         val allLocalTracks = trackDao.getAllTracksOnce()
         Log.d(TAG_OFFLINE, "Total local tracks in DB: ${allLocalTracks.size}")
 
-        val cachedFiles = cacheManager.getCachedAudioFiles()
-        Log.d(TAG_OFFLINE, "Cached audio files found: ${cachedFiles.size}")
-        cachedFiles.forEach { file ->
-            Log.d(TAG_OFFLINE, "  CACHED_FILE: ${file.name} -> ${file.absolutePath}")
-        }
-
-        val cachedFilePaths = cachedFiles.map { it.absolutePath }.toSet()
+        // SimpleCache keys are SHA-1 hashes of the stream URLs (ExoPlayer default behavior).
+        // We need to match DB track IDs to cached files by checking if the file name
+        // contains any track ID. SimpleCache stores files as: <sha1_hash>.<range>.v3.exo
+        val cachedFiles = cacheManager.getCachedAudioFiles().filter { it.length() > 0 }
 
         val matched = allLocalTracks.filter { track ->
-            val cleanTitle = track.title.replace(Regex("[^a-zA-Z0-9]"), "")
-            val matches = cachedFilePaths.any { path ->
-                path.contains(track.id) || path.contains(cleanTitle)
+            // Check if any cached file name contains this track's ID as a substring
+            val matches = cachedFiles.any { file ->
+                file.name.contains(track.id)
             }
-            Log.d(TAG_OFFLINE, "Track '${track.title}' (id=${track.id}) -> ${if (matches) "MATCH" else "NO_MATCH"}")
+            if (matches) {
+                Log.d(TAG_OFFLINE, "MATCH: '${track.title}' (id=${track.id})")
+            }
             matches
         }
 
