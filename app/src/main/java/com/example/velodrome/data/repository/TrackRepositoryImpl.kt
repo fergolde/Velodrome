@@ -12,6 +12,7 @@ import com.example.velodrome.util.CacheManager
 import com.example.velodrome.util.CredentialsManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -136,16 +137,30 @@ class TrackRepositoryImpl @Inject constructor(
         val allLocalTracks = trackDao.getAllTracksOnce()
         Log.d(TAG_OFFLINE, "Total local tracks in DB: ${allLocalTracks.size}")
 
-        // SimpleCache keys are SHA-1 hashes of the stream URLs (ExoPlayer default behavior).
-        // We need to match DB track IDs to cached files by checking if the file name
-        // contains any track ID. SimpleCache stores files as: <sha1_hash>.<range>.v3.exo
-        val cachedFiles = cacheManager.getCachedAudioFiles().filter { it.length() > 0 }
+        val cachedKeys = cacheManager.getCachedKeys()
+        Log.d(TAG_OFFLINE, "SimpleCache keys count: ${cachedKeys.size}")
+
+        val serverUrl = credentialsManager.getServerUrl() ?: ""
+        val authParams = credentialsManager.generateAuthParams()
+
+        if (authParams == null) {
+            Log.d(TAG_OFFLINE, "No credentials - returning empty")
+            return emptyList()
+        }
+
+        val (username, token, salt) = authParams
 
         val matched = allLocalTracks.filter { track ->
-            // Check if any cached file name contains this track's ID as a substring
-            val matches = cachedFiles.any { file ->
-                file.name.contains(track.id)
-            }
+            // Reconstruct the exact stream URL used when caching
+            val streamUrl = "${serverUrl.trimEnd('/')}/rest/stream.view" +
+                "?id=${track.id}&u=$username&t=$token&s=$salt&v=1.16.1&c=Velodrome&maxBitRate=320"
+
+            // Hash it the same way Media3 SimpleCache does (SHA-1)
+            val sha1 = MessageDigest.getInstance("SHA-1")
+            val hash = sha1.digest(streamUrl.toByteArray(Charsets.UTF_8))
+            val hashHex = hash.joinToString("") { "%02x".format(it) }
+
+            val matches = cachedKeys.contains(hashHex)
             if (matches) {
                 Log.d(TAG_OFFLINE, "MATCH: '${track.title}' (id=${track.id})")
             }
