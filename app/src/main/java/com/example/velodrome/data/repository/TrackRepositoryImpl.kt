@@ -1,6 +1,5 @@
 package com.example.velodrome.data.repository
 
-import android.util.Log
 import com.example.velodrome.data.local.dao.TrackDao
 import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.data.local.mapper.toEntity
@@ -12,11 +11,8 @@ import com.example.velodrome.util.CacheManager
 import com.example.velodrome.util.CredentialsManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
-
-private const val TAG_OFFLINE = "LOCAL_OFFLINE"
 
 @Singleton
 class TrackRepositoryImpl @Inject constructor(
@@ -123,39 +119,14 @@ class TrackRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getOfflineTracks(): List<Track> {
-        Log.d(TAG_OFFLINE, "=== getOfflineTracks() called ===")
         val allLocalTracks = trackDao.getAllTracksOnce()
-        Log.d(TAG_OFFLINE, "Total local tracks in DB: ${allLocalTracks.size}")
-
+        // Obtenemos todas las claves actuales de la caché de Media3
         val cachedKeys = cacheManager.getCachedKeys()
-        Log.d(TAG_OFFLINE, "SimpleCache keys count: ${cachedKeys.size}")
 
-        val serverUrl = credentialsManager.getServerUrl() ?: ""
-        val authParams = credentialsManager.generateAuthParams()
-
-        if (authParams == null) {
-            Log.d(TAG_OFFLINE, "No credentials - returning empty")
-            return emptyList()
-        }
-
-        val (username, token, salt) = authParams
-
-        val matched = allLocalTracks.filter { track ->
-            val streamUrl = "${serverUrl.trimEnd('/')}/rest/stream.view" +
-                "?id=${track.id}&u=$username&t=$token&s=$salt&v=1.16.1&c=Velodrome&maxBitRate=320"
-
-            val sha1 = MessageDigest.getInstance("SHA-1")
-            val hash = sha1.digest(streamUrl.toByteArray(Charsets.UTF_8))
-            val hashHex = hash.joinToString("") { "%02x".format(it) }
-
-            val matches = cachedKeys.contains(hashHex)
-            if (matches) {
-                Log.d(TAG_OFFLINE, "MATCH: '${track.title}' (id=${track.id})")
-            }
-            matches
-        }
-
-        Log.d(TAG_OFFLINE, "Matched offline tracks: ${matched.size}")
-        return matched.map { it.toDomain() }
+        return allLocalTracks.filter { track ->
+            // La clave ahora es estática y predecible:
+            val stableKey = "navidrome_track_${track.id}"
+            cachedKeys.contains(stableKey)
+        }.map { it.toDomain() }
     }
 }
