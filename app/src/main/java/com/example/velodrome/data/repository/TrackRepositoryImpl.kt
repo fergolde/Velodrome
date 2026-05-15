@@ -1,5 +1,6 @@
 package com.example.velodrome.data.repository
 
+import android.util.Log
 import com.example.velodrome.data.local.dao.TrackDao
 import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.data.local.mapper.toEntity
@@ -13,6 +14,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val TAG_OFFLINE = "LOCAL_OFFLINE"
 
 @Singleton
 class TrackRepositoryImpl @Inject constructor(
@@ -129,18 +132,28 @@ class TrackRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getOfflineTracks(): List<Track> {
+        Log.d(TAG_OFFLINE, "=== getOfflineTracks() called ===")
         val allLocalTracks = trackDao.getAllTracksOnce()
-        val cachedFiles = cacheManager.getCachedAudioFiles()
+        Log.d(TAG_OFFLINE, "Total local tracks in DB: ${allLocalTracks.size}")
 
-        // Build a map of file name (without extension) -> file
-        // SimpleCache stores files with hashed keys, so we use track ID as fallback
+        val cachedFiles = cacheManager.getCachedAudioFiles()
+        Log.d(TAG_OFFLINE, "Cached audio files found: ${cachedFiles.size}")
+        cachedFiles.forEach { file ->
+            Log.d(TAG_OFFLINE, "  CACHED_FILE: ${file.name} -> ${file.absolutePath}")
+        }
+
         val cachedFilePaths = cachedFiles.map { it.absolutePath }.toSet()
 
-        return allLocalTracks.filter { track ->
-            // Check by track ID in the cached file path (heuristic match)
-            cachedFilePaths.any { path ->
-                path.contains(track.id) || path.contains(track.title.replace(Regex("[^a-zA-Z0-9]"), ""))
+        val matched = allLocalTracks.filter { track ->
+            val cleanTitle = track.title.replace(Regex("[^a-zA-Z0-9]"), "")
+            val matches = cachedFilePaths.any { path ->
+                path.contains(track.id) || path.contains(cleanTitle)
             }
-        }.map { it.toDomain() }
+            Log.d(TAG_OFFLINE, "Track '${track.title}' (id=${track.id}) -> ${if (matches) "MATCH" else "NO_MATCH"}")
+            matches
+        }
+
+        Log.d(TAG_OFFLINE, "Matched offline tracks: ${matched.size}")
+        return matched.map { it.toDomain() }
     }
 }
