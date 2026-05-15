@@ -1,5 +1,7 @@
 package com.example.velodrome.data.repository
 
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import com.example.velodrome.data.local.dao.TrackDao
 import com.example.velodrome.data.local.mapper.toDomain
 import com.example.velodrome.data.local.mapper.toEntity
@@ -15,7 +17,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class TrackRepositoryImpl @Inject constructor(
+class TrackRepositoryImpl @OptIn(UnstableApi::class)
+@Inject constructor(
     private val api: NavidromeApi,
     private val trackDao: TrackDao,
     private val credentialsManager: CredentialsManager,
@@ -118,15 +121,13 @@ class TrackRepositoryImpl @Inject constructor(
         }
     }
 
+    @OptIn(UnstableApi::class)
     override suspend fun getOfflineTracks(): List<Track> {
         val allLocalTracks = trackDao.getAllTracksOnce()
-        // Obtenemos todas las claves actuales de la caché de Media3
-        val cachedKeys = cacheManager.getCachedKeys()
 
         return allLocalTracks.filter { track ->
-            // La clave ahora es estática y predecible:
-            val stableKey = "navidrome_track_${track.id}"
-            cachedKeys.contains(stableKey)
+            // Validamos que el track esté completo (95%+ descargado)
+            cacheManager.isTrackFullyCached(track.id, track.sizeBytes)
         }.map { it.toDomain() }
     }
 }
