@@ -56,15 +56,7 @@ class TrackRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getStreamUrl(trackId: String): String {
-        val serverUrl = credentialsManager.getServerUrl() ?: ""
-        val authParams = credentialsManager.generateAuthParams()
-
-        return if (authParams != null) {
-            val (username, token, salt) = authParams
-            "${serverUrl}rest/stream.view?id=$trackId&u=$username&t=$token&s=$salt&v=1.16.1&c=Velodrome&maxBitRate=320"
-        } else {
-            "${serverUrl}rest/stream.view?id=$trackId&maxBitRate=320"
-        }
+        return credentialsManager.getStreamUrl(trackId)
     }
 
     private fun mapSongDto(dto: SongDto, albumId: String): Track {
@@ -111,7 +103,6 @@ class TrackRepositoryImpl @Inject constructor(
 
     override suspend fun searchRemoteTracks(query: String): Result<List<Track>> {
         return runCatching {
-            // Aumentamos el songCount a 100 para tener un margen mayor
             val response = api.search3(query = query, songCount = 100)
             val res = response.response
 
@@ -119,7 +110,6 @@ class TrackRepositoryImpl @Inject constructor(
                 ?: res.searchResult2?.songs
                 ?: emptyList()
 
-            // Confiar en los resultados de la API de Navidrome
             songDtos.map { mapSongDto(it, it.albumId ?: "search_res") }
         }
     }
@@ -133,7 +123,6 @@ class TrackRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getOfflineTracks(): List<Track> {
-<<<<<<< HEAD
         Log.d(TAG_OFFLINE, "=== getOfflineTracks() called ===")
         val allLocalTracks = trackDao.getAllTracksOnce()
         Log.d(TAG_OFFLINE, "Total local tracks in DB: ${allLocalTracks.size}")
@@ -152,11 +141,9 @@ class TrackRepositoryImpl @Inject constructor(
         val (username, token, salt) = authParams
 
         val matched = allLocalTracks.filter { track ->
-            // Reconstruct the exact stream URL used when caching
             val streamUrl = "${serverUrl.trimEnd('/')}/rest/stream.view" +
                 "?id=${track.id}&u=$username&t=$token&s=$salt&v=1.16.1&c=Velodrome&maxBitRate=320"
 
-            // Hash it the same way Media3 SimpleCache does (SHA-1)
             val sha1 = MessageDigest.getInstance("SHA-1")
             val hash = sha1.digest(streamUrl.toByteArray(Charsets.UTF_8))
             val hashHex = hash.joinToString("") { "%02x".format(it) }
@@ -168,10 +155,7 @@ class TrackRepositoryImpl @Inject constructor(
             matches
         }
 
-Log.d(TAG_OFFLINE, "Matched offline tracks: ${matched.size}")
+        Log.d(TAG_OFFLINE, "Matched offline tracks: ${matched.size}")
         return matched.map { it.toDomain() }
-    }
-        }.map { it.toDomain() }
->>>>>>> 2d93634 (fix: exploration buttons - offline detection, Room migration, Top100 fallback)
     }
 }

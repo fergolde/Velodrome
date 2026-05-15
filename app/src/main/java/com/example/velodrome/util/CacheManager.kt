@@ -13,11 +13,11 @@ import javax.inject.Singleton
 /**
  * Manages app cache for images and music.
  * Handles size calculation and cleanup when limits are exceeded.
- * 
+ *
  * Cache strategy:
  * - Images: stored in context.cacheDir (internal storage)
  * - Music: stored in context.filesDir/musicCache (app-specific external storage)
- * 
+ *
  * Cleanup uses official APIs from Media3 (SimpleCache) and Coil (ImageLoader).
  * File.deleteRecursively() is NOT used to avoid corrupting Media3's cache index.
  */
@@ -27,7 +27,7 @@ class CacheManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val simpleCache: androidx.media3.datasource.cache.SimpleCache
 ) {
-    
+
     /**
      * LazyImageLoader from Coil application context.
      * Coil sets this via ImageLoaderFactory in VelodromeApp.
@@ -54,7 +54,7 @@ class CacheManager @Inject constructor(
      * Persists until explicitly cleared or when storage is low.
      */
     val musicCacheDir: File
-        get() = File(context.filesDir, "audioCache").also { it.mkdirs() } // era "musicCache"
+        get() = File(context.filesDir, "audioCache").also { it.mkdirs() }
 
     // --- Size Calculation ---
 
@@ -136,35 +136,17 @@ class CacheManager @Inject constructor(
      */
     fun getCachedKeys(): Set<String> = simpleCache.keys
 
-/**
+    /**
      * Returns the File objects for all cached audio tracks.
      * Used to determine which tracks are available for offline playback.
      * SimpleCache stores files with hashed names (no extension), so we scan the whole directory.
      */
     fun getCachedAudioFiles(): List<File> {
         val cacheDir = File(context.filesDir, "audioCache")
-        if (!cacheDir.exists()) {
-            android.util.Log.d("LOCAL_OFFLINE", "Cache dir does not exist: ${cacheDir.absolutePath}")
-            return emptyList()
-        }
-        val allFiles = cacheDir.walkTopDown().filter { it.isFile }.toList()
-        android.util.Log.d("LOCAL_OFFLINE", "All files in audioCache (${allFiles.size}):")
-        allFiles.forEach { f -> android.util.Log.d("LOCAL_OFFLINE", "  FILE: ${f.name} | ${f.length()} bytes | ${f.absolutePath}") }
-        return allFiles
-    }
-        val allFiles = cacheDir.walkTopDown().filter { it.isFile }.toList()
-        android.util.Log.d("LOCAL_OFFLINE", "All files in audioCache (${allFiles.size}):")
-        allFiles.forEach { f -> android.util.Log.d("LOCAL_OFFLINE", "  FILE: ${f.name} | ${f.length()} bytes | ${f.absolutePath}") }
-        return allFiles
-=======
-     */
-    fun getCachedAudioFiles(): List<File> {
-        val cacheDir = File(context.filesDir, "audioCache")
         if (!cacheDir.exists()) return emptyList()
         return cacheDir.walkTopDown()
-            .filter { it.isFile && (it.extension in listOf("mp3", "flac", "m4a", "ogg", "wav", "aac", "opus")) }
+            .filter { it.isFile }
             .toList()
->>>>>>> 2d93634 (fix: exploration buttons - offline detection, Room migration, Top100 fallback)
     }
 
     // --- Private Helpers ---
@@ -174,7 +156,7 @@ class CacheManager @Inject constructor(
      */
     private fun calculateDirectorySize(directory: File): Long {
         if (!directory.exists()) return 0L
-        
+
         return directory.walkTopDown()
             .filter { it.isFile }
             .sumOf { it.length() }
