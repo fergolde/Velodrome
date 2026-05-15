@@ -34,7 +34,7 @@ object NavidromeAuth {
             val md = MessageDigest.getInstance("MD5")
             val digest = md.digest(input.toByteArray(charset("UTF-8")))
             digest.joinToString("") { "%02x".format(it) }
-        } catch (e: NoSuchAlgorithmException) {
+        } catch (_: NoSuchAlgorithmException) {
             ""
         }
     }

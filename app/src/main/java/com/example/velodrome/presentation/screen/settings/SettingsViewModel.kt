@@ -1,7 +1,9 @@
 package com.example.velodrome.presentation.screen.settings
 
+import androidx.annotation.OptIn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.util.UnstableApi
 import com.example.velodrome.BuildConfig
 import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.util.CacheManager
@@ -35,6 +37,7 @@ data class SettingsUiState(
  * ViewModel for the Settings screen.
  * Manages user preferences and cache configuration.
  */
+@UnstableApi
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
@@ -173,6 +176,7 @@ class SettingsViewModel @Inject constructor(
     /**
      * Clear all caches immediately.
      */
+    @OptIn(UnstableApi::class)
     fun clearAllCaches() {
         viewModelScope.launch {
             _isClearingCache.value = true
@@ -185,6 +189,7 @@ class SettingsViewModel @Inject constructor(
     /**
      * Refresh current cache sizes display.
      */
+    @OptIn(UnstableApi::class)
     private fun refreshCacheSizes() {
         _currentCacheSizes.value = Pair(
             cacheManager.getImageCacheSizeFormatted(),

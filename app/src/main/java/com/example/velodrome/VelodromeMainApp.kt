@@ -21,8 +21,6 @@ import okio.Path.Companion.toOkioPath
 import java.io.File
 import javax.inject.Inject
 
-private const val TAG = "VelodromeApp"
-
 @HiltAndroidApp
 class VelodromeApp : Application(), SingletonImageLoader.Factory, Configuration.Provider {
 

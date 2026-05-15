@@ -121,7 +121,7 @@ data class AlbumDetailDto(
     @Json(name = "genre") val genre: String? = null,
 
     // ❌ puede venir null en Subsonic
-    @Json(name = "songs") val songs: List<SongDto>? = null,
+    @Json(name = "song") val songs: List<SongDto>? = null,
 
     @Json(name = "songCount") val songCount: Int? = null,
     @Json(name = "duration") val duration: Int? = null

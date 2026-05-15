@@ -9,7 +9,6 @@ import javax.inject.Singleton
  */
 @Singleton
 class CredentialsManagerHolder @Inject constructor(
-    credentialsManager: CredentialsManager
+    val credentialsManager: CredentialsManager
 ) {
-    val credentialsManager: CredentialsManager = credentialsManager
 }

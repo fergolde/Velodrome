@@ -73,7 +73,8 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
             trackNumber = dto.track ?: 0,
             year = dto.year,
             isCached = false,
-            coverArtId = effectiveCoverArtId
+            coverArtId = effectiveCoverArtId,
+            playCount = dto.playCount ?: 0
         )
     }
 
@@ -166,6 +167,10 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
                 .sortedByDescending { it.playCount }
                 .take(size)
                 .shuffled()
+
+            result.forEach { track ->
+                Log.d("TOP_GLOBAL", "RAW: ${track.title} - playCount=${track.playCount}")
+            }
 
             result
         }

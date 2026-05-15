@@ -2,7 +2,6 @@ package com.example.velodrome.util
 
 import android.content.Context
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.cache.CacheSpan
 import coil3.ImageLoader
 import coil3.annotation.ExperimentalCoilApi
 import coil3.imageLoader
@@ -161,18 +160,6 @@ class CacheManager @Inject constructor(
         return downloadedBytes >= (actualExpectedSize * 0.90)
     }
 
-    /**
-     * Returns the File objects for all cached audio tracks.
-     * Used to determine which tracks are available for offline playback.
-     * SimpleCache stores files with hashed names (no extension), so we scan the whole directory.
-     */
-    fun getCachedAudioFiles(): List<File> {
-        val cacheDir = File(context.filesDir, "audioCache")
-        if (!cacheDir.exists()) return emptyList()
-        return cacheDir.walkTopDown()
-            .filter { it.isFile }
-            .toList()
-    }
 
     // --- Private Helpers ---
 

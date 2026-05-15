@@ -30,7 +30,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
 import com.example.velodrome.di.CredentialsEntryPoint
 import com.example.velodrome.presentation.components.MiniPlayer
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
@@ -245,14 +244,12 @@ fun MainScaffold(
                             )
                         }
                         composable<Routes.ArtistDetail> { backStackEntry ->
-                            val route: Routes.ArtistDetail = backStackEntry.toRoute()
                             ArtistDetailScreen(
                                 onBackClick = { navController.popBackStack() },
                                 onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) }
                             )
                         }
                         composable<Routes.AlbumDetail> { backStackEntry ->
-                            val route: Routes.AlbumDetail = backStackEntry.toRoute()
                             AlbumDetailScreen(
                                 onBackClick = { navController.popBackStack() }
                             )

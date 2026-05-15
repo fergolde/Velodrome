@@ -25,8 +25,6 @@ class AuthInterceptor @Inject constructor(
     private val credentialsManager: CredentialsManager
 ) : Interceptor {
 
-    private val TAG = "AuthInterceptor"
-
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
         val originalUrl = originalRequest.url
