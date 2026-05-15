@@ -140,11 +140,11 @@ class CacheManager @Inject constructor(
     /**
      * Validates if a track is fully cached by comparing downloaded bytes vs expected size.
      * SimpleCache.keys returns anything that touched the disk, even partial downloads.
-     * This method ensures only fully (95%+) downloaded tracks are marked as offline.
+     * This method ensures only fully (90%+) downloaded tracks are marked as offline.
      *
      * @param trackId The track ID to check
      * @param expectedSizeBytes The expected file size from the API (track.sizeBytes)
-     * @return true if track is at least 95% cached
+     * @return true if track is at least 90% cached
      */
     fun isTrackFullyCached(trackId: String, expectedSizeBytes: Long): Boolean {
         val key = "navidrome_track_$trackId"
@@ -157,8 +157,8 @@ class CacheManager @Inject constructor(
         // If sizeBytes is 0 (API didn't provide it), use 1MB as minimum threshold
         val actualExpectedSize = if (expectedSizeBytes == 0L) 1024 * 1024L else expectedSizeBytes
 
-        // Consider fully cached if we have 95% or more of the file
-        return downloadedBytes >= (actualExpectedSize * 0.95)
+        // Consider fully cached if we have 90% or more of the file
+        return downloadedBytes >= (actualExpectedSize * 0.90)
     }
 
     /**

@@ -8,6 +8,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.session.MediaSession
@@ -42,10 +43,23 @@ class AudioPlayerService : MediaSessionService() {
             .setUsage(C.USAGE_MEDIA)
             .build()
 
+        val loadControl = DefaultLoadControl.Builder()
+            // Configuramos el buffer máximo a 20 minutos (1.200.000 ms)
+            // ExoPlayer no parará de descargar hasta tener 20 mins cacheados.
+            // Esto significa que bajará la canción actual entera en segundos.
+            .setBufferDurationsMs(
+                DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
+                1200000, // 20 minutos
+                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
+                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
+            )
+            .build()
+
         // Configuramos ExoPlayer con soporte nativo para SimpleCache
         exoPlayer = ExoPlayer.Builder(this)
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
+            .setLoadControl(loadControl)
             .setMediaSourceFactory(
                 androidx.media3.exoplayer.source.ProgressiveMediaSource.Factory(cacheDataSourceFactory)
             )

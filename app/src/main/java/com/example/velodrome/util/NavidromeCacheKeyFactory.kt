@@ -1,9 +1,11 @@
 package com.example.velodrome.util
 
 import android.net.Uri
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.cache.CacheKeyFactory
 import androidx.media3.datasource.DataSpec
 
+@UnstableApi
 class NavidromeCacheKeyFactory : CacheKeyFactory {
     override fun buildCacheKey(dataSpec: DataSpec): String {
         val uri = dataSpec.uri
