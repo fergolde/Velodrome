@@ -11,6 +11,7 @@ import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.presentation.audio.AudioPlayerManager
 import com.example.velodrome.presentation.audio.ScrobbleManager
 import com.example.velodrome.util.CredentialsManager
+import com.example.velodrome.util.NavidromeCacheKeyFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -54,6 +55,7 @@ object AudioModule {
         return CacheDataSource.Factory()
             .setCache(simpleCache)
             .setUpstreamDataSourceFactory(httpDataSourceFactory)
+            .setCacheKeyFactory(NavidromeCacheKeyFactory())
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
     }
 
