@@ -226,6 +226,7 @@ class HomeViewModel @Inject constructor(
      * Plays only locally cached/offline tracks.
      */
     fun playOfflineOnly() {
+<<<<<<< HEAD
         Log.d(TAG_OFFLINE, "=== playOfflineOnly() called ===")
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
@@ -236,10 +237,9 @@ class HomeViewModel @Inject constructor(
                 Log.d(TAG_OFFLINE, "Calling playerManager.playNow with ${offlineTracks.size} tracks")
                 playerManager.playNow(offlineTracks.shuffled())
                 playerManager.setLoadMoreCallback { /* no auto-load for offline list */ }
-                Log.d(TAG_OFFLINE, "playerManager.playNow called successfully")
+Log.d(TAG_OFFLINE, "playerManager.playNow called successfully")
             } else {
                 Log.d(TAG_OFFLINE, "No offline tracks found - playlist stays empty")
-            }
             _uiState.update { it.copy(isLoading = false) }
         }
     }

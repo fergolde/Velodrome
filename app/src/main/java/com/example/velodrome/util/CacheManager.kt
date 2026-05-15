@@ -136,7 +136,7 @@ class CacheManager @Inject constructor(
      */
     fun getCachedKeys(): Set<String> = simpleCache.keys
 
-    /**
+/**
      * Returns the File objects for all cached audio tracks.
      * Used to determine which tracks are available for offline playback.
      * SimpleCache stores files with hashed names (no extension), so we scan the whole directory.
@@ -151,6 +151,20 @@ class CacheManager @Inject constructor(
         android.util.Log.d("LOCAL_OFFLINE", "All files in audioCache (${allFiles.size}):")
         allFiles.forEach { f -> android.util.Log.d("LOCAL_OFFLINE", "  FILE: ${f.name} | ${f.length()} bytes | ${f.absolutePath}") }
         return allFiles
+    }
+        val allFiles = cacheDir.walkTopDown().filter { it.isFile }.toList()
+        android.util.Log.d("LOCAL_OFFLINE", "All files in audioCache (${allFiles.size}):")
+        allFiles.forEach { f -> android.util.Log.d("LOCAL_OFFLINE", "  FILE: ${f.name} | ${f.length()} bytes | ${f.absolutePath}") }
+        return allFiles
+=======
+     */
+    fun getCachedAudioFiles(): List<File> {
+        val cacheDir = File(context.filesDir, "audioCache")
+        if (!cacheDir.exists()) return emptyList()
+        return cacheDir.walkTopDown()
+            .filter { it.isFile && (it.extension in listOf("mp3", "flac", "m4a", "ogg", "wav", "aac", "opus")) }
+            .toList()
+>>>>>>> 2d93634 (fix: exploration buttons - offline detection, Room migration, Top100 fallback)
     }
 
     // --- Private Helpers ---

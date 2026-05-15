@@ -133,6 +133,7 @@ class TrackRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getOfflineTracks(): List<Track> {
+<<<<<<< HEAD
         Log.d(TAG_OFFLINE, "=== getOfflineTracks() called ===")
         val allLocalTracks = trackDao.getAllTracksOnce()
         Log.d(TAG_OFFLINE, "Total local tracks in DB: ${allLocalTracks.size}")
@@ -167,7 +168,10 @@ class TrackRepositoryImpl @Inject constructor(
             matches
         }
 
-        Log.d(TAG_OFFLINE, "Matched offline tracks: ${matched.size}")
+Log.d(TAG_OFFLINE, "Matched offline tracks: ${matched.size}")
         return matched.map { it.toDomain() }
+    }
+        }.map { it.toDomain() }
+>>>>>>> 2d93634 (fix: exploration buttons - offline detection, Room migration, Top100 fallback)
     }
 }
