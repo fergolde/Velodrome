@@ -93,4 +93,10 @@ interface NavidromeApi {
     suspend fun getMusicDirectory(
         @Query("id") id: String
     ): SubsonicResponse
+
+    // Top songs endpoint for HomeScreen exploration
+    @GET("rest/getTopSongs.view")
+    suspend fun getTopSongs(
+        @Query("count") count: Int = 100
+    ): SubsonicResponse
 }

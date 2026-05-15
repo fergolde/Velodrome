@@ -200,4 +200,46 @@ class HomeViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = false, isPlaying = true) }
         }
     }
+
+    /**
+     * Plays the Top 100 most played songs.
+     * Note: Navidrome getTopSongs requires artist param (Last.fm lookup).
+     * Fallback: getRandomSongs as proxy for library favorites.
+     */
+    fun playTop100() {
+        _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch {
+            trackUseCases.getRandomSongs(size = 100).onSuccess { tracks ->
+                if (tracks.isNotEmpty()) {
+                    playerManager.playNow(tracks)
+                    playerManager.setLoadMoreCallback { /* no auto-load for static list */ }
+                }
+            }
+            _uiState.update { it.copy(isLoading = false) }
+        }
+    }
+
+    /**
+     * Plays only locally cached/offline tracks.
+     */
+    fun playOfflineOnly() {
+        _uiState.update { it.copy(isLoading = true) }
+        viewModelScope.launch {
+            val offlineTracks = trackUseCases.getOfflineTracks()
+            if (offlineTracks.isNotEmpty()) {
+                playerManager.playNow(offlineTracks.shuffled())
+                playerManager.setLoadMoreCallback { /* no auto-load for offline list */ }
+            }
+            _uiState.update { it.copy(isLoading = false) }
+        }
+    }
+
+    /**
+     * Starts the discovery radio mode with random songs.
+     */
+    fun playDiscovery() {
+        _uiState.update { it.copy(isLoading = true) }
+        smartRadioEngine.startRadio(RadioContext.Random)
+        _uiState.update { it.copy(isLoading = false) }
+    }
 }

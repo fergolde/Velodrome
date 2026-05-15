@@ -35,6 +35,7 @@ data class SubsonicResponseDto(
     @Json(name = "songs") val songs: List<SongDto>? = null,
     @Json(name = "randomSongs") val randomSongs: RandomSongsDto? = null,
     @Json(name = "songsByGenre") val songsByGenre: SongsByGenreDto? = null,
+    @Json(name = "topSongs") val topSongs: TopSongsDto? = null,
 
     val error: ErrorDto? = null
 )
@@ -184,5 +185,12 @@ data class RandomSongsDto(
 
 @JsonClass(generateAdapter = true)
 data class SongsByGenreDto(
+    @Json(name = "song") val song: List<SongDto>? = null
+)
+
+// ================= TOP SONGS =================
+
+@JsonClass(generateAdapter = true)
+data class TopSongsDto(
     @Json(name = "song") val song: List<SongDto>? = null
 )

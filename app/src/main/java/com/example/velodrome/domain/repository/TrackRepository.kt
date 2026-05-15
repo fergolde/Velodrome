@@ -14,4 +14,6 @@ interface TrackRepository {
     suspend fun getRandomSongsByGenre(genre: String, size: Int = 50): Result<List<Track>>
     suspend fun getRandomSongs(size: Int = 50, genre: String? = null, fromYear: Int? = null, toYear: Int? = null): Result<List<Track>>
     suspend fun searchRemoteTracks(query: String): Result<List<Track>>
+    suspend fun getTopSongs(count: Int = 100): Result<List<Track>>
+    suspend fun getOfflineTracks(): List<Track>
 }

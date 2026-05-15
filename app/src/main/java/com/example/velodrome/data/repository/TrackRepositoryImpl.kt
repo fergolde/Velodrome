@@ -7,6 +7,7 @@ import com.example.velodrome.data.remote.NavidromeApi
 import com.example.velodrome.data.remote.dto.SongDto
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.domain.repository.TrackRepository
+import com.example.velodrome.util.CacheManager
 import com.example.velodrome.util.CredentialsManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -17,7 +18,8 @@ import javax.inject.Singleton
 class TrackRepositoryImpl @Inject constructor(
     private val api: NavidromeApi,
     private val trackDao: TrackDao,
-    private val credentialsManager: CredentialsManager
+    private val credentialsManager: CredentialsManager,
+    private val cacheManager: CacheManager
 ) : TrackRepository {
 
     override fun observeTracksByAlbum(albumId: String): Flow<List<Track>> {
@@ -116,5 +118,29 @@ class TrackRepositoryImpl @Inject constructor(
             // Confiar en los resultados de la API de Navidrome
             songDtos.map { mapSongDto(it, it.albumId ?: "search_res") }
         }
+    }
+
+    override suspend fun getTopSongs(count: Int): Result<List<Track>> {
+        return runCatching {
+            val response = api.getTopSongs(count)
+            val songDtos = response.response.topSongs?.song ?: emptyList()
+            songDtos.map { mapSongDto(it, it.albumId ?: "") }
+        }
+    }
+
+    override suspend fun getOfflineTracks(): List<Track> {
+        val allLocalTracks = trackDao.getAllTracksOnce()
+        val cachedFiles = cacheManager.getCachedAudioFiles()
+
+        // Build a map of file name (without extension) -> file
+        // SimpleCache stores files with hashed keys, so we use track ID as fallback
+        val cachedFilePaths = cachedFiles.map { it.absolutePath }.toSet()
+
+        return allLocalTracks.filter { track ->
+            // Check by track ID in the cached file path (heuristic match)
+            cachedFilePaths.any { path ->
+                path.contains(track.id) || path.contains(track.title.replace(Regex("[^a-zA-Z0-9]"), ""))
+            }
+        }.map { it.toDomain() }
     }
 }

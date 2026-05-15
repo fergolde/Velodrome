@@ -14,5 +14,6 @@ data class TrackEntity(
     val durationSec: Int,
     val trackNumber: Int,
     val coverArtId: String?,
+    val localFilePath: String? = null,
     val updatedAt: Long = System.currentTimeMillis()
 )

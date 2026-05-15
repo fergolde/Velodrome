@@ -3,6 +3,7 @@ package com.example.velodrome.di
 import android.content.Context
 import androidx.room.Room
 import com.example.velodrome.data.local.VelodromeDatabase
+import com.example.velodrome.data.local.MIGRATION_1_2
 import com.example.velodrome.data.local.dao.AlbumDao
 import com.example.velodrome.data.local.dao.ArtistDao
 import com.example.velodrome.data.local.dao.ScrobbleDao
@@ -27,7 +28,7 @@ object DatabaseModule {
             context,
             VelodromeDatabase::class.java,
             VelodromeDatabase.DATABASE_NAME
-        ).build()
+        ).addMigrations(MIGRATION_1_2).build()
     }
 
     @Provides

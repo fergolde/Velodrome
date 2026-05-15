@@ -130,6 +130,24 @@ class CacheManager @Inject constructor(
         clearMusicCache()
     }
 
+    /**
+     * Returns the set of cached audio keys from Media3 SimpleCache.
+     * Used to determine which tracks are available offline.
+     */
+    fun getCachedKeys(): Set<String> = simpleCache.keys
+
+    /**
+     * Returns the File objects for all cached audio tracks.
+     * Used to determine which tracks are available for offline playback.
+     */
+    fun getCachedAudioFiles(): List<File> {
+        val cacheDir = File(context.filesDir, "audioCache")
+        if (!cacheDir.exists()) return emptyList()
+        return cacheDir.walkTopDown()
+            .filter { it.isFile && (it.extension in listOf("mp3", "flac", "m4a", "ogg", "wav", "aac", "opus")) }
+            .toList()
+    }
+
     // --- Private Helpers ---
 
     /**

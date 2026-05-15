@@ -55,7 +55,7 @@ fun TrackEntity.toDomain(): Track = Track(
     sizeBytes = 0, // Not stored locally
     bitrate = 0, // Not stored locally
     trackNumber = trackNumber,
-    isCached = false,
+    isCached = localFilePath != null,
     coverArtId = coverArtId
 )
 
@@ -67,5 +67,6 @@ fun Track.toEntity(): TrackEntity = TrackEntity(
     title = title,
     durationSec = durationSec,
     trackNumber = trackNumber,
-    coverArtId = coverArtId
+    coverArtId = coverArtId,
+    localFilePath = null
 )

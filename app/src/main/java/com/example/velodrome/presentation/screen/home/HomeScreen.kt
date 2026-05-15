@@ -17,22 +17,27 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.TravelExplore
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Album
 
@@ -96,6 +101,42 @@ fun HomeScreen(
                 albums = state.recentlyPlayedAlbums,
                 onAlbumClick = onAlbumClick
             )
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        // Explora tu Biblioteca - Feature Cards
+        item {
+            SectionHeader(title = "Explora tu Biblioteca", subtitle = "MIXES Y DESCUBRIMIENTO")
+            Spacer(modifier = Modifier.height(16.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                item {
+                    FeatureCard(
+                        title = "Local Offline",
+                        subtitle = "Sin gastar datos",
+                        icon = Icons.Default.OfflinePin,
+                        backgroundColor = Color(0xFF0F6E56),
+                        onClick = { viewModel.playOfflineOnly() }
+                    )
+                }
+                item {
+                    FeatureCard(
+                        title = "Top 100",
+                        subtitle = "Tus favoritas",
+                        icon = Icons.Default.TrendingUp,
+                        backgroundColor = Color(0xFF854F0B),
+                        onClick = { viewModel.playTop100() }
+                    )
+                }
+                item {
+                    FeatureCard(
+                        title = "Tesoros Ocultos",
+                        subtitle = "Descubrimiento",
+                        icon = Icons.Default.TravelExplore,
+                        backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        onClick = { viewModel.playDiscovery() }
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(100.dp))
         }
     }
@@ -155,6 +196,48 @@ fun RecentAlbumsRow(
                 album = album,
                 onClick = { onAlbumClick(album.id) }
             )
+        }
+    }
+}
+
+@Composable
+fun FeatureCard(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    backgroundColor: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .size(width = 160.dp, height = 100.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = backgroundColor
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(28.dp)
+            )
+            Column {
+                Text(
+                    text = title,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = subtitle,
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 11.sp
+                )
+            }
         }
     }
 }
