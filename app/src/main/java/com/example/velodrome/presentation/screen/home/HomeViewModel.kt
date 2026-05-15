@@ -210,7 +210,7 @@ class HomeViewModel @Inject constructor(
     fun playTop100() {
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            trackUseCases.getRandomSongs(size = 100).onSuccess { tracks ->
+            trackUseCases.GetTopGlobalTracksUseCase(size = 100).onSuccess { tracks ->
                 if (tracks.isNotEmpty()) {
                     playerManager.playNow(tracks)
                     playerManager.setLoadMoreCallback { /* no auto-load for static list */ }
@@ -250,4 +250,5 @@ class HomeViewModel @Inject constructor(
         smartRadioEngine.startRadio(RadioContext.Random)
         _uiState.update { it.copy(isLoading = false) }
     }
+
 }

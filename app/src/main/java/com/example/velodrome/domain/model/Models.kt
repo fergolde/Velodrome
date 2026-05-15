@@ -31,6 +31,7 @@ data class Track(
     val trackNumber: Int,
     val year: Int? = null,
     val isCached: Boolean = false,
+    val playCount: Int = 0,
     val coverArtId: String? = null
 )
 

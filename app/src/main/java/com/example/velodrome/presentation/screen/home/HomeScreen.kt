@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.TravelExplore
@@ -122,7 +123,7 @@ fun HomeScreen(
                     FeatureCard(
                         title = "Top 100",
                         subtitle = "Tus favoritas",
-                        icon = Icons.Default.TrendingUp,
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
                         backgroundColor = Color(0xFF854F0B),
                         onClick = { viewModel.playTop100() }
                     )

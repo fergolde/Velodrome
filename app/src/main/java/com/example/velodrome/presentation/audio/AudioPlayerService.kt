@@ -14,7 +14,13 @@ import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.example.velodrome.MainActivity
+import com.example.velodrome.data.local.dao.TrackDao
+import com.example.velodrome.data.local.entity.TrackEntity
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -30,6 +36,12 @@ class AudioPlayerService : MediaSessionService() {
 
     @Inject
     lateinit var scrobbleManager: ScrobbleManager
+
+    @Inject
+    lateinit var trackDao: TrackDao
+
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(serviceJob + Dispatchers.IO)
 
     private var mediaSession: MediaSession? = null
     private var exoPlayer: ExoPlayer? = null
@@ -93,6 +105,7 @@ class AudioPlayerService : MediaSessionService() {
             mediaSession = null
         }
         exoPlayer = null
+        serviceJob.cancel()
         super.onDestroy()
     }
 
@@ -137,6 +150,27 @@ class AudioPlayerService : MediaSessionService() {
                 scrobbledTracks.remove(trackId)
                 scrobbleManager.onTrackChanged()
                 scrobbleManager.sendNowPlaying(trackId)
+
+                // Guardar en Room para disponibilidad offline
+                val meta = it.mediaMetadata
+                serviceScope.launch {
+                    val existing = trackDao.getTrackById(trackId)
+                    if (existing == null) {
+                        trackDao.insertTrack(
+                            TrackEntity(
+                                id = trackId,
+                                albumId = "",
+                                title = meta.title?.toString() ?: "Unknown",
+                                artistName = meta.artist?.toString() ?: "",
+                                albumName = meta.albumTitle?.toString() ?: "",
+                                durationSec = 0,
+                                trackNumber = 0,
+                                coverArtId = meta.artworkUri?.toString(),
+                                sizeBytes = 0L
+                            )
+                        )
+                    }
+                }
             }
         }
 

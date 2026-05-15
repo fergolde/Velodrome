@@ -157,7 +157,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     private fun updateCurrentTrackFromMediaItem(mediaItem: MediaItem) {
         val playlist = _playlist.value
-        val index = mediaItem.mediaId.toIntOrNull() ?: -1
+        val index = playlist.indexOfFirst { it.id == mediaItem.mediaId }
         if (index in playlist.indices) {
             val previousId = _currentTrackId.value  // guardar ANTES de actualizar
             _currentIndex.value = index
@@ -180,7 +180,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val mediaItems = playlist.mapIndexed { index, t ->
             val streamUrl = getStreamUrl(t)
             val coverUrl = t.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
-            MediaItem.Builder().setMediaId(index.toString()).setUri(streamUrl)
+            MediaItem.Builder().setMediaId(t.id).setUri(streamUrl)
                 .setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artistName).setAlbumTitle(t.albumName)
                     .apply { coverUrl?.let { setArtworkUri(it.toUri()) } }.build()).build()
         }
@@ -242,11 +242,10 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     fun appendToPlaylist(tracks: List<Track>) {
         if (tracks.isEmpty()) return
         _playlist.value += tracks
-        val startIndex = _playlist.value.size - tracks.size
         val mediaItems = tracks.mapIndexed { index, t ->
             val streamUrl = getStreamUrl(t)
             val coverUrl = t.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
-            MediaItem.Builder().setMediaId((startIndex + index).toString()).setUri(streamUrl)
+            MediaItem.Builder().setMediaId(t.id).setUri(streamUrl)
                 .setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artistName).setAlbumTitle(t.albumName)
                     .apply { coverUrl?.let { setArtworkUri(it.toUri()) } }.build()).build()
         }

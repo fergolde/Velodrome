@@ -149,7 +149,9 @@ data class SongDto(
     @Json(name = "suffix") val suffix: String? = null,
     @Json(name = "duration") val duration: Int? = null,
     @Json(name = "bitRate") val bitRate: Int? = null,
+    @Json(name = "playCount") val playCount: Int? = null,
     @Json(name = "path") val path: String? = null
+
 )
 
 // ================= SEARCH =================

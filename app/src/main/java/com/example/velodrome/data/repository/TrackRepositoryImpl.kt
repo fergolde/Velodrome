@@ -1,6 +1,7 @@
 package com.example.velodrome.data.repository
 
 import androidx.annotation.OptIn
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import com.example.velodrome.data.local.dao.TrackDao
 import com.example.velodrome.data.local.mapper.toDomain
@@ -125,9 +126,48 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
     override suspend fun getOfflineTracks(): List<Track> {
         val allLocalTracks = trackDao.getAllTracksOnce()
 
+        // LOG 1: ¿Hay tracks en la BD?
+        Log.d("LOCAL_OFFLINE", "Total tracks in DB: ${allLocalTracks.size}")
+
+        // LOG 2: ¿Qué keys hay en SimpleCache?
+        val cachedKeys = cacheManager.getCachedKeys()
+        Log.d("LOCAL_OFFLINE", "SimpleCache keys (${cachedKeys.size}): $cachedKeys")
+
         return allLocalTracks.filter { track ->
-            // Validamos que el track esté completo (95%+ descargado)
-            cacheManager.isTrackFullyCached(track.id, track.sizeBytes)
+            val key = "navidrome_track_${track.id}"
+            val spans = cacheManager.isTrackFullyCached(track.id, track.sizeBytes)
+            Log.d("LOCAL_OFFLINE", "Track ${track.id} -> key=$key, cached=$spans, sizeBytes=${track.sizeBytes}")
+            spans
         }.map { it.toDomain() }
+    }
+
+
+    @OptIn(UnstableApi::class)
+    override suspend fun getTopGlobalTracks(size: Int): Result<List<Track>> {
+        return runCatching {
+            val response = api.getAlbumList2(type = "frequent", size = 50)
+            val albums = response.response.albumList2?.albums ?: emptyList()
+
+            val allTracks = mutableListOf<Track>()
+
+            for (album in albums) {
+                val albumResponse = api.getAlbum(album.id)
+                val songs = albumResponse.response.album?.songs ?: emptyList()
+                songs.forEach { allTracks.add(mapSongDto(it, album.id)) }
+            }
+
+            allTracks.forEach { track ->
+                Log.d("TOP_GLOBAL", "RAW: ${track.title} - playCount=${track.playCount}")
+            }
+
+            val result = allTracks
+                .filter { it.playCount > 0 }
+                .distinctBy { it.id }
+                .sortedByDescending { it.playCount }
+                .take(size)
+                .shuffled()
+
+            result
+        }
     }
 }
