@@ -1,22 +1,11 @@
 package com.example.velodrome.presentation.screen.settings
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -26,42 +15,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -70,10 +32,12 @@ import androidx.core.graphics.toColorInt
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import com.example.velodrome.R
+import com.example.velodrome.ui.theme.DmSansFontFamily
+import com.example.velodrome.ui.theme.SyneFontFamily
+import com.example.velodrome.ui.theme.VeloPalette
 
-/**
- * Settings screen with cache configuration, appearance, and stream settings.
- */
+// ─── SCREEN ──────────────────────────────────────────────────────────────────
+
 @androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,466 +49,496 @@ fun SettingsScreen(
     var showColorPicker by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
 
-    // Show dialog when pending changes detected
     LaunchedEffect(uiState.hasPendingChanges) {
-        if (uiState.hasPendingChanges) {
-            showConfirmDialog = true
-        }
+        if (uiState.hasPendingChanges) showConfirmDialog = true
     }
 
-    // Confirmation dialog
+    // ── Confirm dialog ─────────────────────────────────────────────────────
     if (showConfirmDialog) {
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = {},
+            containerColor   = VeloPalette.Bg3,
+            titleContentColor = VeloPalette.TextPrimary,
+            textContentColor  = VeloPalette.TextSecondary,
             title = {
                 Text(
-                    text = "Confirm Changes",
-                    fontWeight = FontWeight.Bold
+                    stringResource(R.string.settings_apply_changes),
+                    fontFamily = SyneFontFamily,
+                    fontWeight = FontWeight.Bold,
                 )
             },
             text = {
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+
                     if (uiState.pendingImageCacheMb != uiState.imageCacheSizeMb) {
-                        Text("Image cache: ${uiState.imageCacheSizeMb} MB → ${uiState.pendingImageCacheMb} MB")
+                        Text(
+                            stringResource(
+                                R.string.settings_image_cache_change,
+                                uiState.imageCacheSizeMb,
+                                uiState.pendingImageCacheMb
+                            )
+                        )
                     }
+
                     if (uiState.pendingMusicCacheGb != uiState.musicCacheSizeGb) {
-                        Text("Music cache: ${uiState.musicCacheSizeGb} GB → ${uiState.pendingMusicCacheGb} GB")
+                        Text(
+                            stringResource(
+                                R.string.settings_music_cache_change,
+                                uiState.musicCacheSizeGb,
+                                uiState.pendingMusicCacheGb
+                            )
+                        )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+
                     Text(
-                        "Apply these changes?",
-                        color = Color(0xFFAAAAB7),
-                        fontSize = 12.sp
+                        stringResource(R.string.settings_confirm_changes_question),
+                        fontSize = 12.sp,
+                        color = VeloPalette.TextTertiary,
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.confirmChanges()
-                        showConfirmDialog = false
-                    }
-                ) {
-                    Text("Apply", color = Color(0xFFB6A0FF))
+                TextButton(onClick = {
+                    viewModel.confirmChanges()
+                    showConfirmDialog = false
+                }) {
+                    Text(
+                        stringResource(R.string.settings_apply),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontFamily = DmSansFontFamily
+                    )
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.discardChanges()
-                        showConfirmDialog = false
-                    }
-                ) {
-                    Text("Cancel", color = Color(0xFFAAAAB7))
+                TextButton(onClick = {
+                    viewModel.discardChanges()
+                    showConfirmDialog = false
+                }) {
+                    Text(
+                        stringResource(R.string.settings_cancel),
+                        color = VeloPalette.TextSecondary,
+                        fontFamily = DmSansFontFamily
+                    )
                 }
             },
-            containerColor = Color(0xFF1A1D26),
-            titleContentColor = Color.White,
-            textContentColor = Color.White
         )
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0C0E17))
-            .statusBarsPadding()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding(),
     ) {
-        TopAppBar(
-            title = {
-                Text(
-                    stringResource(R.string.settings_title),
-                    fontWeight = FontWeight.Bold
+        // ── Toolbar ────────────────────────────────────────────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            IconButton(
+                onClick = onNavigateBack,
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(VeloPalette.Bg3)
+                    .border(1.dp, VeloPalette.Border, RoundedCornerShape(12.dp)),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.settings_back),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp),
                 )
-            },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent,
-                titleContentColor = Color.White,
-                navigationIconContentColor = Color.White
+            }
+            Text(
+                text = stringResource(R.string.settings_title),
+                fontFamily = SyneFontFamily,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 26.sp,
+                color = MaterialTheme.colorScheme.onBackground,
             )
-        )
+        }
+
+        // ── Content ────────────────────────────────────────────────────────
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // --- Appearance Section ---
-            SettingsSection(title = stringResource(R.string.settings_appearance)) {
-                // Accent Color
-                SettingsClickableItem(
+            // Appearance
+            VeloSettingsSection(eyebrow = stringResource(R.string.settings_appearance)) {
+                VeloSettingsClickableRow(
+                    icon = Icons.Default.Palette,
+                    iconTint = MaterialTheme.colorScheme.primary,
                     title = stringResource(R.string.settings_accent_color),
                     subtitle = uiState.accentColor,
-                    onClick = { showColorPicker = !showColorPicker },
-                    leadingIcon = {
+                    trailing = {
                         Box(
-                            modifier = Modifier
-                                .size(24.dp)
+                            Modifier
+                                .size(22.dp)
                                 .clip(CircleShape)
                                 .background(parseHexColor(uiState.accentColor))
+                                .border(1.dp, VeloPalette.Border, CircleShape)
                         )
-                    }
+                    },
+                    onClick = { showColorPicker = !showColorPicker },
                 )
+
                 if (showColorPicker) {
-                    ColorPickerBottomSheet(
+                    ColorPickerPanel(
                         colors = viewModel.availableAccentColors,
                         selectedColor = uiState.accentColor,
-                        onColorSelected = { color ->
-                            viewModel.setAccentColor(color)
-                        },
-                        onDismiss = { showColorPicker = false }
+                        onColorSelected = { viewModel.setAccentColor(it) },
+                        onDismiss = { showColorPicker = false },
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Scrobble Section ---
-            SettingsSection(title = stringResource(R.string.settings_scrobble)) {
-                SettingsSwitchItem(
-                    title = stringResource(R.string.settings_scrobble_enabled),
+            // Scrobble
+            VeloSettingsSection(eyebrow = "Last.fm") {
+                VeloSettingsSwitchRow(
+                    icon     = Icons.Default.GraphicEq,
+                    iconTint = VeloPalette.LastFmRed,
+                    title    = stringResource(R.string.settings_scrobble_enabled),
                     subtitle = stringResource(R.string.settings_scrobble_desc),
-                    checked = uiState.scrobbleEnabled,
-                    onCheckedChange = { viewModel.setScrobbleEnabled(it) }
+                    checked  = uiState.scrobbleEnabled,
+                    onCheckedChange = viewModel::setScrobbleEnabled,
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Cache Section ---
-            SettingsSection(title = stringResource(R.string.settings_cache)) {
-                // Music Cache with Chips
-                CacheChipsItem(
+            // Cache
+            VeloSettingsSection(eyebrow = stringResource(R.string.settings_cache)) {
+                // Music cache
+                CacheConfigRow(
+                    icon = Icons.Default.LibraryMusic,
+                    iconTint = Color(0xFF60A5FA),
                     title = stringResource(R.string.settings_music_cache),
                     subtitle = stringResource(R.string.settings_music_cache_desc),
+                    currentSizeFormatted = uiState.currentMusicCacheSize,
                     currentValue = uiState.musicCacheSizeGb,
                     pendingValue = uiState.pendingMusicCacheGb,
                     options = listOf(2, 4, 6, 8, 10),
                     unit = "GB",
-                    currentSizeFormatted = uiState.currentMusicCacheSize,
-                    onValueChange = { viewModel.setMusicCacheSizeGb(it) }
+                    onValueChange = viewModel::setMusicCacheSizeGb,
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(
+                    color = VeloPalette.Border,
+                    thickness = 1.dp,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
 
-                // Image Cache with Chips
-                CacheChipsItem(
+                // Image cache
+                CacheConfigRow(
+                    icon = Icons.Default.Image,
+                    iconTint = Color(0xFFA78BFA),
                     title = stringResource(R.string.settings_image_cache),
                     subtitle = stringResource(R.string.settings_image_cache_desc),
+                    currentSizeFormatted = uiState.currentImageCacheSize,
                     currentValue = uiState.imageCacheSizeMb,
                     pendingValue = uiState.pendingImageCacheMb,
                     options = listOf(200, 400, 600, 800, 1000),
                     unit = "MB",
-                    currentSizeFormatted = uiState.currentImageCacheSize,
-                    onValueChange = { viewModel.setImageCacheSizeMb(it) }
+                    onValueChange = viewModel::setImageCacheSizeMb,
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(Modifier.height(4.dp))
 
-                // Clear Cache Button
+                // Clear button
                 OutlinedButton(
                     onClick = { viewModel.clearAllCaches() },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(42.dp),
                     enabled = !uiState.isClearingCache,
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFEF5350)
+                        contentColor = VeloPalette.Destructive,
                     ),
-                    border = ButtonDefaults.outlinedButtonBorder(enabled = !uiState.isClearingCache).copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(Color(0xFFEF5350))
-                    )
+                    border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                        brush = androidx.compose.ui.graphics.SolidColor(VeloPalette.Destructive.copy(alpha = .5f)),
+                    ),
+                    shape = RoundedCornerShape(12.dp),
                 ) {
                     if (uiState.isClearingCache) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color(0xFFEF5350),
-                            strokeWidth = 2.dp
+                            modifier = Modifier.size(16.dp),
+                            color = VeloPalette.Destructive,
+                            strokeWidth = 2.dp,
                         )
                     } else {
-                        Icon(Icons.Default.DeleteSweep, contentDescription = null)
+                        Icon(Icons.Default.DeleteSweep, null, Modifier.size(18.dp))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.settings_clear_cache))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        stringResource(R.string.settings_clear_cache),
+                        fontFamily = DmSansFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- About Section ---
-            SettingsSection(title = stringResource(R.string.settings_about)) {
-                SettingsInfoItem(
+            // About
+            VeloSettingsSection(eyebrow = stringResource(R.string.settings_about)) {
+                VeloSettingsInfoRow(
+                    icon = Icons.Default.Info,
+                    iconTint = MaterialTheme.colorScheme.primary,
                     title = stringResource(R.string.settings_version),
                     subtitle = stringResource(R.string.settings_version_desc),
-                    value = uiState.appVersion // Dinámico!
+                    value = uiState.appVersion,
                 )
             }
 
-            Spacer(modifier = Modifier.height(100.dp)) // Space for mini player
+            Spacer(Modifier.height(100.dp))
         }
     }
 }
 
-// --- Reusable Components ---
+// ─── SECTION WRAPPER ─────────────────────────────────────────────────────────
 
 @Composable
-fun SettingsSection(
-    title: String,
-    content: @Composable ColumnScope.() -> Unit
+fun VeloSettingsSection(
+    eyebrow: String,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column {
         Text(
-            text = title,
+            text = eyebrow.uppercase(),
+            fontFamily = DmSansFontFamily,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 10.sp,
+            letterSpacing = 2.sp,
             color = MaterialTheme.colorScheme.primary,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
-            modifier = Modifier.padding(bottom = 12.dp)
+            modifier = Modifier.padding(bottom = 10.dp),
         )
-        Card(
+        Surface(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF171924)
+            shape = RoundedCornerShape(18.dp),
+            color = VeloPalette.Bg3,
+            border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                brush = androidx.compose.ui.graphics.SolidColor(VeloPalette.Border),
             ),
-            shape = RoundedCornerShape(16.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                content = content
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                content = content,
             )
         }
     }
 }
 
+// ─── ROW TYPES ───────────────────────────────────────────────────────────────
+
 @Composable
-fun CacheChipsItem(
-    title: String,
-    subtitle: String,
-    currentValue: Int,
-    pendingValue: Int,
-    options: List<Int>,
-    unit: String,
-    currentSizeFormatted: String,
-    onValueChange: (Int) -> Unit
-) {
-    var selectedValue by remember { mutableStateOf(pendingValue) }
-
-    LaunchedEffect(pendingValue) {
-        selectedValue = pendingValue
-    }
-
-    Column {
-        // Header row with title and value side by side
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = title,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = subtitle,
-                    color = Color(0xFFAAAAB7),
-                    fontSize = 12.sp
-                )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "$selectedValue $unit",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = stringResource(R.string.settings_current) + ": $currentSizeFormatted",
-                    color = Color(0xFFAAAAB7),
-                    fontSize = 11.sp
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        // Chips row with equal spacing
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            options.forEach { option ->
-                val isSelected = option == selectedValue
-                val isCurrent = option == currentValue
-
-                Box(
-                    modifier = Modifier
-                        .height(40.dp)
-                        .width(if (options.size <= 5) 56.dp else 44.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            when {
-                                isSelected -> MaterialTheme.colorScheme.primary
-                                isCurrent -> Color(0xFF2A2D3A)
-                                else -> Color(0xFF1A1D26)
-                            }
-                        )
-                        .border(
-                            width = if (isCurrent && !isSelected) 1.dp else 0.dp,
-                            color = if (isCurrent && !isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .clickable { onValueChange(option) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$option",
-                        color = when {
-                            isSelected -> Color.Black
-                            isCurrent -> MaterialTheme.colorScheme.primary
-                            else -> Color(0xFFAAAAB7)
-                        },
-                        fontSize = 13.sp,
-                        fontWeight = if (isSelected || isCurrent) FontWeight.Bold else FontWeight.Normal
-                    )
-                }
-            }
-        }
+private fun RowIcon(icon: ImageVector, tint: Color) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(tint.copy(alpha = .12f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
     }
 }
 
 @Composable
-fun SettingsClickableItem(
+fun VeloSettingsClickableRow(
+    icon: ImageVector,
+    iconTint: Color,
     title: String,
     subtitle: String,
     onClick: () -> Unit,
-    leadingIcon: @Composable (() -> Unit)? = null
+    trailing: @Composable () -> Unit = {
+        Icon(Icons.Default.ChevronRight, null, tint = VeloPalette.TextTertiary, modifier = Modifier.size(18.dp))
+    },
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
-        ) {
-            if (leadingIcon != null) {
-                leadingIcon()
-                Spacer(modifier = Modifier.width(12.dp))
-            }
-            Column {
-                Text(
-                    text = title,
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = subtitle,
-                    color = Color(0xFFAAAAB7),
-                    fontSize = 12.sp
-                )
-            }
+        RowIcon(icon, iconTint)
+        Column(Modifier.weight(1f)) {
+            Text(title, fontFamily = DmSansFontFamily, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = VeloPalette.TextPrimary)
+            Text(subtitle, fontFamily = DmSansFontFamily, fontSize = 11.sp, color = VeloPalette.TextSecondary)
         }
-        Icon(
-            Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = Color(0xFFAAAAB7)
-        )
+        trailing()
     }
 }
 
 @Composable
-fun SettingsSwitchItem(
+fun VeloSettingsSwitchRow(
+    icon: ImageVector,
+    iconTint: Color,
     title: String,
     subtitle: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onCheckedChange(!checked) }
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = subtitle,
-                color = Color(0xFFAAAAB7),
-                fontSize = 12.sp
-            )
+        RowIcon(icon, iconTint)
+        Column(Modifier.weight(1f)) {
+            Text(title, fontFamily = DmSansFontFamily, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = VeloPalette.TextPrimary)
+            Text(subtitle, fontFamily = DmSansFontFamily, fontSize = 11.sp, color = VeloPalette.TextSecondary)
         }
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                uncheckedThumbColor = Color(0xFFAAAAB7),
-                uncheckedTrackColor = Color(0xFF2A2D3A)
-            )
+                checkedThumbColor   = MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor   = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = VeloPalette.TextSecondary,
+                uncheckedTrackColor = VeloPalette.Bg4,
+            ),
         )
     }
 }
 
 @Composable
-fun SettingsInfoItem(
+fun VeloSettingsInfoRow(
+    icon: ImageVector,
+    iconTint: Color,
     title: String,
     subtitle: String,
-    value: String
+    value: String,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = subtitle,
-                color = Color(0xFFAAAAB7),
-                fontSize = 12.sp
-            )
+        RowIcon(icon, iconTint)
+        Column(Modifier.weight(1f)) {
+            Text(title, fontFamily = DmSansFontFamily, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = VeloPalette.TextPrimary)
+            Text(subtitle, fontFamily = DmSansFontFamily, fontSize = 11.sp, color = VeloPalette.TextSecondary)
         }
-        Text(
-            text = value,
-            color = Color(0xFFAAAAB7),
-            fontSize = 14.sp
-        )
+        Text(value, fontFamily = DmSansFontFamily, fontSize = 13.sp, color = VeloPalette.TextTertiary)
     }
 }
 
+// ─── CACHE CONFIG ROW ────────────────────────────────────────────────────────
+
+@Composable
+fun CacheConfigRow(
+    icon: ImageVector,
+    iconTint: Color,
+    title: String,
+    subtitle: String,
+    currentSizeFormatted: String,
+    currentValue: Int,
+    pendingValue: Int,
+    options: List<Int>,
+    unit: String,
+    onValueChange: (Int) -> Unit,
+) {
+    var selected by remember { mutableStateOf(pendingValue) }
+    LaunchedEffect(pendingValue) { selected = pendingValue }
+
+    Column(modifier = Modifier.padding(vertical = 10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            RowIcon(icon, iconTint)
+            Column(Modifier.weight(1f)) {
+                Text(title, fontFamily = DmSansFontFamily, fontWeight = FontWeight.Medium, fontSize = 14.sp, color = VeloPalette.TextPrimary)
+                Text(subtitle, fontFamily = DmSansFontFamily, fontSize = 11.sp, color = VeloPalette.TextSecondary)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "$selected $unit",
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = "usado: $currentSizeFormatted",
+                    fontFamily = DmSansFontFamily,
+                    fontSize = 10.sp,
+                    color = VeloPalette.TextTertiary,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            options.forEach { opt ->
+                val isSelected = opt == selected
+                val isCurrent  = opt == currentValue
+                val bgColor by animateColorAsState(
+                    targetValue = when {
+                        isSelected -> MaterialTheme.colorScheme.primary
+                        else       -> VeloPalette.Bg4
+                    },
+                    animationSpec = tween(180),
+                    label = "chipBg",
+                )
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(38.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(bgColor)
+                        .then(
+                            if (isCurrent && !isSelected)
+                                Modifier.border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = .5f), RoundedCornerShape(10.dp))
+                            else Modifier
+                        )
+                        .clickable { selected = opt; onValueChange(opt) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "$opt",
+                        fontFamily = DmSansFontFamily,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        fontSize = 12.sp,
+                        color = when {
+                            isSelected -> MaterialTheme.colorScheme.onPrimary
+                            isCurrent  -> MaterialTheme.colorScheme.primary
+                            else       -> VeloPalette.TextSecondary
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─── COLOR PICKER PANEL ──────────────────────────────────────────────────────
+// Rendered inline inside the settings card (no bottom sheet needed here)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ColorPickerBottomSheet(
+fun ColorPickerPanel(
     colors: List<AccentColorOption>,
     selectedColor: String,
     onColorSelected: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var customHex by remember { mutableStateOf(selectedColor) }
@@ -552,113 +546,113 @@ fun ColorPickerBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = VeloPalette.Bg3,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp) // Extra padding for navigation bar
+                .padding(bottom = 32.dp),
         ) {
             Text(
                 text = "Color de Acento",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 16.dp)
+                fontFamily = SyneFontFamily,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 22.sp,
+                color = VeloPalette.TextPrimary,
+                modifier = Modifier.padding(bottom = 20.dp),
             )
 
-            // Grid de colores predefinidos
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 56.dp),
+                columns = GridCells.Adaptive(52.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
             ) {
-                items(colors) { colorOption ->
-                    val isSelected = colorOption.hexColor.equals(selectedColor, ignoreCase = true)
-
+                items(colors) { option ->
+                    val isSelected = option.hexColor.equals(selectedColor, ignoreCase = true)
+                    val parsedColor = parseHexColor(option.hexColor)
                     Box(
                         modifier = Modifier
                             .aspectRatio(1f)
                             .clip(CircleShape)
-                            .background(parseHexColor(colorOption.hexColor))
+                            .background(parsedColor)
                             .then(
-                                if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+                                if (isSelected) Modifier.border(2.5.dp, VeloPalette.TextPrimary, CircleShape)
                                 else Modifier
                             )
-                            .clickable { onColorSelected(colorOption.hexColor) },
-                        contentAlignment = Alignment.Center
+                            .clickable { onColorSelected(option.hexColor) },
+                        contentAlignment = Alignment.Center,
                     ) {
                         if (isSelected) {
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = null,
-                                tint = if (parseHexColor(colorOption.hexColor).luminance() > 0.5f) Color.Black else Color.White,
-                                modifier = Modifier.size(24.dp)
+                                tint = if (parsedColor.luminance() > 0.4f) Color.Black else Color.White,
+                                modifier = Modifier.size(20.dp),
                             )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
+            HorizontalDivider(color = VeloPalette.Border)
+            Spacer(Modifier.height(20.dp))
 
-            // Input para color infinito/personalizado
             Text(
                 text = "Personalizado (HEX)",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 8.dp)
+                fontFamily = DmSansFontFamily,
+                fontSize = 12.sp,
+                color = VeloPalette.TextSecondary,
+                modifier = Modifier.padding(bottom = 10.dp),
             )
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                // Vista previa del color escrito
                 Box(
-                    modifier = Modifier
+                    Modifier
                         .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(14.dp))
                         .background(parseHexColor(customHex))
-                        .border(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        .border(1.dp, VeloPalette.Border, RoundedCornerShape(14.dp))
                 )
-
                 OutlinedTextField(
                     value = customHex,
-                    onValueChange = { newValue ->
-                        // Permitir solo el hashtag y hasta 6 caracteres hex
-                        if (newValue.length <= 7 && newValue.matches(Regex("^[#a-fA-F0-9]*$"))) {
-                            customHex = newValue
-                            // Si es un hex válido de 7 caracteres (#FFFFFF), aplicarlo en vivo
-                            if (newValue.length == 7) {
-                                onColorSelected(newValue.uppercase())
-                            }
+                    onValueChange = { v ->
+                        if (v.length <= 7 && v.matches(Regex("^[#a-fA-F0-9]*$"))) {
+                            customHex = v
+                            if (v.length == 7) onColorSelected(v.uppercase())
                         }
                     },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        focusedContainerColor   = VeloPalette.Bg4,
+                        unfocusedContainerColor = VeloPalette.Bg4,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = VeloPalette.Border,
                     ),
-                    modifier = Modifier.weight(1f)
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        fontFamily = DmSansFontFamily,
+                        color = VeloPalette.TextPrimary,
+                        fontSize = 14.sp,
+                    ),
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
     }
 }
-/**
- * Parse hex color string to Compose Color.
- */
-fun parseHexColor(hex: String): Color {
-    return try {
-        val cleanHex = hex.removePrefix("#")
-        Color("#$cleanHex".toColorInt())
-    } catch (_: Exception) {
-        Color(0xFFB6A0FF) // Default purple
-    }
+
+// ─── UTIL ─────────────────────────────────────────────────────────────────────
+
+fun parseHexColor(hex: String): Color = try {
+    val clean = hex.removePrefix("#")
+    Color("#$clean".toColorInt())
+} catch (_: Exception) {
+    VeloPalette.AccentDefault
 }

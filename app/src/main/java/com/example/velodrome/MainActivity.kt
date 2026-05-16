@@ -7,7 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
@@ -17,6 +20,7 @@ import com.example.velodrome.data.worker.SyncLibraryWorker
 import com.example.velodrome.domain.repository.SettingsRepository
 import com.example.velodrome.presentation.VelodromeMainApp
 import com.example.velodrome.presentation.player.SharedPlayerViewModel
+import com.example.velodrome.presentation.screen.settings.parseHexColor
 import com.example.velodrome.ui.theme.VelodromeTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -36,13 +40,17 @@ class MainActivity : ComponentActivity() {
         triggerLibrarySync()
 
         setContent {
-            VelodromeTheme(settingsRepository = settingsRepository) {
+            // Leer accent color del repositorio en tiempo real
+            val accentColorHex by settingsRepository.accentColor
+                .collectAsState(initial = "#C8FF00")
+            val accentColor = parseHexColor(accentColorHex)
+
+            VelodromeTheme(accentColor = accentColor) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Get SharedPlayerViewModel - must be done in compose context
-                    val sharedPlayerViewModel = androidx.hilt.navigation.compose.hiltViewModel<SharedPlayerViewModel>()
+                    val sharedPlayerViewModel = hiltViewModel<SharedPlayerViewModel>()
                     VelodromeMainApp(sharedPlayerViewModel = sharedPlayerViewModel)
                 }
             }

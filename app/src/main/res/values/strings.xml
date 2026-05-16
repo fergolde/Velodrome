@@ -30,6 +30,14 @@
     <string name="home_discover">DESCUBRE</string>
     <string name="home_retry">Reintentar</string>
     <string name="home_search_hint">Buscar artistas, álbumes o canciones…</string>
+    <string name="home_feature_offline_title">Sin datos</string>
+    <string name="home_feature_offline_subtitle">Solo offline</string>
+
+    <string name="home_feature_top100_title">Top 100</string>
+    <string name="home_feature_top100_subtitle">Tus favoritas</string>
+
+    <string name="home_feature_discovery_title">Ocultas</string>
+    <string name="home_feature_discovery_subtitle">Descubrimiento</string>
 
     <!-- Player -->
     <string name="player_now_playing">Reproduciendo Ahora</string>
@@ -60,6 +68,8 @@
     <string name="explore_loading">Cargando…</string>
     <string name="explore_artist_of_month">ARTISTA DEL MES</string>
     <string name="explore_monthly_listeners">oyentes mensuales</string>
+    <string name="explore_range_years">RANGO DE AÑOS</string>
+    <string name="explore_years">Años</string>
 
 <!-- Artists -->
     <string name="artists_title">Artistas</string>
@@ -109,6 +119,12 @@
     <string name="settings_about">Acerca de</string>
     <string name="settings_version">Versión</string>
     <string name="settings_version_desc">Versión de la aplicación</string>
+    <string name="settings_apply_changes">Aplicar cambios</string>
+    <string name="settings_image_cache_change">Caché de imágenes: %1$d → %2$d MB</string>
+    <string name="settings_music_cache_change">Caché de música: %1$d → %2$d GB</string>
+    <string name="settings_confirm_changes_question">¿Confirmas los cambios?</string>
+    <string name="settings_apply">Aplicar</string>
+    <string name="settings_cancel">Cancelar</string>
 
     <!-- Common -->
     <string name="nav_back">Atrás</string>

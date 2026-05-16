@@ -15,7 +15,7 @@
 
     <!-- Navigation -->
     <string name="nav_home">Home</string>
-    <string name="nav_explore">Explore</string>
+    <string name="nav_explore">EXPLORE</string>
     <string name="nav_settings">Settings</string>
 
     <!-- Home -->
@@ -24,12 +24,20 @@
     <string name="home_new_arrivals">NEW</string>
     <string name="home_most_played">Most Played</string>
     <string name="home_your_favorites">YOUR FAVORITES</string>
-    <string name="home_recently_played">Recently Played</string>
+    <string name="home_recently_played">Recent</string>
     <string name="home_just_for_you">JUST FOR YOU</string>
-    <string name="home_random">Random</string>
+    <string name="home_random">Shuffle</string>
     <string name="home_discover">DISCOVER</string>
     <string name="home_retry">Retry</string>
     <string name="home_search_hint">Search artists, albums or songs…</string>
+    <string name="home_feature_offline_title">No Data</string>
+    <string name="home_feature_offline_subtitle">Offline only</string>
+
+    <string name="home_feature_top100_title">Top 100</string>
+    <string name="home_feature_top100_subtitle">Your favorites</string>
+
+    <string name="home_feature_discovery_title">Hidden</string>
+    <string name="home_feature_discovery_subtitle">Discovery</string>
 
     <!-- Player -->
     <string name="player_now_playing">Now Playing</string>
@@ -40,7 +48,7 @@
     <string name="player_previous">Previous</string>
     <string name="player_next">Next</string>
     <string name="player_repeat">Repeat</string>
-    <string name="player_next_up">QUEUE</string>
+    <string name="player_next_up">Playlist</string>
     <string name="player_progress">Progress</string>
     <string name="player_pause">Pause</string>
 
@@ -51,7 +59,7 @@
     <string name="explore_curated_albums">Curated Albums</string>
     <string name="explore_based_on_activity">BASED ON YOUR NIGHT ACTIVITY</string>
     <string name="explore_random_albums">Random Albums</string>
-    <string name="explore_rising_artists">Rising Artists</string>
+    <string name="explore_rising_artists">Emerging Artists</string>
     <string name="explore_trending">TRENDING IN YOUR LIBRARY</string>
     <string name="explore_genres">Genres</string>
     <string name="explore_all_genres">ALL GENRES</string>
@@ -60,16 +68,18 @@
     <string name="explore_loading">Loading…</string>
     <string name="explore_artist_of_month">ARTIST OF THE MONTH</string>
     <string name="explore_monthly_listeners">monthly listeners</string>
+    <string name="explore_range_years">YEAR RANGE</string>
+    <string name="explore_years">Years</string>
 
     <!-- Artists -->
     <string name="artists_title">Artists</string>
-    <string name="artists_search_hint">Search your artists library…</string>
+    <string name="artists_search_hint">Search artists…</string>
     <string name="artists_albums_count">ALBUMS</string>
     <string name="artists_unknown">Unknown Artist</string>
 
     <!-- Albums -->
     <string name="albums_title">Albums</string>
-    <string name="albums_search_hint">Search your albums library…</string>
+    <string name="albums_search_hint">Search albums…</string>
     <string name="albums_unknown_title">Unknown Album</string>
     <string name="albums_unknown_artist">Unknown Artist</string>
 
@@ -109,6 +119,12 @@
     <string name="settings_about">About</string>
     <string name="settings_version">Version</string>
     <string name="settings_version_desc">App version</string>
+    <string name="settings_apply_changes">Apply changes</string>
+    <string name="settings_image_cache_change">Image cache: %1$d → %2$d MB</string>
+    <string name="settings_music_cache_change">    Music cache: %1$d → %2$d GB</string>
+    <string name="settings_confirm_changes_question">    Do you confirm the changes?</string>
+    <string name="settings_apply">Apply</string>
+    <string name="settings_cancel">Cancel</string>
 
     <!-- Common -->
     <string name="nav_back">Back</string>

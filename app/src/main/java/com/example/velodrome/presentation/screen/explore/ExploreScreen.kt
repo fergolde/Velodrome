@@ -1,49 +1,22 @@
 package com.example.velodrome.presentation.screen.explore
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RangeSlider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,14 +28,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
-import com.example.velodrome.domain.model.Album
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.domain.model.Track
+import com.example.velodrome.presentation.components.UniversalOptionsSheet
+import com.example.velodrome.presentation.components.VeloSectionHeader
 import com.example.velodrome.presentation.screen.home.AlbumCover
 import com.example.velodrome.presentation.screen.home.ArtistAvatar
-import com.example.velodrome.presentation.screen.home.RecentAlbumsRow
-import com.example.velodrome.presentation.screen.home.SectionHeader
-import com.example.velodrome.presentation.components.UniversalOptionsSheet
+import com.example.velodrome.presentation.screen.home.VeloAlbumCard
+import com.example.velodrome.ui.theme.DmSansFontFamily
+import com.example.velodrome.ui.theme.SyneFontFamily
+import com.example.velodrome.ui.theme.VeloPalette
+
+// ─── SCREEN ──────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,285 +48,331 @@ fun ExploreScreen(
     onArtistsViewAllClick: () -> Unit = {},
     onAlbumsViewAllClick: () -> Unit = {},
     onArtistClick: (String) -> Unit = {},
-    onAlbumClick: (String) -> Unit = {}
+    onAlbumClick: (String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
-            .padding(horizontal = 16.dp)
-        ) {
-item {
-                SearchBar(
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding(),
+    ) {
+        // ── Screen title + search bar ──────────────────────────────────────
+        item {
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 5.dp)) {
+                VeloSearchBar(
                     query = uiState.searchQuery,
-                    onQueryChange = { query -> viewModel.onSearchQueryChange(query) },
-                    onClearClick = { viewModel.clearSearch() }
+                    onQueryChange = viewModel::onSearchQueryChange,
+                    onClearClick = viewModel::clearSearch,
                 )
-                Spacer(modifier = Modifier.height(32.dp))
-            }
-
-            if (uiState.searchQuery.isNotBlank()) {
-                item {
-                    SearchResultsView(
-                        searchQuery = uiState.searchQuery,
-                        searchResults = uiState.searchResults,
-                        isSearching = uiState.isSearching,
-                        onArtistClick = onArtistClick,
-                        onAlbumClick = onAlbumClick,
-                        onPlayTrackClick = viewModel::playSearchedTrack,
-                        onPlayTrackNow = viewModel::onPlayTrackNow,
-                        onPlayTrackNext = viewModel::onPlayTrackNext,
-                        onAddTrackToQueue = viewModel::onAddTrackToQueue,
-                        onClearSearch = viewModel::clearSearch
-                    )
-                }
-            } else {
-                // Random Artists Carousel
-                item {
-                    SectionHeader(
-                        title = stringResource(R.string.explore_artists),
-                        subtitle = stringResource(R.string.explore_artists_discover),
-                        onViewAllClick = onArtistsViewAllClick
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    RandomArtistsRow(
-                        artists = uiState.randomArtists,
-                        onArtistClick = { artist -> onArtistClick(artist.id) }
-                    )
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-
-                // Random Albums Carousel
-                item {
-                    SectionHeader(
-                        title = stringResource(R.string.explore_random_albums),
-                        subtitle = stringResource(R.string.nav_explore),
-                        onViewAllClick = onAlbumsViewAllClick
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    RecentAlbumsRow(
-                        albums = uiState.randomAlbums,
-                        onAlbumClick = { albumId -> onAlbumClick(albumId) }
-                    )
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-
-                // Genres Section
-                item {
-                    SectionHeader(
-                        title = stringResource(R.string.explore_genres),
-                        subtitle = stringResource(R.string.explore_all_genres),
-                        onViewAllClick = null,
-                        showActionText = null,
-                        onActionClick = {}
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    GenresRow(
-                        genres = uiState.genres,
-                        selectedGenres = uiState.selectedGenres,
-                        onGenreToggle = viewModel::onGenreToggle
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Year Filter Slider (without play button - combined with genres)
-                    YearFilterRow(
-                        minYear = uiState.minYear,
-                        currentYear = uiState.currentYear,
-                        selectedRange = uiState.selectedYearRange,
-                        onRangeChange = viewModel::onYearRangeSelected
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Unified Play button for both genre + year filters
-                    val hasGenres = uiState.selectedGenres.isNotEmpty()
-                    val hasYearRange = uiState.selectedYearRange != null
-                    val buttonEnabled = true
-
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .clickable(enabled = buttonEnabled) { viewModel.onPlayGenres() },
-                        shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = buildString {
-                                    append("Play")
-                                    if (hasGenres && hasYearRange) {
-                                        append(" (")
-                                        append(uiState.selectedGenres.size)
-                                        append(" genres, ")
-                                        append(uiState.selectedYearRange?.start)
-                                        append("-")
-                                        append(uiState.selectedYearRange?.endInclusive)
-                                        append(")")
-                                    } else if (hasGenres) {
-                                        append(" (")
-                                        append(uiState.selectedGenres.size)
-                                        append(" genres)")
-                                    } else if (hasYearRange) {
-                                        append(" (")
-                                        append(uiState.selectedYearRange?.start)
-                                        append("-")
-                                        append(uiState.selectedYearRange?.endInclusive)
-                                        append(")")
-                                    } else {
-                                        append(" (shuffle)")
-                                    }
-                                },
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(100.dp)) // Padding for mini player
+                Spacer(Modifier.height(32.dp))
             }
         }
+
+        // ── Search results vs browse ───────────────────────────────────────
+        if (uiState.searchQuery.isNotBlank()) {
+            item {
+                SearchResultsView(
+                    searchQuery     = uiState.searchQuery,
+                    searchResults   = uiState.searchResults,
+                    isSearching     = uiState.isSearching,
+                    onArtistClick   = onArtistClick,
+                    onAlbumClick    = onAlbumClick,
+                    onPlayTrackClick  = viewModel::playSearchedTrack,
+                    onPlayTrackNow    = viewModel::onPlayTrackNow,
+                    onPlayTrackNext   = viewModel::onPlayTrackNext,
+                    onAddTrackToQueue = viewModel::onAddTrackToQueue,
+                    onClearSearch   = viewModel::clearSearch,
+                )
+            }
+        } else {
+            // ── Artists carousel ───────────────────────────────────────────
+            item {
+                VeloSectionHeader(
+                    eyebrow  = stringResource(R.string.explore_artists_discover),
+                    title    = stringResource(R.string.explore_artists),
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    onViewAll = onArtistsViewAllClick,
+                )
+                Spacer(Modifier.height(16.dp))
+                ArtistsCarousel(
+                    artists = uiState.randomArtists,
+                    onArtistClick = { onArtistClick(it.id) },
+                )
+                Spacer(Modifier.height(36.dp))
+            }
+
+            // ── Albums carousel ────────────────────────────────────────────
+            item {
+                VeloSectionHeader(
+                    eyebrow  = stringResource(R.string.nav_explore),
+                    title    = stringResource(R.string.explore_random_albums),
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    onViewAll = onAlbumsViewAllClick,
+                )
+                Spacer(Modifier.height(16.dp))
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    items(uiState.randomAlbums, key = { it.id }) { album ->
+                        VeloAlbumCard(
+                            album = album,
+                            onClick = { onAlbumClick(album.id) },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(36.dp))
+            }
+
+            // ── Genres ────────────────────────────────────────────────────
+            item {
+                VeloSectionHeader(
+                    eyebrow  = stringResource(R.string.explore_all_genres),
+                    title    = stringResource(R.string.explore_genres),
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+                Spacer(Modifier.height(16.dp))
+                VeloGenreGrid(
+                    genres         = uiState.genres,
+                    selectedGenres = uiState.selectedGenres,
+                    onGenreToggle  = viewModel::onGenreToggle,
+                    modifier       = Modifier.padding(horizontal = 20.dp),
+                )
+                Spacer(Modifier.height(36.dp))
+            }
+
+            // ── Year slider ───────────────────────────────────────────────
+            item {
+                VeloYearFilter(
+                    minYear      = uiState.minYear,
+                    currentYear  = uiState.currentYear,
+                    selectedRange = uiState.selectedYearRange,
+                    onRangeChange = viewModel::onYearRangeSelected,
+                    modifier     = Modifier.padding(horizontal = 20.dp),
+                )
+                Spacer(Modifier.height(36.dp))
+            }
+
+            // ── Play button ───────────────────────────────────────────────
+            item {
+                val hasGenres    = uiState.selectedGenres.isNotEmpty()
+                val hasYearRange = uiState.selectedYearRange != null
+
+                val label = buildString {
+                    append("Play")
+                    when {
+                        hasGenres && hasYearRange -> {
+                            append(" · ${uiState.selectedGenres.size} géneros")
+                            append(", ${uiState.selectedYearRange?.start}–${uiState.selectedYearRange?.endInclusive}")
+                        }
+                        hasGenres    -> append(" · ${uiState.selectedGenres.size} géneros")
+                        hasYearRange -> append(" · ${uiState.selectedYearRange?.start}–${uiState.selectedYearRange?.endInclusive}")
+                        else         -> append(" (${stringResource(R.string.player_shuffle)})")
+                    }
+                }
+
+                Button(
+                    onClick = { viewModel.onPlayGenres() },
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor   = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                    shape = RoundedCornerShape(25.dp),
+                    elevation = ButtonDefaults.buttonElevation(0.dp),
+                ) {
+                    Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = label,
+                        fontFamily = DmSansFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                    )
+                }
+                Spacer(Modifier.height(100.dp))
+            }
+        }
+    }
 }
 
+// ─── SEARCH BAR ──────────────────────────────────────────────────────────────
+
 @Composable
-fun SearchBar(
+fun VeloSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
-    onClearClick: () -> Unit
+    onClearClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = Modifier
+    Surface(
+        modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(MaterialTheme.colorScheme.surface),
-        placeholder = { Text(stringResource(R.string.explore_search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-        singleLine = true,
-        shape = RoundedCornerShape(28.dp),
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-        trailingIcon = {
+            .height(50.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = ButtonDefaults.outlinedButtonBorder(true).copy(
+            brush = androidx.compose.ui.graphics.SolidColor(VeloPalette.Border),
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+            )
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                ),
+                decorationBox = { inner ->
+                    if (query.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.explore_search_hint),
+                            fontFamily = DmSansFontFamily,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    inner()
+                },
+            )
             if (query.isNotEmpty()) {
-                IconButton(onClick = onClearClick) {
+                IconButton(
+                    onClick = onClearClick,
+                    modifier = Modifier.size(24.dp),
+                ) {
                     Icon(
                         imageVector = Icons.Default.Clear,
                         contentDescription = "Borrar búsqueda",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp),
                     )
                 }
             }
         }
-    )
+    }
 }
+
+// ─── ARTISTS CAROUSEL ────────────────────────────────────────────────────────
+
 @Composable
-fun RandomArtistsRow(
+fun ArtistsCarousel(
     artists: List<Artist>,
-    onArtistClick: (Artist) -> Unit
+    onArtistClick: (Artist) -> Unit,
 ) {
     if (artists.isEmpty()) {
-        // Show placeholder when loading
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            repeat(5) { _ ->
-                ArtistPlaceholder(modifier = Modifier.width(80.dp))
-            }
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            items(6) { ArtistPlaceholder() }
         }
         return
     }
-
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        items(artists) { artist ->
-            ArtistCircleCard(
-                artist = artist,
-                onClick = { onArtistClick(artist) }
-            )
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        items(artists, key = { it.id }) { artist ->
+            VeloArtistCircle(artist = artist, onClick = { onArtistClick(artist) })
         }
     }
 }
 
 @Composable
-private fun ArtistPlaceholder(modifier: Modifier = Modifier) {
+private fun ArtistPlaceholder() {
     Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.width(72.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            modifier = Modifier
-                .size(80.dp)
+            Modifier
+                .size(72.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(VeloPalette.Bg4)
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Box(modifier = Modifier.width(40.dp).height(12.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)))
-        Spacer(modifier = Modifier.height(4.dp))
-        Box(modifier = Modifier.width(25.dp).height(8.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)))
+        Spacer(Modifier.height(8.dp))
+        Box(Modifier.width(40.dp).height(10.dp).background(VeloPalette.Bg4.copy(alpha = .5f)))
     }
 }
 
 @Composable
-fun ArtistCircleCard(
+fun VeloArtistCircle(
     artist: Artist,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
-            .width(80.dp)
+            .width(72.dp)
             .clickable(onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             modifier = Modifier
-                .size(80.dp)
+                .size(72.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(VeloPalette.Bg4),
         ) {
-            // Artist image with cache
             ArtistAvatar(
                 coverArtId = artist.coverUrl,
                 contentDescription = artist.name,
-                size = 80.dp
+                size = 72.dp,
             )
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
             text = artist.name,
-color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold,
-            fontSize = 12.sp,
-            maxLines = 1
+            fontFamily = DmSansFontFamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 10.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
 
+// ─── GENRE GRID ──────────────────────────────────────────────────────────────
+
 @Composable
-fun GenresRow(
+fun VeloGenreGrid(
     genres: List<String>,
     selectedGenres: Set<String> = emptySet(),
-    onGenreToggle: (String) -> Unit = {}
+    onGenreToggle: (String) -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     if (genres.isEmpty()) {
-        // Show placeholder grid when loading
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             repeat(3) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     repeat(3) {
-                        GenreChipPlaceholder()
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(VeloPalette.Bg4)
+                        )
                     }
                 }
             }
@@ -357,46 +380,72 @@ fun GenresRow(
         return
     }
 
-    // Show genres in 3-column grid
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        genres.chunked(3).forEach { rowGenres ->
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        genres.chunked(3).forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                rowGenres.forEach { genre ->
-                    GenreChip(
-                        genre = genre,
+                row.forEach { genre ->
+                    VeloGenreChip(
+                        genre      = genre,
                         isSelected = selectedGenres.contains(genre),
-                        onClick = { onGenreToggle(genre) },
-                        modifier = Modifier.weight(1f)
+                        onClick    = { onGenreToggle(genre) },
+                        modifier   = Modifier.weight(1f),
                     )
                 }
-                // Fill remaining columns if row has less than 3 items
-                repeat(3 - rowGenres.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+                // fill remaining columns
+                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
 }
 
 @Composable
-private fun GenreChipPlaceholder() {
-    Box(
-        modifier = Modifier
+fun VeloGenreChip(
+    genre: String,
+    isSelected: Boolean = false,
+    onClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    val bgColor = if (isSelected) MaterialTheme.colorScheme.primary else VeloPalette.Bg3
+    val borderColor = if (isSelected) Color.Transparent else VeloPalette.Border
+    val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Surface(
+        modifier = modifier
             .height(40.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-    )
+            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        color = bgColor,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = genre,
+                fontFamily = DmSansFontFamily,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = textColor,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+        }
+    }
 }
 
+// ─── YEAR FILTER ─────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun YearFilterRow(
+fun VeloYearFilter(
     minYear: Int,
     currentYear: Int,
     selectedRange: IntRange?,
-    onRangeChange: (IntRange?) -> Unit
+    onRangeChange: (IntRange?) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var sliderPosition by remember {
         mutableStateOf(minYear.toFloat()..currentYear.toFloat())
@@ -404,124 +453,114 @@ fun YearFilterRow(
 
     LaunchedEffect(minYear) {
         if (minYear > 0) {
-            sliderPosition = if (selectedRange != null) {
-                selectedRange.first.toFloat()..selectedRange.last.toFloat()
-            } else {
-                minYear.toFloat()..currentYear.toFloat()
-            }
+            sliderPosition = selectedRange?.let {
+                it.first.toFloat()..it.last.toFloat()
+            } ?: (minYear.toFloat()..currentYear.toFloat())
         }
     }
 
     val isFiltered = selectedRange != null &&
             (selectedRange.first > minYear || selectedRange.last < currentYear)
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Header row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Bottom,
         ) {
             Column {
                 Text(
-                    text = "TODOS LOS AÑOS",
+                    text = stringResource(R.string.explore_range_years),
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 10.sp,
+                    letterSpacing = 2.sp,
                     color = MaterialTheme.colorScheme.primary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
                 )
+                Spacer(Modifier.height(2.dp))
                 Text(
-                    text = "Años",
+                    text = stringResource(R.string.explore_years),
+                    fontFamily = SyneFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    lineHeight = 24.sp,
                     color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold
                 )
             }
-            if (isFiltered) {
-                IconButton(
-                    onClick = {
-                        sliderPosition = minYear.toFloat()..currentYear.toFloat()
-                        onRangeChange(null)
-                    },
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = "Quitar filtro de año",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 4.dp)) {
+                // Active range tag
+                if (isFiltered) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                    ) {
+                        Text(
+                            text = "${sliderPosition.start.toInt()} – ${sliderPosition.endInclusive.toInt()}",
+                            fontFamily = DmSansFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            sliderPosition = minYear.toFloat()..currentYear.toFloat()
+                            onRangeChange(null)
+                        },
+                        modifier = Modifier.size(24.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Quitar filtro",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
 
         RangeSlider(
             value = sliderPosition,
-            onValueChange = { range -> sliderPosition = range },
+            onValueChange = { sliderPosition = it },
             onValueChangeFinished = {
                 val from = sliderPosition.start.toInt()
-                val to = sliderPosition.endInclusive.toInt()
-                if (from == minYear && to == currentYear) {
-                    onRangeChange(null)
-                } else {
-                    onRangeChange(from..to)
-                }
+                val to   = sliderPosition.endInclusive.toInt()
+                onRangeChange(if (from == minYear && to == currentYear) null else from..to)
             },
             valueRange = minYear.toFloat()..currentYear.toFloat(),
             steps = (currentYear - minYear - 1).coerceAtLeast(0),
             colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.primary,
-                activeTrackColor = MaterialTheme.colorScheme.primary,
-                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+                thumbColor          = MaterialTheme.colorScheme.primary,
+                activeTrackColor    = MaterialTheme.colorScheme.primary,
+                inactiveTrackColor  = VeloPalette.Bg4,
+            ),
         )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "${sliderPosition.start.toInt()}",
+                "${sliderPosition.start.toInt()}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "${sliderPosition.endInclusive.toInt()}",
+                "${sliderPosition.endInclusive.toInt()}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
 }
 
-@Composable
-fun GenreChip(
-    genre: String,
-    isSelected: Boolean = false,
-    onClick: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier
-            .height(40.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-    ) {
-        Text(
-            text = genre,
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentSize(Alignment.Center)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            maxLines = 1
-        )
-    }
-}
+// ─── SEARCH RESULTS ───────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -535,7 +574,7 @@ fun SearchResultsView(
     onPlayTrackNow: (Track) -> Unit = {},
     onPlayTrackNext: (Track) -> Unit = {},
     onAddTrackToQueue: (Track) -> Unit = {},
-    onClearSearch: () -> Unit = {}
+    onClearSearch: () -> Unit = {},
 ) {
     var showOptions by remember { mutableStateOf(false) }
     var selectedTrack by remember { mutableStateOf<Track?>(null) }
@@ -544,59 +583,69 @@ fun SearchResultsView(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(28.dp),
     ) {
-        if (isSearching) {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        when {
+            isSearching -> {
+                Box(Modifier.fillMaxWidth().padding(vertical = 32.dp), Alignment.Center) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
             }
-        } else if (searchResults.isEmpty) {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("No results found", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            searchResults.isEmpty -> {
+                Box(Modifier.fillMaxWidth().padding(vertical = 32.dp), Alignment.Center) {
+                    Text(
+                        "Sin resultados para \"$searchQuery\"",
+                        fontFamily = DmSansFontFamily,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp,
+                    )
+                }
             }
-        } else {
-            // Artists - horizontal carousel
-            if (searchResults.artists.isNotEmpty()) {
-                Column {
-                    Text("Artists", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(12.dp))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(searchResults.artists.take(10)) { artist ->
-                            ArtistCircleCard(artist = artist, onClick = { onArtistClick(artist.id) })
+            else -> {
+                if (searchResults.artists.isNotEmpty()) {
+                    Column {
+                        SearchResultLabel("Artistas")
+                        Spacer(Modifier.height(12.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            items(searchResults.artists.take(10)) { artist ->
+                                VeloArtistCircle(artist = artist, onClick = { onArtistClick(artist.id) })
+                            }
                         }
                     }
                 }
-            }
 
-            // Albums - horizontal carousel
-            if (searchResults.albums.isNotEmpty()) {
-                Column {
-                    Text("Albums", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(12.dp))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(searchResults.albums.take(10)) { album ->
-                            AlbumGridItem(album = album, onClick = { onAlbumClick(album.id) })
+                if (searchResults.albums.isNotEmpty()) {
+                    Column {
+                        SearchResultLabel("Álbumes")
+                        Spacer(Modifier.height(12.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            items(searchResults.albums.take(10)) { album ->
+                                VeloAlbumCard(album = album, artSize = 110.dp, onClick = { onAlbumClick(album.id) })
+                            }
                         }
                     }
                 }
-            }
 
-            // Tracks - vertical list
-            if (searchResults.tracks.isNotEmpty()) {
-                Column {
-                    Text("Songs", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.height(12.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        searchResults.tracks.take(25).forEach { track ->
-                            TrackRow(
-                                track = track,
-                                onClick = { onPlayTrackClick(track) },
-                                onLongClick = {
-                                    selectedTrack = track
-                                    showOptions = true
-                                }
-                            )
+                if (searchResults.tracks.isNotEmpty()) {
+                    Column {
+                        SearchResultLabel("Canciones")
+                        Spacer(Modifier.height(12.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            searchResults.tracks.take(25).forEach { track ->
+                                VeloTrackRow(
+                                    track = track,
+                                    onClick = { onPlayTrackClick(track) },
+                                    onLongClick = {
+                                        selectedTrack = track
+                                        showOptions = true
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -607,104 +656,97 @@ fun SearchResultsView(
     if (showOptions && selectedTrack != null) {
         ModalBottomSheet(
             onDismissRequest = { showOptions = false },
-            sheetState = sheetState
+            sheetState = sheetState,
+            containerColor = VeloPalette.Bg3,
         ) {
             UniversalOptionsSheet(
-                title = selectedTrack!!.title,
-                subtitle = selectedTrack!!.artistName,
-                coverArtId = selectedTrack!!.coverArtId,
-                onPlayNow = {
-                    onPlayTrackNow(selectedTrack!!)
-                    showOptions = false
-                },
-                onPlayNext = {
-                    onPlayTrackNext(selectedTrack!!)
-                    showOptions = false
-                },
-                onAddToQueue = {
-                    onAddTrackToQueue(selectedTrack!!)
-                    showOptions = false
-                }
+                title       = selectedTrack!!.title,
+                subtitle    = selectedTrack!!.artistName,
+                coverArtId  = selectedTrack!!.coverArtId,
+                onPlayNow   = { onPlayTrackNow(selectedTrack!!); showOptions = false },
+                onPlayNext  = { onPlayTrackNext(selectedTrack!!); showOptions = false },
+                onAddToQueue = { onAddTrackToQueue(selectedTrack!!); showOptions = false },
             )
         }
     }
 }
 
 @Composable
-fun AlbumGridItem(album: Album, onClick: () -> Unit = {}) {
-    Column(
-        modifier = Modifier
-            .width(120.dp)
-            .clickable(onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        AlbumCover(
-            coverArtId = album.coverUrl,
-            contentDescription = album.title,
-            size = 100.dp,
-            cornerRadius = 8.dp
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(album.title, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
-        Text(album.artistName, style = MaterialTheme.typography.bodySmall, maxLines = 1)
-    }
+private fun SearchResultLabel(text: String) {
+    Text(
+        text = text,
+        fontFamily = DmSansFontFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 13.sp,
+        letterSpacing = 1.sp,
+        color = MaterialTheme.colorScheme.primary,
+    )
 }
 
+// ─── TRACK ROW ───────────────────────────────────────────────────────────────
+
 @Composable
-fun TrackRow(track: Track, onClick: () -> Unit = {}, onLongClick: () -> Unit = {}) {
+fun VeloTrackRow(
+    track: Track,
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            ),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+            .clip(RoundedCornerShape(14.dp))
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        shape = RoundedCornerShape(14.dp),
+        color = VeloPalette.Bg3,
+        border = ButtonDefaults.outlinedButtonBorder(true).copy(
+            brush = androidx.compose.ui.graphics.SolidColor(VeloPalette.Border),
+        ),
     ) {
         Row(
-            modifier = Modifier.padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            // CARÁTULA REAL EN LA CANCIÓN
             AlbumCover(
-                coverArtId = track.coverArtId,
+                coverArtId         = track.coverArtId,
                 contentDescription = track.albumName,
-                size = 48.dp,
-                cornerRadius = 8.dp
+                size               = 46.dp,
+                cornerRadius       = 10.dp,
             )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
                 Text(
                     text = track.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
                 Text(
                     text = track.artistName,
-                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp),
                 )
             }
-
-            // Indicador de duración sutil
             Text(
                 text = formatDuration(track.durationSec),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.padding(horizontal = 8.dp)
+                fontFamily = DmSansFontFamily,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.padding(start = 10.dp),
             )
         }
     }
 }
+
 private fun formatDuration(seconds: Int): String {
-    val mins = seconds / 60
-    val secs = seconds % 60
-    return "%d:%02d".format(mins, secs)
+    val m = seconds / 60
+    val s = seconds % 60
+    return "%d:%02d".format(m, s)
 }
