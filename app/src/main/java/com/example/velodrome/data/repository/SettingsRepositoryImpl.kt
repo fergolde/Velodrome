@@ -17,7 +17,7 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     // Inyectamos el SharedPreferences para la caché síncrona
     private val cachePrefs: SharedPreferences
 ) : SettingsRepository {

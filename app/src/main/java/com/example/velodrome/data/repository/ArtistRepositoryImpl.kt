@@ -41,7 +41,7 @@ class ArtistRepositoryImpl @Inject constructor(
             val flatArtists = response.response.artists?.artistList
 
             val artistsList = when {
-                indexes != null -> indexes.flatMap { it.artists ?: emptyList() }
+                indexes != null -> indexes.flatMap { it.artists }
                 flatArtists != null -> flatArtists
                 else -> emptyList()
             }

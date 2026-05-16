@@ -26,7 +26,7 @@ import javax.inject.Singleton
 class ScrobbleManager @Inject constructor(
     private val scrobbleRepository: ScrobbleRepository,
     private val settingsRepository: SettingsRepository,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val workManager by lazy { WorkManager.getInstance(context) }
