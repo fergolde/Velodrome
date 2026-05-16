@@ -1,50 +1,40 @@
 Velodrome
 
-Velodrome es una aplicación de streaming de música diseñada para servidores Navidrome. Creada con las últimas tecnologías de Android, prioriza la fluidez, la experiencia offline y el rendimiento bajo protocolos de red inestables.
-🚀 Características principales
+Velodrome es tu cliente de música personal para Navidrome. Diseñado para llevar toda tu biblioteca musical contigo, sin complicaciones y con una estética moderna. Escucha tu colección donde quieras, cuando quieras y con la mejor calidad.
+🎵 ¿Qué puedes hacer con Velodrome?
 
-    Offline-First: Gestión inteligente de caché (imágenes y audio) para una reproducción sin interrupciones incluso sin conexión.
+    Tu música, siempre contigo: Conéctate a tu propio servidor Navidrome y accede a toda tu colección musical desde tu móvil.
 
-    Arquitectura Robusta: Implementación de Clean Architecture con MVVM y Unidirectional Data Flow (UDF).
+    Modo Offline: ¿Sin internet? No te preocupes. Velodrome guarda automáticamente las canciones que escuchas para que puedas disfrutarlas sin conexión.
 
-    Reproductor Profesional: Basado en Jetpack Media3 (ExoPlayer) con soporte nativo para caching y sesiones multimedia.
+    Experiencia sin cortes: Gracias a su sistema inteligente de carga, la música empieza a sonar al instante y se mantiene estable incluso si tu conexión falla.
 
-    Sincronización Inteligente: Uso de WorkManager para procesos de fondo (scrobbling y sincronización de biblioteca) resilientes.
+    Exploración intuitiva: Navega por tus artistas, álbumes y géneros favoritos con una interfaz limpia, rápida y diseñada para ser fácil de usar.
 
-    UI Moderna: Interfaz desarrollada 100% en Jetpack Compose con un diseño altamente personalizable y rendimiento optimizado.
+    Radio Inteligente: ¿No sabes qué escuchar? Deja que Velodrome cree una mezcla automática basada en tus géneros favoritos o años de música que más te gustan.
 
-    Seguridad: Almacenamiento de credenciales mediante EncryptedSharedPreferences y Tink.
+    Personalización total: Elige tu propio color de acento y adapta la app a tu estilo.
 
-🛠 Tech Stack
+    Privacidad ante todo: Tus credenciales de acceso están guardadas de forma segura y encriptada en tu dispositivo.
 
-    Lenguaje: Kotlin
+✨ Características destacadas
 
-    UI: Jetpack Compose, Material3
+    Interfaz fluida: Diseñada para ser rápida, cómoda y visualmente atractiva.
 
-    Arquitectura: MVVM, Clean Architecture, Dependency Injection (Hilt)
+    Gestión de cola de reproducción: Añade canciones a la cola, reordénalas o elige qué suena a continuación con solo un par de toques.
 
-    Red: Retrofit + OkHttp (con intercepción dinámica de autenticación)
+    Scrobbling con Last.fm: Sincroniza automáticamente lo que escuchas con Last.fm para llevar un registro de todos tus éxitos.
 
-    Persistencia: Room (Offline-First) + DataStore (Preferences)
+    Búsqueda ultra rápida: Encuentra ese álbum o artista que buscas en segundos.
 
-    Multimedia: Android Media3 (ExoPlayer) + Coil 3
+🚀 ¿Cómo empezar?
 
-    Background Tasks: WorkManager
+    Descarga la aplicación en tu móvil.
 
-    Navegación: Type-safe Navigation (kotlinx.serialization)
+    Al abrirla, introduce la dirección de tu servidor Navidrome, tu usuario y tu contraseña.
 
-🏗 Arquitectura de alto nivel
+    ¡Listo! Ya puedes empezar a disfrutar de tu música.
 
-La aplicación está estructurada para garantizar la mantenibilidad:
+💡 ¿Por qué Velodrome?
 
-    Domain: Define las entidades y los casos de uso (UseCases), manteniendo la lógica de negocio independiente de los frameworks.
-
-    Data: Repositorios que actúan como Single Source of Truth entre la API (Remota) y la Base de Datos (Local).
-
-    Presentation: Interfaces reactivas (Flows) y Viewmodels que exponen estados inmutables a la UI.
-
-🔐 Seguridad
-
-    Zero-exposure policy: Las credenciales del servidor Navidrome se almacenan mediante cifrado de nivel industrial (Tink/EncryptedSharedPreferences).
-
-    Intercepción: Autenticación dinámica que evita la exposición de tokens en logs o almacenamiento innecesario.
+Queremos que tu experiencia escuchando música sea simple y privada. Velodrome no rastrea tu actividad, no vende tus datos y es totalmente gratuito. Está hecho por amantes de la música, para amantes de la música.
