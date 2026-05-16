@@ -1,6 +1,5 @@
 package com.example.velodrome.presentation.screen.artists
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,15 +18,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -69,7 +64,6 @@ fun ArtistsScreen(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .padding(horizontal = 16.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (uiState.isLoading) {
@@ -81,14 +75,14 @@ fun ArtistsScreen(
                     Text(text = uiState.error!!, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 15.dp)) {
                     VeloSearchBar(
                         query = uiState.searchQuery,
                         onQueryChange = viewModel::onSearchQueryChange,
                         onClearClick = { viewModel.onSearchQueryChange("") },
                         hint = stringResource(R.string.artists_search_hint)
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(36.dp))
 
                     if (uiState.isSearching) {
                         // Resultados de búsqueda local
@@ -182,7 +176,7 @@ fun ArtistCard(artist: Artist, onClick: () -> Unit = {}, onLongClick: () -> Unit
             ArtistAvatar(
                 coverArtId = artist.coverUrl,
                 contentDescription = artist.name,
-                size = 64.dp
+                size = 96.dp
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {

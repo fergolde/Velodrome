@@ -89,13 +89,13 @@ fun ExploreScreen(
     ) {
         // ── Screen title + search bar ──────────────────────────────────────
         item {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 5.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 15.dp)) {
                 VeloSearchBar(
                     query = uiState.searchQuery,
                     onQueryChange = viewModel::onSearchQueryChange,
                     onClearClick = viewModel::clearSearch,
                 )
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(36.dp))
             }
         }
 
@@ -279,20 +279,20 @@ fun VeloArtistCircle(
 ) {
     Column(
         modifier = Modifier
-            .width(72.dp)
+            .width(96.dp)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             modifier = Modifier
-                .size(72.dp)
+                .fillMaxSize()
                 .clip(CircleShape)
                 .background(VeloPalette.Bg4),
         ) {
             ArtistAvatar(
                 coverArtId = artist.coverUrl,
                 contentDescription = artist.name,
-                size = 72.dp,
+                size = 96.dp,
             )
         }
         Spacer(Modifier.height(8.dp))

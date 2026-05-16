@@ -77,7 +77,7 @@ fun HomeScreen(
         // ── Shuffle button ─────────────────────────────────────────────────
         item {
             ShuffleButton(
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 5.dp),
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 15.dp),
                 onShuffle = { viewModel.playShuffle() }
             )
             Spacer(Modifier.height(36.dp))

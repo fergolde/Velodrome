@@ -20,15 +20,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -70,7 +66,6 @@ fun AlbumsScreen(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .padding(horizontal = 16.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (uiState.isLoading) {
@@ -82,14 +77,14 @@ fun AlbumsScreen(
                     Text(text = uiState.error!!, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 15.dp)) {
                     VeloSearchBar(
                         query = uiState.searchQuery,
                         onQueryChange = viewModel::onSearchQueryChange,
                         onClearClick = { viewModel.onSearchQueryChange("") },
                         hint = stringResource(R.string.albums_search_hint),
                     )
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(36.dp))
 
                     if (uiState.isSearching) {
                         LazyColumn(
@@ -180,15 +175,15 @@ fun AlbumCard(album: Album, onClick: () -> Unit = {}, onLongClick: () -> Unit = 
         ) {
             Box(
                 modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(96.dp)
+                    //.clip(RoundedCornerShape(8.dp))
                     .background(color = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 AlbumCover(
                     coverArtId = album.coverUrl,
                     contentDescription = album.title,
-                    size = 64.dp,
-                    cornerRadius = 8.dp
+                    size = 96.dp,
+                    cornerRadius = 12.dp
                 )
             }
             Spacer(modifier = Modifier.width(16.dp))
