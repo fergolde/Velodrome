@@ -23,7 +23,7 @@ data class SubsonicResponseDto(
     @Json(name = "albumList2") val albumList2: AlbumListDto? = null,
     @Json(name = "album") val album: AlbumDetailDto? = null,
 
-    // 🔥 FIX IMPORTANTE: MusicDirectory (TRACKS REALS)
+    // MusicDirectory (TRACKS REALS)
     @Json(name = "directory") val directory: DirectoryDto? = null,
 
     // Search / genres
@@ -120,7 +120,7 @@ data class AlbumDetailDto(
     @Json(name = "year") val year: Int? = null,
     @Json(name = "genre") val genre: String? = null,
 
-    // ❌ puede venir null en Subsonic
+    // puede venir null en Subsonic
     @Json(name = "song") val songs: List<SongDto>? = null,
 
     @Json(name = "songCount") val songCount: Int? = null,

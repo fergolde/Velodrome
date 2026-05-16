@@ -1,7 +1,6 @@
 package com.example.velodrome.data.repository
 
 import androidx.annotation.OptIn
-import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import com.example.velodrome.data.local.dao.TrackDao
 import com.example.velodrome.data.local.mapper.toDomain
@@ -127,17 +126,8 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
     override suspend fun getOfflineTracks(): List<Track> {
         val allLocalTracks = trackDao.getAllTracksOnce()
 
-        // LOG 1: ¿Hay tracks en la BD?
-        Log.d("LOCAL_OFFLINE", "Total tracks in DB: ${allLocalTracks.size}")
-
-        // LOG 2: ¿Qué keys hay en SimpleCache?
-        val cachedKeys = cacheManager.getCachedKeys()
-        Log.d("LOCAL_OFFLINE", "SimpleCache keys (${cachedKeys.size}): $cachedKeys")
-
         return allLocalTracks.filter { track ->
-            val key = "navidrome_track_${track.id}"
             val spans = cacheManager.isTrackFullyCached(track.id, track.sizeBytes)
-            Log.d("LOCAL_OFFLINE", "Track ${track.id} -> key=$key, cached=$spans, sizeBytes=${track.sizeBytes}")
             spans
         }.map { it.toDomain() }
     }
@@ -157,20 +147,12 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
                 songs.forEach { allTracks.add(mapSongDto(it, album.id)) }
             }
 
-            allTracks.forEach { track ->
-                Log.d("TOP_GLOBAL", "RAW: ${track.title} - playCount=${track.playCount}")
-            }
-
             val result = allTracks
                 .filter { it.playCount > 0 }
                 .distinctBy { it.id }
                 .sortedByDescending { it.playCount }
                 .take(size)
                 .shuffled()
-
-            result.forEach { track ->
-                Log.d("TOP_GLOBAL", "RAW: ${track.title} - playCount=${track.playCount}")
-            }
 
             result
         }

@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -48,6 +49,7 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showColorPicker by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
+    var showClearCacheDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.hasPendingChanges) {
         if (uiState.hasPendingChanges) showConfirmDialog = true
@@ -251,8 +253,81 @@ fun SettingsScreen(
                 Spacer(Modifier.height(4.dp))
 
                 // Clear button
+
+                if (showClearCacheDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showClearCacheDialog = false },
+                        shape = RoundedCornerShape(20.dp),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.DeleteSweep,
+                                contentDescription = null,
+                                tint = VeloPalette.Destructive,
+                                modifier = Modifier.size(28.dp),
+                            )
+                        },
+                        title = {
+                            Text(
+                                text = stringResource(R.string.settings_clear_cache_dialog_title),
+                                fontFamily = DmSansFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = stringResource(R.string.settings_clear_cache_dialog_message),
+                                fontFamily = DmSansFontFamily,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        },
+                        dismissButton = {
+                            OutlinedButton(
+                                onClick = { showClearCacheDialog = false },
+                                shape = RoundedCornerShape(12.dp),
+                                border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                                    brush = SolidColor(VeloPalette.Border),
+                                ),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_cancel),
+                                    fontFamily = DmSansFontFamily,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            OutlinedButton(
+                                onClick = {
+                                    showClearCacheDialog = false
+                                    viewModel.clearAllCaches()
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = VeloPalette.Destructive,
+                                ),
+                                border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                                    brush = SolidColor(VeloPalette.Destructive.copy(alpha = .5f)),
+                                ),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_clear_cache),
+                                    fontFamily = DmSansFontFamily,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.sp,
+                                )
+                            }
+                        },
+                    )
+                }
                 OutlinedButton(
-                    onClick = { viewModel.clearAllCaches() },
+                    onClick = { showClearCacheDialog = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(42.dp),
@@ -261,7 +336,7 @@ fun SettingsScreen(
                         contentColor = VeloPalette.Destructive,
                     ),
                     border = ButtonDefaults.outlinedButtonBorder(true).copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(VeloPalette.Destructive.copy(alpha = .5f)),
+                        brush = SolidColor(VeloPalette.Destructive.copy(alpha = .5f)),
                     ),
                     shape = RoundedCornerShape(12.dp),
                 ) {
@@ -322,7 +397,7 @@ fun VeloSettingsSection(
             shape = RoundedCornerShape(18.dp),
             color = VeloPalette.Bg3,
             border = ButtonDefaults.outlinedButtonBorder(true).copy(
-                brush = androidx.compose.ui.graphics.SolidColor(VeloPalette.Border),
+                brush = SolidColor(VeloPalette.Border),
             ),
         ) {
             Column(

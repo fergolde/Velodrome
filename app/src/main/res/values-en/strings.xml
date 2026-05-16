@@ -125,6 +125,8 @@
     <string name="settings_confirm_changes_question">    Do you confirm the changes?</string>
     <string name="settings_apply">Apply</string>
     <string name="settings_cancel">Cancel</string>
+    <string name="settings_clear_cache_dialog_title">Clear cache?</string>
+    <string name="settings_clear_cache_dialog_message">All cached data will be deleted. You will need to reload the content next time.</string>
 
     <!-- Common -->
     <string name="nav_back">Back</string>

@@ -2,7 +2,6 @@ package com.example.velodrome.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
 import com.example.velodrome.data.local.dao.AlbumDao
 import com.example.velodrome.data.local.dao.ArtistDao
 import com.example.velodrome.data.local.dao.ScrobbleDao

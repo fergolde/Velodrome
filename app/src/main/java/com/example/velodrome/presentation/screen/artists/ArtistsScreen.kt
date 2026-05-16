@@ -49,6 +49,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.velodrome.R
 import com.example.velodrome.domain.model.Artist
 import com.example.velodrome.presentation.components.UniversalOptionsSheet
+import com.example.velodrome.presentation.components.VeloSearchBar
 import com.example.velodrome.presentation.screen.home.ArtistAvatar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,10 +82,11 @@ fun ArtistsScreen(
                 }
             } else {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    ArtistsSearchBar(
+                    VeloSearchBar(
                         query = uiState.searchQuery,
                         onQueryChange = viewModel::onSearchQueryChange,
-                        onClearClick = { viewModel.onSearchQueryChange("") }
+                        onClearClick = { viewModel.onSearchQueryChange("") },
+                        hint = stringResource(R.string.artists_search_hint)
                     )
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -157,48 +159,6 @@ fun ArtistsScreen(
             }
         }
     }
-}
-
-@Composable
-fun ArtistsSearchBar(
-    query: String = "",
-    onQueryChange: (String) -> Unit = {},
-    onClearClick: () -> Unit = {}
-) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(MaterialTheme.colorScheme.surface),
-        placeholder = {
-            Text(
-                text = stringResource(R.string.artists_search_hint),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-        },
-        shape = RoundedCornerShape(28.dp),
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = onClearClick) {
-                    Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = "Limpiar búsqueda",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-    )
 }
 
 @Composable
