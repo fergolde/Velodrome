@@ -1,4 +1,4 @@
-Velodrome
+Velodrome 🚴‍♂️💨
 
 Velodrome es tu cliente de música personal para Navidrome. Diseñado para llevar toda tu biblioteca musical contigo, sin complicaciones y con una estética moderna. Escucha tu colección donde quieras, cuando quieras y con la mejor calidad.
 🎵 ¿Qué puedes hacer con Velodrome?
