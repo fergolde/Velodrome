@@ -29,6 +29,7 @@ paging = "3.5.0"
 room = "2.8.4"
 uiText = "1.11.1"
 
+
 [libraries]
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

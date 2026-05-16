@@ -19,6 +19,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Velodrome">
+        <profileable android:shell="true" />
 
         <provider
             android:name="androidx.startup.InitializationProvider"
@@ -39,6 +40,7 @@
             android:theme="@style/Theme.Velodrome">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -52,7 +54,6 @@
                 <action android:name="androidx.media3.session.MediaSessionService" />
             </intent-filter>
         </service>
-
     </application>
 
 </manifest>
