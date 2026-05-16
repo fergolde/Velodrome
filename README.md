@@ -3,7 +3,7 @@ Velodrome
 Velodrome es tu cliente de música personal para Navidrome. Diseñado para llevar toda tu biblioteca musical contigo, sin complicaciones y con una estética moderna. Escucha tu colección donde quieras, cuando quieras y con la mejor calidad.
 ¿Qué puedes hacer con Velodrome?
 
-    Tu música, siempre contigo: Conéctate a tu propio servidor Navidrome y accede a toda tu colección musical desde tu móvil.
+- Tu música, siempre contigo: Conéctate a tu propio servidor Navidrome y accede a toda tu colección musical desde tu móvil.
 
     Modo Offline: ¿Sin internet? No te preocupes. Velodrome guarda automáticamente las canciones que escuchas para que puedas disfrutarlas sin conexión.
 
