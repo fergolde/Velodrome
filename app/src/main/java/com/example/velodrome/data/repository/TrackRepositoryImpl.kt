@@ -34,7 +34,10 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
     override suspend fun syncTracksForAlbum(albumId: String): Result<Unit> {
         return runCatching {
             val response = api.getMusicDirectory(albumId)
-            val songsList = response.response.directory?.child ?: emptyList()
+
+            // Filtramos asegurando que solo procesamos archivos (isDir = false o null)
+            val songsList = response.response.directory?.child?.filter { it.isDir != true }
+                ?: return@runCatching // Si no hay directorio o hijos, terminamos exitosamente
 
             val entities = songsList.map { song ->
                 Track(
@@ -50,7 +53,10 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
                     coverArtId = song.coverArt
                 ).toEntity()
             }
-            trackDao.insertTracks(entities)
+
+            if (entities.isNotEmpty()) {
+                trackDao.insertTracks(entities)
+            }
         }
     }
 
@@ -97,7 +103,12 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
         return runCatching {
             val response = api.getRandomSongs(size, genre, fromYear, toYear)
             val songDtos = response.response.randomSongs?.song ?: emptyList()
-            songDtos.map { mapSongDto(it, it.albumId ?: "") }
+            val tracks = songDtos.map { mapSongDto(it, it.albumId ?: "") }
+
+            // ¡Guardamos en Room para tener el sizeBytes disponible en el futuro!
+            saveTracksToLocalDb(tracks)
+
+            tracks
         }
     }
 
@@ -156,5 +167,10 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
 
             result
         }
+    }
+
+    // Usa este método para guardar canciones cada vez que las obtengas de la API
+    private suspend fun saveTracksToLocalDb(tracks: List<Track>) {
+        trackDao.insertTracks(tracks.map { it.toEntity() })
     }
 }

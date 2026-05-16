@@ -145,19 +145,27 @@ class CacheManager @Inject constructor(
      * @param expectedSizeBytes The expected file size from the API (track.sizeBytes)
      * @return true if track is at least 90% cached
      */
+    /**
+     * Valida si un track está completamente cacheado.
+     */
     fun isTrackFullyCached(trackId: String, expectedSizeBytes: Long): Boolean {
         val key = "navidrome_track_$trackId"
         val spans = simpleCache.getCachedSpans(key)
+
+        // 1. Si no hay nada en disco, no hay canción offline.
         if (spans.isEmpty()) return false
 
-        // Calculate total downloaded bytes for this key
         val downloadedBytes = spans.sumOf { it.length }
 
-        // If sizeBytes is 0 (API didn't provide it), use 1MB as minimum threshold
-        val actualExpectedSize = if (expectedSizeBytes == 0L) 1024 * 1024L else expectedSizeBytes
+        // 2. Si tenemos datos en Room (expectedSizeBytes > 0), somos estrictos.
+        if (expectedSizeBytes > 0) {
+            return downloadedBytes >= expectedSizeBytes
+        }
 
-        // Consider fully cached if we have 90% or more of the file
-        return downloadedBytes >= (actualExpectedSize * 0.90)
+        // 3. Fallback: Si Room no sabe el tamaño (expectedSizeBytes == 0),
+        // usamos tu criterio de 2MB para determinar si es un archivo completo.
+        // Esto es muy seguro para MP3s.
+        return downloadedBytes > (2 * 1024 * 1024)
     }
 
 

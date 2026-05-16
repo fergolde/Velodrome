@@ -27,43 +27,30 @@ class AuthInterceptor @Inject constructor(
 
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
-        val originalUrl = originalRequest.url
 
-        // Generate fresh auth params for each request
-        val authParams = credentialsManager.generateAuthParams()
-
-        if (authParams == null) {
-            // Allow request to proceed (might be login request)
-            return chain.proceed(originalRequest)
-        }
+        // Obtenemos los parámetros (reutiliza el token si es válido)
+        val authParams = credentialsManager.getValidAuthParams()
+            ?: return chain.proceed(originalRequest)
 
         val (username, token, salt) = authParams
 
-        // Build new URL with auth params and force JSON response
-        val newUrl = originalUrl.newBuilder()
+        val newUrl = originalRequest.url.newBuilder()
             .addQueryParameter("u", username)
             .addQueryParameter("t", token)
             .addQueryParameter("s", salt)
             .addQueryParameter("v", NavidromeApi.API_VERSION)
             .addQueryParameter("c", NavidromeApi.CLIENT_NAME)
-            .addQueryParameter("f", "json")  // Force JSON response
+            .addQueryParameter("f", "json")
             .build()
 
-        val newRequest = originalRequest.newBuilder()
-            .url(newUrl)
-            .build()
+        val newRequest = originalRequest.newBuilder().url(newUrl).build()
+        val response = chain.proceed(newRequest)
 
-        return try {
-            val response = chain.proceed(newRequest)
-            
-            // Check for auth errors - if 401/403, clear credentials
-            if (response.code == 401 || response.code == 403) {
-                credentialsManager.clearCredentials()
-            }
-            
-            response
-        } catch (e: IOException) {
-            throw e
+        // Si el servidor nos rechaza el token (401/403), invalidamos la caché
+        if (response.code == 401 || response.code == 403) {
+            credentialsManager.invalidateAuth()
         }
+
+        return response
     }
 }

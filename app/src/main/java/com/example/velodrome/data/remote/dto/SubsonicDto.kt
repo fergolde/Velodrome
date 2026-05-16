@@ -133,6 +133,7 @@ data class AlbumDetailDto(
 data class SongDto(
     val id: String,
     val title: String,
+    val isDir: Boolean? = null,
 
     @Json(name = "album") val album: String? = null,
     @Json(name = "albumId") val albumId: String? = null,

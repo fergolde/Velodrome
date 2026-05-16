@@ -53,10 +53,9 @@ class VelodromeApp : Application(), SingletonImageLoader.Factory, Configuration.
         }
 
     override fun newImageLoader(context: Context): ImageLoader {
-        // Image cache: usa setting del usuario (en MB)
-        val imageLimitMb = runBlocking {
-            settingsRepository.imageCacheSizeMb.first()
-        }.toLong()
+        // Lectura síncrona desde SharedPreferences
+        val prefs = context.getSharedPreferences("velodrome_cache_prefs", Context.MODE_PRIVATE)
+        val imageLimitMb = prefs.getInt("image_cache_size_mb", 200).toLong()
 
         return ImageLoader.Builder(context)
             .components {
@@ -77,9 +76,8 @@ class VelodromeApp : Application(), SingletonImageLoader.Factory, Configuration.
             }
             // Disk cache: usa setting imageCacheSizeMb del usuario (convertido a bytes)
             .diskCache {
-                val cacheDir: Path = File(cacheDir, "image_cache").toOkioPath()
                 DiskCache.Builder()
-                    .directory(cacheDir)
+                    .directory(File(cacheDir, "image_cache").toOkioPath())
                     .maxSizeBytes(imageLimitMb * 1024L * 1024L)
                     .build()
             }
