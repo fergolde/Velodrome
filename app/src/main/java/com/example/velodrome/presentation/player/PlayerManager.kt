@@ -53,17 +53,13 @@ class PlayerManager @Inject constructor(
     }
 
     fun playNext(track: Track) {
-        val currentList = audioPlayerManager.playlist.value.toMutableList()
         val currentIndex = audioPlayerManager.currentIndex.value
-        val insertIndex = (currentIndex + 1).coerceAtMost(currentList.size)
-        currentList.add(insertIndex, track)
-        audioPlayerManager.setPlaylist(currentList)
+        val insertIndex = (currentIndex + 1).coerceAtMost(audioPlayerManager.playlist.value.size)
+        audioPlayerManager.insertIntoPlaylist(insertIndex, listOf(track))
     }
 
     fun addToQueue(track: Track) {
-        val currentList = audioPlayerManager.playlist.value.toMutableList()
-        currentList.add(track)
-        audioPlayerManager.setPlaylist(currentList)
+        audioPlayerManager.addToPlaylist(listOf(track))
     }
 
     fun playNow(tracks: List<Track>) {
@@ -73,17 +69,13 @@ class PlayerManager @Inject constructor(
 
     fun playNext(tracks: List<Track>) {
         if (tracks.isEmpty()) return
-        val currentList = playlist.value.toMutableList()
-        val insertIndex = (currentIndex.value + 1).coerceAtMost(currentList.size)
-        currentList.addAll(insertIndex, tracks)
-        audioPlayerManager.setPlaylist(currentList)
+        val insertIndex = (audioPlayerManager.currentIndex.value + 1).coerceAtMost(audioPlayerManager.playlist.value.size)
+        audioPlayerManager.insertIntoPlaylist(insertIndex, tracks)
     }
 
     fun addToQueue(tracks: List<Track>) {
         if (tracks.isEmpty()) return
-        val currentList = playlist.value.toMutableList()
-        currentList.addAll(tracks)
-        audioPlayerManager.setPlaylist(currentList)
+        audioPlayerManager.addToPlaylist(tracks)
     }
 
     fun setLoadMoreCallback(callback: () -> Unit) {

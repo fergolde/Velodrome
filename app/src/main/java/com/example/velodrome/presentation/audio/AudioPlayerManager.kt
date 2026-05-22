@@ -239,16 +239,69 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         return credentialsManager.getStreamUrl(track.id)
     }
 
+    /**
+     * Construye un [MediaItem] para el MediaController a partir de un [Track].
+     */
+    private fun buildMediaItem(track: Track): MediaItem {
+        val streamUrl = getStreamUrl(track)
+        val coverUrl = track.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
+        return MediaItem.Builder().setMediaId(track.id).setUri(streamUrl)
+            .setMediaMetadata(MediaMetadata.Builder().setTitle(track.title).setArtist(track.artistName).setAlbumTitle(track.albumName)
+                .apply { coverUrl?.let { setArtworkUri(it.toUri()) } }.build()).build()
+    }
+
+    /**
+     * Inserta tracks en la playlist en el índice especificado.
+     * Actualiza TANTO el StateFlow local como la lista interna del MediaController.
+     */
+    fun insertIntoPlaylist(index: Int, tracks: List<Track>) {
+        if (tracks.isEmpty()) return
+        val currentPlaylist = _playlist.value.toMutableList()
+        currentPlaylist.addAll(index, tracks)
+        _playlist.value = currentPlaylist
+
+        val mediaItems = tracks.map { buildMediaItem(it) }
+
+        mediaController?.let { controller ->
+            controller.addMediaItems(index, mediaItems)
+            return
+        }
+
+        val future = controllerFuture
+        if (future == null || !future.isDone) return
+        try {
+            mediaController = future.get()
+            mediaController?.addMediaItems(index, mediaItems)
+        } catch (_: Exception) { }
+    }
+
+    /**
+     * Agrega tracks al final de la playlist.
+     * Actualiza TANTO el StateFlow local como la lista interna del MediaController.
+     */
+    fun addToPlaylist(tracks: List<Track>) {
+        if (tracks.isEmpty()) return
+        _playlist.value = _playlist.value + tracks
+
+        val mediaItems = tracks.map { buildMediaItem(it) }
+
+        mediaController?.let { controller ->
+            controller.addMediaItems(mediaItems)
+            return
+        }
+
+        val future = controllerFuture
+        if (future == null || !future.isDone) return
+        try {
+            mediaController = future.get()
+            mediaController?.addMediaItems(mediaItems)
+        } catch (_: Exception) { }
+    }
+
     fun appendToPlaylist(tracks: List<Track>) {
         if (tracks.isEmpty()) return
         _playlist.value += tracks
-        val mediaItems = tracks.mapIndexed { index, t ->
-            val streamUrl = getStreamUrl(t)
-            val coverUrl = t.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
-            MediaItem.Builder().setMediaId(t.id).setUri(streamUrl)
-                .setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artistName).setAlbumTitle(t.albumName)
-                    .apply { coverUrl?.let { setArtworkUri(it.toUri()) } }.build()).build()
-        }
+        val mediaItems = tracks.map { buildMediaItem(it) }
 
         // Try to add directly if controller is ready
         mediaController?.let { controller ->
