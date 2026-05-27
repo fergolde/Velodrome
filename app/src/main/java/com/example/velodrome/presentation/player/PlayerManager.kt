@@ -93,6 +93,10 @@ class PlayerManager @Inject constructor(
         }
     }
 
+    fun removeFromPlaylist(index: Int) {
+        audioPlayerManager.removeFromPlaylist(index)
+    }
+
     fun togglePlayPause() {
         audioPlayerManager.togglePlayPause()
     }

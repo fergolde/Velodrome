@@ -80,6 +80,13 @@ class PlayerViewModel @Inject constructor(
     }
 
     /**
+     * Remove a track from the playlist by index
+     */
+    fun onRemoveTrack(index: Int) {
+        playerManager.removeFromPlaylist(index)
+    }
+
+    /**
      * Seek to position (in seconds)
      */
     fun onSeek(position: Int) {

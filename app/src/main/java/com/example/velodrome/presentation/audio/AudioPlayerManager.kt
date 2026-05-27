@@ -379,6 +379,39 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         }
     }
 
+    fun removeFromPlaylist(index: Int) {
+        val currentList = _playlist.value.toMutableList()
+        if (index !in currentList.indices) return
+        
+        currentList.removeAt(index)
+        _playlist.value = currentList
+        
+        // If playlist is empty, stop playback
+        if (currentList.isEmpty()) {
+            mediaController?.stop()
+            _currentIndex.value = 0
+            _currentTrack.value = null
+            _currentTrackId.value = null
+            _isPlaying.value = false
+            return
+        }
+        
+        // Remove from MediaController
+        mediaController?.removeMediaItem(index)
+        
+        // Adjust current index if needed
+        val currentIdx = _currentIndex.value
+        if (index < currentIdx) {
+            _currentIndex.value = currentIdx - 1
+        } else if (index == currentIdx) {
+            // MediaController handles transition, but we need to ensure consistency
+            val newIdx = currentIdx.coerceAtMost(currentList.size - 1)
+            _currentIndex.value = newIdx
+            _currentTrack.value = currentList.getOrNull(newIdx)
+            _currentTrackId.value = currentList.getOrNull(newIdx)?.id
+        }
+    }
+
     fun setPlaylist(playlist: List<Track>) { _playlist.value = playlist }
 
     fun setLoadMoreCallback(callback: () -> Unit) { loadMoreCallback = callback }

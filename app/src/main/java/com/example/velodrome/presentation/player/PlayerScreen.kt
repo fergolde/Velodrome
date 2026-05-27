@@ -16,6 +16,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -60,6 +62,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -69,9 +72,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,6 +86,8 @@ import com.example.velodrome.R
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.screen.home.AlbumCover
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -192,11 +200,12 @@ fun PlayerScreen(
             QueueContent(
                 playlist = uiState.playlist,
                 currentIndex = uiState.currentIndex,
-                uiState.isPlaying,
+                isPlaying = uiState.isPlaying,
                 onTrackClick = { index ->
                     viewModel.onTrackSelected(index)
                     showQueue = false
-                }
+                },
+                onRemoveTrack = viewModel::onRemoveTrack
             )
             Spacer(modifier = Modifier.height(20.dp))
         }
@@ -499,8 +508,8 @@ fun QueueContent(
     playlist: List<Track>,
     currentIndex: Int,
     isPlaying: Boolean,
-    onTrackClick: (Int) -> Unit
-
+    onTrackClick: (Int) -> Unit,
+    onRemoveTrack: (Int) -> Unit = {}
 ) {
     val listState = rememberLazyListState()
 
@@ -549,19 +558,21 @@ fun QueueContent(
         Spacer(modifier = Modifier.height(20.dp))
 
         LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            itemsIndexed(playlist) { index, track ->
+            itemsIndexed(playlist, key = { _, track -> track.id }) { index, track ->
                 QueueTrackItem(
                     track = track,
                     index = index,
                     isCurrentTrack = index == currentIndex,
-                    isPlaying,
-                    onClick = { onTrackClick(index) }
+                    isPlaying = isPlaying,
+                    onClick = { onTrackClick(index) },
+                    onRemove = { onRemoveTrack(index) }
                 )
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QueueTrackItem(
     track: Track,
@@ -569,7 +580,12 @@ fun QueueTrackItem(
     isCurrentTrack: Boolean,
     isPlaying: Boolean,
     onClick: () -> Unit,
+    onRemove: () -> Unit = {},
 ) {
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    val density = LocalDensity.current
+    val threshold = with(density) { 100.dp.toPx() }
+
     val bgColor by animateColorAsState(
         targetValue = if (isCurrentTrack)
             MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
@@ -577,78 +593,100 @@ fun QueueTrackItem(
         label = "trackBg"
     )
 
-    Row(
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(bgColor)
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp, horizontal = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .offset { IntOffset(offsetX.roundToInt(), 0) }
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { _, dragAmount ->
+                        offsetX = (offsetX + dragAmount).coerceIn(-500f, 500f)
+                    },
+                    onDragEnd = {
+                        if (abs(offsetX) > threshold) {
+                            onRemove()
+                        } else {
+                            offsetX = 0f
+                        }
+                    },
+                    onDragCancel = {
+                        offsetX = 0f
+                    }
+                )
+            }
     ) {
-        // Portada con overlay de "playing" si es la pista actual
-        Box(
+        Row(
             modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(bgColor)
+                .clickable(onClick = onClick)
+                .padding(vertical = 8.dp, horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            AlbumCover(
-                coverArtId = track.coverArtId,
-                contentDescription = null,
-                size = 52.dp,
-                cornerRadius = 10.dp,
-                modifier = Modifier.fillMaxSize()
-            )
-            // Overlay oscuro + icono solo en la pista actual
-            if (isCurrentTrack) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.45f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Equalizer animado
-                    EqualizerBars(isPlaying)
+            // Portada con overlay de "playing" si es la pista actual
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(10.dp))
+            ) {
+                AlbumCover(
+                    coverArtId = track.coverArtId,
+                    contentDescription = null,
+                    size = 52.dp,
+                    cornerRadius = 10.dp,
+                    modifier = Modifier.fillMaxSize()
+                )
+                // Overlay oscuro + icono solo en la pista actual
+                if (isCurrentTrack) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.45f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Equalizer animado
+                        EqualizerBars(isPlaying)
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = track.title,
-                color = if (isCurrentTrack)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.onBackground,
-                fontSize = 14.sp,
-                fontWeight = if (isCurrentTrack) FontWeight.SemiBold else FontWeight.Normal,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = track.artistName,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                fontSize = 12.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = track.title,
+                    color = if (isCurrentTrack)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onBackground,
+                    fontSize = 14.sp,
+                    fontWeight = if (isCurrentTrack) FontWeight.SemiBold else FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(
+                    text = track.artistName,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
 
-        Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = formatTime(track.durationSec),
-                color = if (isCurrentTrack)
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                else
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = formatTime(track.durationSec),
+                    color = if (isCurrentTrack)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }
