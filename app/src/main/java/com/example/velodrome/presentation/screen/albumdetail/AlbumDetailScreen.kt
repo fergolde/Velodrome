@@ -201,17 +201,18 @@ private fun AlbumContent(
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     if (isLandscape) {
-        // ── Landscape: cover izq + info/tracks der ────────────────────────
+        // ── Landscape: todo izq (cover+info+btns), solo tracks der ───────
         Row(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Left: back button + album cover
+            // Left: cover + album info + action buttons (centrado vertical)
             Column(
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(0.35f),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // Back button siempre arriba
                 IconButton(
                     onClick = onBackClick,
                     modifier = Modifier
@@ -226,104 +227,105 @@ private fun AlbumContent(
                         tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                     )
                 }
-                Box(
+
+                // Bloque centrado verticalmente
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    contentAlignment = Alignment.Center
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Cover
                     AlbumCover(
                         coverArtId = album?.coverUrl,
                         contentDescription = album?.title,
                         size = 0.dp,
                         cornerRadius = 16.dp,
                         modifier = Modifier
-                            .fillMaxWidth(0.75f)
+                            .fillMaxWidth(0.7f)
                             .aspectRatio(1f)
                     )
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // Album info
+                    Text(
+                        text = album?.title ?: "",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = album?.artistName ?: "",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    ) {
+                        album?.year?.let { year ->
+                            Text(
+                                text = year.toString(),
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = " · ",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            )
+                        }
+                        Text(
+                            text = "${tracks.size} tracks · ${durationDisk(tracks)} min",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // Action buttons
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = onPlayAllClick,
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.height(40.dp)
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Play", fontSize = 13.sp)
+                        }
+                        Button(
+                            onClick = onShuffleClick,
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.height(40.dp)
+                        ) {
+                            Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                        Button(
+                            onClick = onAddToQueueClick,
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.height(40.dp)
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                    }
                 }
             }
 
-            // Right: info + buttons + track list
+            // Right: solo tracks
             Column(
                 modifier = Modifier
                     .fillMaxHeight()
                     .weight(0.65f)
                     .padding(end = 16.dp)
             ) {
-                Spacer(Modifier.height(20.dp))
-                Text(
-                    text = album?.title ?: "",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = album?.artistName ?: "",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    album?.year?.let { year ->
-                        Text(
-                            text = year.toString(),
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        )
-                        Text(
-                            text = " · ",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        )
-                    }
-                    Text(
-                        text = "${tracks.size} tracks · ${durationDisk(tracks)} min",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                }
-                Spacer(Modifier.height(12.dp))
-
-                // Action buttons
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(
-                        onClick = onPlayAllClick,
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.height(44.dp)
-                    ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Play", fontSize = 14.sp)
-                    }
-                    Button(
-                        onClick = onShuffleClick,
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.height(44.dp)
-                    ) {
-                        Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(20.dp))
-                    }
-                    Button(
-                        onClick = onAddToQueueClick,
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.height(44.dp)
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, modifier = Modifier.size(20.dp))
-                    }
-                }
-                Spacer(Modifier.height(16.dp))
-
-                // Tracks header
-                Text(
-                    text = "Tracks",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-                Spacer(Modifier.height(4.dp))
-
-                // Tracks list
                 LazyColumn(modifier = Modifier.weight(1f)) {
                     items(tracks) { track ->
                         TrackItem(
@@ -347,14 +349,6 @@ private fun AlbumContent(
                     onShuffleClick = onShuffleClick,
                     onAddToQueueClick = onAddToQueueClick,
                     onBackClick = onBackClick
-                )
-            }
-            item {
-                Text(
-                    text = "Tracks",
-                    modifier = Modifier.padding(16.dp),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
                 )
             }
             items(tracks) { track ->
