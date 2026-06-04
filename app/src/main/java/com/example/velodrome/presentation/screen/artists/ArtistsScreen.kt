@@ -1,29 +1,23 @@
 package com.example.velodrome.presentation.screen.artists
 
-import android.content.res.Configuration
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -38,7 +32,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -65,8 +58,6 @@ fun ArtistsScreen(
     var showOptions by remember { mutableStateOf(false) }
     var selectedArtist by remember { mutableStateOf<Artist?>(null) }
     val sheetState = rememberModalBottomSheetState()
-    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -92,17 +83,35 @@ fun ArtistsScreen(
                     Spacer(modifier = Modifier.height(36.dp))
 
                     if (uiState.isSearching) {
-                        // Resultados de búsqueda local
-                        if (isLandscape) {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(3),
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(bottom = 100.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(count = uiState.searchResults.size) { index ->
-                                    val artist = uiState.searchResults[index]
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(140.dp),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 100.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(uiState.searchResults, key = { it.id }) { artist ->
+                                ArtistGridCard(
+                                    artist = artist,
+                                    onClick = { onArtistClick(artist) },
+                                    onLongClick = {
+                                        selectedArtist = artist
+                                        showOptions = true
+                                    }
+                                )
+                            }
+                        }
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(140.dp),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 100.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(count = pagedArtists.itemCount) { index ->
+                                val artist = pagedArtists[index]
+                                if (artist != null) {
                                     ArtistGridCard(
                                         artist = artist,
                                         onClick = { onArtistClick(artist) },
@@ -111,69 +120,6 @@ fun ArtistsScreen(
                                             showOptions = true
                                         }
                                     )
-                                }
-                            }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(bottom = 100.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(count = uiState.searchResults.size) { index ->
-                                    val artist = uiState.searchResults[index]
-                                    ArtistCard(
-                                        artist = artist,
-                                        onClick = { onArtistClick(artist) },
-                                        onLongClick = {
-                                            selectedArtist = artist
-                                            showOptions = true
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        // Lista paginada
-                        if (isLandscape) {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(3),
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(bottom = 100.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(count = pagedArtists.itemCount) { index ->
-                                    val artist = pagedArtists[index]
-                                    if (artist != null) {
-                                        ArtistGridCard(
-                                            artist = artist,
-                                            onClick = { onArtistClick(artist) },
-                                            onLongClick = {
-                                                selectedArtist = artist
-                                                showOptions = true
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(bottom = 100.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                items(count = pagedArtists.itemCount) { index ->
-                                    val artist = pagedArtists[index]
-                                    if (artist != null) {
-                                        ArtistCard(
-                                            artist = artist,
-                                            onClick = { onArtistClick(artist) },
-                                            onLongClick = {
-                                                selectedArtist = artist
-                                                showOptions = true
-                                            }
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -205,54 +151,6 @@ fun ArtistsScreen(
                     }
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun ArtistCard(artist: Artist, onClick: () -> Unit = {}, onLongClick: () -> Unit = {}) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            ),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ArtistAvatar(
-                coverArtId = artist.coverUrl,
-                contentDescription = artist.name,
-                size = 96.dp
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = artist.name,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Text(
-                    text = "${artist.albumCount} ALBUMS",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 0.5.sp
-                )
-            }
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            )
         }
     }
 }

@@ -2,10 +2,11 @@ package com.example.velodrome.presentation.screen.artistdetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,7 +22,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -45,8 +45,6 @@ fun ArtistDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-
     Scaffold(
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) { data ->
@@ -93,7 +91,6 @@ fun ArtistDetailScreen(
                         artist = uiState.artist,
                         albums = uiState.albums,
                         isPreparingPlayback = uiState.isPreparingPlayback,
-                        isLandscape = isLandscape,
                         onBackClick = onBackClick,
                         onAlbumClick = onAlbumClick,
                         onPlayAllClick = {
@@ -147,19 +144,20 @@ fun ArtistAlbumsList(
     artist: com.example.velodrome.domain.model.Artist?,
     albums: List<Album>,
     isPreparingPlayback: Boolean,
-    isLandscape: Boolean,
     onBackClick: () -> Unit,
     onAlbumClick: (String) -> Unit,
     onPlayAllClick: () -> Unit,
     onShuffleAllClick: () -> Unit,
     onAddToQueueClick: () -> Unit
 ) {
-    val columns = if (isLandscape) 3 else 2
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(160.dp),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 100.dp)
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 100.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
+        item(span = { GridItemSpan(maxLineSpan) }) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -246,35 +244,22 @@ fun ArtistAlbumsList(
             }
         }
 
-        item {
+        item(span = { GridItemSpan(maxLineSpan) }) {
             Text(
                 text = stringResource(R.string.artist_detail_albums),
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp)
             )
         }
 
-        val albumRows = albums.chunked(columns)
-        items(albumRows) { rowAlbums ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                rowAlbums.forEach { album ->
-                    ArtistAlbumCard(
-                        album = album,
-                        onClick = { onAlbumClick(album.id) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                repeat(columns - rowAlbums.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-            }
+        items(albums, key = { it.id }) { album ->
+            ArtistAlbumCard(
+                album = album,
+                onClick = { onAlbumClick(album.id) },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
