@@ -73,6 +73,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +84,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.velodrome.R
+import android.content.res.Configuration
 import com.example.velodrome.domain.model.Track
 import com.example.velodrome.presentation.components.SharedBottomNavigationBar
 import com.example.velodrome.presentation.screen.home.AlbumCover
@@ -102,72 +104,159 @@ fun PlayerScreen(
     val uiState by viewModel.uiState.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showQueue by remember { mutableStateOf(false) }
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Contenido del player ocupa todo el espacio disponible menos la barra inferior
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            // Gradient overlay
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(320.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
-                                Color.Transparent
+            if (isLandscape) {
+                // ── Landscape: Row partido ──────────────────────────────────
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(start = 16.dp, end = 12.dp),
+                ) {
+                    // Left: TopBar + Album Art centrado verticalmente
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(0.40f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        PlayerTopBar(
+                            onMinimizeClick = onMinimizeClick,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AlbumArt(
+                                coverArtId = uiState.currentTrack?.coverArtId,
+                            )
+                        }
+                    }
+
+                    // Right: SongInfo + Seek + Controls + inline Queue
+                    Column(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(0.65f)
+                            .padding(start = 20.dp, end = 4.dp),
+                    ) {
+                        // Controls section (top, fixed height)
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Spacer(Modifier.height(16.dp))
+                            SongInfoSection(
+                                title = uiState.currentTrack?.title ?: stringResource(R.string.player_unknown_track),
+                                artist = uiState.currentTrack?.artistName ?: stringResource(R.string.artists_unknown),
+                                album = uiState.currentTrack?.albumName ?: stringResource(R.string.albums_unknown_title)
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            SeekBar(
+                                currentPosition = uiState.currentPosition,
+                                duration = uiState.currentTrack?.durationSec ?: 0,
+                                onSeek = viewModel::onSeek
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            PlaybackControls(
+                                isPlaying = uiState.isPlaying,
+                                onPlayPauseClick = { viewModel.onPlayPauseClick() },
+                                onPreviousClick = { viewModel.onPreviousClick() },
+                                onNextClick = { viewModel.onNextClick() },
+                                isShuffleEnabled = uiState.isShuffleEnabled,
+                                isRepeatEnabled = uiState.isRepeatEnabled,
+                                onShuffleClick = { viewModel.toggleShuffle() },
+                                onRepeatClick = { viewModel.toggleRepeat() }
+                            )
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        // Queue visible inline (takes remaining space)
+                        Box(modifier = Modifier.weight(1f)) {
+                            QueueContent(
+                                playlist = uiState.playlist,
+                                currentIndex = uiState.currentIndex,
+                                isPlaying = uiState.isPlaying,
+                                onTrackClick = { index ->
+                                    viewModel.onTrackSelected(index)
+                                },
+                                onRemoveTrack = viewModel::onRemoveTrack
+                            )
+                        }
+                    }
+                }
+            } else {
+                // ── Portrait: layout actual (sin cambios) ──────────────────
+                // Gradient overlay
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(320.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+                                    Color.Transparent
+                                )
                             )
                         )
-                    )
-            )
+                )
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(modifier = Modifier.height(20.dp))
-                PlayerTopBar(onMinimizeClick = onMinimizeClick)
-                Spacer(modifier = Modifier.height(20.dp))
-                AlbumArt(
-                    coverArtId = uiState.currentTrack?.coverArtId,
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-                SongInfoSection(
-                    title = uiState.currentTrack?.title ?: stringResource(R.string.player_unknown_track),
-                    artist = uiState.currentTrack?.artistName ?: stringResource(R.string.artists_unknown),
-                    album = uiState.currentTrack?.albumName ?: stringResource(R.string.albums_unknown_title)
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-                SeekBar(
-                    currentPosition = uiState.currentPosition,
-                    duration = uiState.currentTrack?.durationSec ?: 0,
-                    onSeek = viewModel::onSeek
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-                PlaybackControls(
-                    isPlaying = uiState.isPlaying,
-                    onPlayPauseClick = { viewModel.onPlayPauseClick() },
-                    onPreviousClick = { viewModel.onPreviousClick() },
-                    onNextClick = { viewModel.onNextClick() },
-                    isShuffleEnabled = uiState.isShuffleEnabled,
-                    isRepeatEnabled = uiState.isRepeatEnabled,
-                    onShuffleClick = { viewModel.toggleShuffle() },
-                    onRepeatClick = { viewModel.toggleRepeat() }
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                QueueChip(onClick = { showQueue = true })
-                Spacer(modifier = Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    PlayerTopBar(onMinimizeClick = onMinimizeClick)
+                    Spacer(modifier = Modifier.height(20.dp))
+                    AlbumArt(
+                        coverArtId = uiState.currentTrack?.coverArtId,
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                    SongInfoSection(
+                        title = uiState.currentTrack?.title ?: stringResource(R.string.player_unknown_track),
+                        artist = uiState.currentTrack?.artistName ?: stringResource(R.string.artists_unknown),
+                        album = uiState.currentTrack?.albumName ?: stringResource(R.string.albums_unknown_title)
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    SeekBar(
+                        currentPosition = uiState.currentPosition,
+                        duration = uiState.currentTrack?.durationSec ?: 0,
+                        onSeek = viewModel::onSeek
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    PlaybackControls(
+                        isPlaying = uiState.isPlaying,
+                        onPlayPauseClick = { viewModel.onPlayPauseClick() },
+                        onPreviousClick = { viewModel.onPreviousClick() },
+                        onNextClick = { viewModel.onNextClick() },
+                        isShuffleEnabled = uiState.isShuffleEnabled,
+                        isRepeatEnabled = uiState.isRepeatEnabled,
+                        onShuffleClick = { viewModel.toggleShuffle() },
+                        onRepeatClick = { viewModel.toggleRepeat() }
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    QueueChip(onClick = { showQueue = true })
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
 
@@ -215,9 +304,12 @@ fun PlayerScreen(
 // ─── Top Bar ──────────────────────────────────────────────────────────────────
 
 @Composable
-fun PlayerTopBar(onMinimizeClick: () -> Unit = {}) {
+fun PlayerTopBar(
+    onMinimizeClick: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
         // Texto centrado REAL
@@ -264,7 +356,7 @@ fun AlbumArt(
         AlbumCover(
             coverArtId = coverArtId,
             contentDescription = null,
-            size = 300.dp,
+            size = 0.dp,
             cornerRadius = 28.dp,
             modifier = Modifier.fillMaxSize()
         )

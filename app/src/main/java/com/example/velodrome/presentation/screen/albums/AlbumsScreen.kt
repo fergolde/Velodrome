@@ -6,23 +6,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -39,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -87,13 +84,15 @@ fun AlbumsScreen(
                     Spacer(modifier = Modifier.height(36.dp))
 
                     if (uiState.isSearching) {
-                        LazyColumn(
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(180.dp),
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 100.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(uiState.searchResults) { album ->
-                                AlbumCard(
+                            items(uiState.searchResults, key = { it.id }) { album ->
+                                AlbumGridCard(
                                     album = album,
                                     onClick = { onAlbumClick(album) },
                                     onLongClick = {
@@ -104,15 +103,17 @@ fun AlbumsScreen(
                             }
                         }
                     } else {
-                        LazyColumn(
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(180.dp),
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 100.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(count = pagedAlbums.itemCount) { index ->
                                 val album = pagedAlbums[index]
                                 if (album != null) {
-                                    AlbumCard(
+                                    AlbumGridCard(
                                         album = album,
                                         onClick = { onAlbumClick(album) },
                                         onLongClick = {
@@ -156,55 +157,51 @@ fun AlbumsScreen(
 }
 
 @Composable
-fun AlbumCard(album: Album, onClick: () -> Unit = {}, onLongClick: () -> Unit = {}) {
+fun AlbumGridCard(album: Album, onClick: () -> Unit = {}, onLongClick: () -> Unit = {}) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),
-        color = MaterialTheme.colorScheme.surface
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .padding(8.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(96.dp)
-                    //.clip(RoundedCornerShape(8.dp))
-                    .background(color = MaterialTheme.colorScheme.surfaceVariant)
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 AlbumCover(
                     coverArtId = album.coverUrl,
                     contentDescription = album.title,
-                    size = 96.dp,
-                    cornerRadius = 12.dp
+                    size = 200.dp,
+                    cornerRadius = 8.dp,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = album.title,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Text(
-                    text = album.artistName,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = album.title,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = album.artistName,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

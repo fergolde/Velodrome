@@ -29,7 +29,7 @@ fun AlbumCover(
 ) {
     Box(
         modifier = modifier
-            .size(size)
+            .then(if (size > 0.dp) Modifier.size(size) else Modifier)
             .clip(RoundedCornerShape(cornerRadius))
             .background(SurfaceDark),
         contentAlignment = Alignment.Center
