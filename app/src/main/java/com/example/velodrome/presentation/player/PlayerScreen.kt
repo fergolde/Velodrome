@@ -124,17 +124,18 @@ fun PlayerScreen(
                         .windowInsetsPadding(WindowInsets.statusBars)
                         .padding(start = 16.dp, end = 12.dp),
                 ) {
-                    // Left: TopBar + Album Art centrado verticalmente
+                    // Left: TopBar + Album Art centrado + SongInfo + SeekBar + Controls
                     Column(
                         modifier = Modifier
                             .fillMaxHeight()
-                            .weight(0.40f),
+                            .weight(0.35f),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         PlayerTopBar(
                             onMinimizeClick = onMinimizeClick,
                             modifier = Modifier.padding(top = 4.dp)
                         )
+                        // Album art centrado verticalmente
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -145,21 +146,12 @@ fun PlayerScreen(
                                 coverArtId = uiState.currentTrack?.coverArtId,
                             )
                         }
-                    }
-
-                    // Right: SongInfo + Seek + Controls + inline Queue
-                    Column(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(0.65f)
-                            .padding(start = 20.dp, end = 4.dp),
-                    ) {
-                        // Controls section (top, fixed height)
+                        Spacer(Modifier.height(12.dp))
+                        // Controls debajo del album art
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Spacer(Modifier.height(16.dp))
                             SongInfoSection(
                                 title = uiState.currentTrack?.title ?: stringResource(R.string.player_unknown_track),
                                 artist = uiState.currentTrack?.artistName ?: stringResource(R.string.artists_unknown),
@@ -183,21 +175,24 @@ fun PlayerScreen(
                                 onRepeatClick = { viewModel.toggleRepeat() }
                             )
                         }
-
-                        Spacer(Modifier.height(12.dp))
-
-                        // Queue visible inline (takes remaining space)
-                        Box(modifier = Modifier.weight(1f)) {
-                            QueueContent(
-                                playlist = uiState.playlist,
-                                currentIndex = uiState.currentIndex,
-                                isPlaying = uiState.isPlaying,
-                                onTrackClick = { index ->
-                                    viewModel.onTrackSelected(index)
-                                },
-                                onRemoveTrack = viewModel::onRemoveTrack
-                            )
-                        }
+                        Spacer(Modifier.height(24.dp))
+                    }
+                    // Right: solo inline Queue
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(0.60f)
+                            .padding(start = 20.dp, end = 4.dp)
+                    ) {
+                        QueueContent(
+                            playlist = uiState.playlist,
+                            currentIndex = uiState.currentIndex,
+                            isPlaying = uiState.isPlaying,
+                            onTrackClick = { index ->
+                                viewModel.onTrackSelected(index)
+                            },
+                            onRemoveTrack = viewModel::onRemoveTrack
+                        )
                     }
                 }
             } else {
@@ -371,17 +366,22 @@ fun SongInfoSection(
     artist: String,
     album: String
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
         MarqueeText(
             text = title,
             color = MaterialTheme.colorScheme.onBackground,
             fontSize = 26.sp,
             fontWeight = FontWeight.ExtraBold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(4.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
@@ -401,7 +401,7 @@ fun SongInfoSection(
                 text = album,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 fontSize = 13.sp,
-                modifier = Modifier.weight(1f)
+                textAlign = androidx.compose.ui.text.style.TextAlign.Start,
             )
         }
     }
@@ -842,6 +842,7 @@ fun MarqueeText(
     color: Color,
     fontSize: TextUnit,
     fontWeight: FontWeight = FontWeight.Normal,
+    textAlign: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Start,
     modifier: Modifier = Modifier
 ) {
     Text(
@@ -851,6 +852,7 @@ fun MarqueeText(
         fontWeight = fontWeight,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
+        textAlign = textAlign,
         modifier = modifier.basicMarquee(
             iterations = Int.MAX_VALUE,
             repeatDelayMillis = 3000,
