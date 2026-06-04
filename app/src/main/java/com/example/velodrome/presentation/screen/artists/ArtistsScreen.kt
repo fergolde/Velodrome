@@ -84,7 +84,7 @@ fun ArtistsScreen(
 
                     if (uiState.isSearching) {
                         LazyVerticalGrid(
-                            columns = GridCells.Adaptive(140.dp),
+                            columns = GridCells.Adaptive(180.dp),
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 100.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -103,7 +103,7 @@ fun ArtistsScreen(
                         }
                     } else {
                         LazyVerticalGrid(
-                            columns = GridCells.Adaptive(140.dp),
+                            columns = GridCells.Adaptive(180.dp),
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 100.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),

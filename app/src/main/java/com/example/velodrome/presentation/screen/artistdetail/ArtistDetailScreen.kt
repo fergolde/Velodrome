@@ -151,7 +151,7 @@ fun ArtistAlbumsList(
     onAddToQueueClick: () -> Unit
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(160.dp),
+        columns = GridCells.Adaptive(180.dp),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 100.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
