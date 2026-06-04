@@ -1,5 +1,6 @@
 package com.example.velodrome.presentation.screen.artists
 
+import android.content.res.Configuration
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,8 +38,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -59,6 +65,7 @@ fun ArtistsScreen(
     var showOptions by remember { mutableStateOf(false) }
     var selectedArtist by remember { mutableStateOf<Artist?>(null) }
     val sheetState = rememberModalBottomSheetState()
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     Box(
         modifier = Modifier
@@ -86,32 +93,34 @@ fun ArtistsScreen(
 
                     if (uiState.isSearching) {
                         // Resultados de búsqueda local
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 100.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(uiState.searchResults) { artist ->
-                                ArtistCard(
-                                    artist = artist,
-                                    onClick = { onArtistClick(artist) },
-                                    onLongClick = {
-                                        selectedArtist = artist
-                                        showOptions = true
-                                    }
-                                )
+                        if (isLandscape) {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(3),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 100.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(count = uiState.searchResults.size) { index ->
+                                    val artist = uiState.searchResults[index]
+                                    ArtistGridCard(
+                                        artist = artist,
+                                        onClick = { onArtistClick(artist) },
+                                        onLongClick = {
+                                            selectedArtist = artist
+                                            showOptions = true
+                                        }
+                                    )
+                                }
                             }
-                        }
-                    } else {
-                        // Lista paginada
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 100.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(count = pagedArtists.itemCount) { index ->
-                                val artist = pagedArtists[index]
-                                if (artist != null) {
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 100.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(count = uiState.searchResults.size) { index ->
+                                    val artist = uiState.searchResults[index]
                                     ArtistCard(
                                         artist = artist,
                                         onClick = { onArtistClick(artist) },
@@ -120,6 +129,51 @@ fun ArtistsScreen(
                                             showOptions = true
                                         }
                                     )
+                                }
+                            }
+                        }
+                    } else {
+                        // Lista paginada
+                        if (isLandscape) {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(3),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 100.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(count = pagedArtists.itemCount) { index ->
+                                    val artist = pagedArtists[index]
+                                    if (artist != null) {
+                                        ArtistGridCard(
+                                            artist = artist,
+                                            onClick = { onArtistClick(artist) },
+                                            onLongClick = {
+                                                selectedArtist = artist
+                                                showOptions = true
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 100.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(count = pagedArtists.itemCount) { index ->
+                                    val artist = pagedArtists[index]
+                                    if (artist != null) {
+                                        ArtistCard(
+                                            artist = artist,
+                                            onClick = { onArtistClick(artist) },
+                                            onLongClick = {
+                                                selectedArtist = artist
+                                                showOptions = true
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -198,6 +252,52 @@ fun ArtistCard(artist: Artist, onClick: () -> Unit = {}, onLongClick: () -> Unit
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            )
+        }
+    }
+}
+
+@Composable
+fun ArtistGridCard(artist: Artist, onClick: () -> Unit = {}, onLongClick: () -> Unit = {}) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ArtistAvatar(
+                coverArtId = artist.coverUrl,
+                contentDescription = artist.name,
+                size = 96.dp
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = artist.name,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "${artist.albumCount} ALBUMS",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.5.sp
             )
         }
     }

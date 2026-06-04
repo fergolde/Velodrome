@@ -1,10 +1,13 @@
 package com.example.velodrome.presentation.screen.albumdetail
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -195,32 +198,173 @@ private fun AlbumContent(
     onBackClick: () -> Unit,
     currentTrackId: String? = null
 ) {
-    LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
-        item {
-            AlbumHeader(
-                album = album,
-                tracks = tracks,
-                onPlayAllClick = onPlayAllClick,
-                onShuffleClick = onShuffleClick,
-                onAddToQueueClick = onAddToQueueClick,
-                onBackClick = onBackClick
-            )
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    if (isLandscape) {
+        // ── Landscape: cover izq + info/tracks der ────────────────────────
+        Row(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Left: back button + album cover
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(0.35f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .padding(start = 8.dp, top = 8.dp)
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .align(Alignment.Start)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AlbumCover(
+                        coverArtId = album?.coverUrl,
+                        contentDescription = album?.title,
+                        size = 0.dp,
+                        cornerRadius = 16.dp,
+                        modifier = Modifier
+                            .fillMaxWidth(0.75f)
+                            .aspectRatio(1f)
+                    )
+                }
+            }
+
+            // Right: info + buttons + track list
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(0.65f)
+                    .padding(end = 16.dp)
+            ) {
+                Spacer(Modifier.height(20.dp))
+                Text(
+                    text = album?.title ?: "",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = album?.artistName ?: "",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    album?.year?.let { year ->
+                        Text(
+                            text = year.toString(),
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = " · ",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        )
+                    }
+                    Text(
+                        text = "${tracks.size} tracks · ${durationDisk(tracks)} min",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+
+                // Action buttons
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = onPlayAllClick,
+                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier.height(44.dp)
+                    ) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Play", fontSize = 14.sp)
+                    }
+                    Button(
+                        onClick = onShuffleClick,
+                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier.height(44.dp)
+                    ) {
+                        Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(20.dp))
+                    }
+                    Button(
+                        onClick = onAddToQueueClick,
+                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier.height(44.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, modifier = Modifier.size(20.dp))
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+
+                // Tracks header
+                Text(
+                    text = "Tracks",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+                Spacer(Modifier.height(4.dp))
+
+                // Tracks list
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(tracks) { track ->
+                        TrackItem(
+                            track = track,
+                            isPlaying = track.id == currentTrackId,
+                            onClick = { onTrackClick(track) },
+                            onLongClick = { onTrackLongClick(track) }
+                        )
+                    }
+                }
+            }
         }
-        item {
-            Text(
-                text = "Tracks",
-                modifier = Modifier.padding(16.dp),
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            )
-        }
-        items(tracks) { track ->
-            TrackItem(
-                track = track,
-                isPlaying = track.id == currentTrackId,
-                onClick = { onTrackClick(track) },
-                onLongClick = { onTrackLongClick(track) }
-            )
+    } else {
+        // ── Portrait: layout actual (sin cambios) ─────────────────────────
+        LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+            item {
+                AlbumHeader(
+                    album = album,
+                    tracks = tracks,
+                    onPlayAllClick = onPlayAllClick,
+                    onShuffleClick = onShuffleClick,
+                    onAddToQueueClick = onAddToQueueClick,
+                    onBackClick = onBackClick
+                )
+            }
+            item {
+                Text(
+                    text = "Tracks",
+                    modifier = Modifier.padding(16.dp),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            }
+            items(tracks) { track ->
+                TrackItem(
+                    track = track,
+                    isPlaying = track.id == currentTrackId,
+                    onClick = { onTrackClick(track) },
+                    onLongClick = { onTrackLongClick(track) }
+                )
+            }
         }
     }
 }
