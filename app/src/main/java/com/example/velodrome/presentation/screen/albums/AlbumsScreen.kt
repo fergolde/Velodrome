@@ -1,5 +1,6 @@
 package com.example.velodrome.presentation.screen.albums
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,6 +60,8 @@ fun AlbumsScreen(
     var showOptions by remember { mutableStateOf(false) }
     var selectedAlbum by remember { mutableStateOf<Album?>(null) }
     val sheetState = rememberModalBottomSheetState()
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val gridColumns = if (isLandscape) GridCells.Adaptive(180.dp) else GridCells.Fixed(3)
 
     Box(
         modifier = Modifier
@@ -85,7 +89,7 @@ fun AlbumsScreen(
 
                     if (uiState.isSearching) {
                         LazyVerticalGrid(
-                            columns = GridCells.Adaptive(180.dp),
+                            columns = gridColumns,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 100.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -104,7 +108,7 @@ fun AlbumsScreen(
                         }
                     } else {
                         LazyVerticalGrid(
-                            columns = GridCells.Adaptive(180.dp),
+                            columns = gridColumns,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 100.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
