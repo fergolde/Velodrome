@@ -106,6 +106,11 @@ fun PlayerScreen(
     var showQueue by remember { mutableStateOf(false) }
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
+    // Auto-cerrar el modal de queue al girar a landscape (ya está inline)
+    LaunchedEffect(isLandscape) {
+        if (isLandscape) showQueue = false
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()

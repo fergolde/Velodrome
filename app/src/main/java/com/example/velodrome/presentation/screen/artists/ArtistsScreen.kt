@@ -61,7 +61,12 @@ fun ArtistsScreen(
     var selectedArtist by remember { mutableStateOf<Artist?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val gridColumns = if (isLandscape) GridCells.Adaptive(180.dp) else GridCells.Fixed(2)
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val gridColumns = when {
+        isLandscape -> GridCells.Adaptive(180.dp)
+        screenWidthDp >= 600 -> GridCells.Fixed(4)
+        else -> GridCells.Fixed(2)
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
