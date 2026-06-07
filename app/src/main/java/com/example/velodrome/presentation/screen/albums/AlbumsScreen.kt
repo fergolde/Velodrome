@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,10 +62,10 @@ fun AlbumsScreen(
     var selectedAlbum by remember { mutableStateOf<Album?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val isTablet = LocalContext.current.resources.getBoolean(R.bool.allow_rotation)
     val gridColumns = when {
         isLandscape -> GridCells.Adaptive(180.dp)
-        screenWidthDp >= 600 -> GridCells.Fixed(4)
+        isTablet -> GridCells.Fixed(4)
         else -> GridCells.Fixed(3)
     }
 
