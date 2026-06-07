@@ -13,10 +13,7 @@ import com.example.velodrome.presentation.audio.ScrobbleManager
 import com.example.velodrome.util.CredentialsManager
 import com.example.velodrome.util.NavidromeImageInterceptor
 import dagger.hilt.android.HiltAndroidApp
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
-import okio.Path
 import okio.Path.Companion.toOkioPath
 import java.io.File
 import javax.inject.Inject
@@ -54,7 +51,7 @@ class VelodromeApp : Application(), SingletonImageLoader.Factory, Configuration.
 
     override fun newImageLoader(context: Context): ImageLoader {
         // Lectura síncrona desde SharedPreferences
-        val prefs = context.getSharedPreferences("velodrome_cache_prefs", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("velodrome_cache_prefs", MODE_PRIVATE)
         val imageLimitMb = prefs.getInt("image_cache_size_mb", 200).toLong()
 
         return ImageLoader.Builder(context)
