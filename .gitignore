@@ -64,3 +64,7 @@ proguard/
 
 # Log files
 *.log
+
+#Firma
+Fernando.jks
+keystore.properties

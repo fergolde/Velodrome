@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -6,20 +9,35 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
-    namespace = "com.example.velodrome"
+    namespace = "com.fergolde.velodrome"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.example.velodrome"
+        applicationId = "com.fergolde.velodrome"
         minSdk = 34
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.3.0"
+        versionCode = 4
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("Fernando.jks")
+            storePassword = System.getenv("STORE_PASSWORD") ?: keystoreProperties["storePassword"]?.toString()
+            keyAlias = System.getenv("KEY_ALIAS") ?: keystoreProperties["keyAlias"]?.toString()
+            keyPassword = System.getenv("KEY_PASSWORD") ?: keystoreProperties["keyPassword"]?.toString()
+        }
     }
 
     buildTypes {
@@ -30,7 +48,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
