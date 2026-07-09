@@ -114,7 +114,6 @@ Genera mezclas automáticas basadas en:
 - Media3 / ExoPlayer
 - Coroutines
 - Navidrome API
-- Last.fm
 
 ---
 
