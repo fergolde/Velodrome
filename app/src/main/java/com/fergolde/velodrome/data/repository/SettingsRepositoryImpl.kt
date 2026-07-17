@@ -65,7 +65,7 @@ class SettingsRepositoryImpl @Inject constructor(
     // --- Actions ---
 
     override suspend fun setImageCacheSizeMb(sizeMb: Int) {
-        val safeSize = sizeMb.coerceIn(0, 500)
+        val safeSize = sizeMb.coerceIn(0, 1000)
         context.settingsDataStore.edit { it[PreferencesKeys.IMAGE_CACHE_SIZE_MB] = safeSize }
 
         // Sincronizar con SharedPreferences para el arranque de Coil
