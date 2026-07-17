@@ -57,6 +57,7 @@ import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.presentation.components.VeloSectionHeader
 import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 import com.fergolde.velodrome.ui.theme.VeloPalette
+import kotlin.time.Duration.Companion.milliseconds
 
 // ─── SCREEN ──────────────────────────────────────────────────────────────────
 
@@ -202,7 +203,7 @@ fun ShuffleButton(
 
     LaunchedEffect(pressed) {
         if (pressed) {
-            kotlinx.coroutines.delay(120)
+            kotlinx.coroutines.delay(120.milliseconds)
             pressed = false
         }
     }

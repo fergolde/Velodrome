@@ -17,10 +17,9 @@ class NavidromeImageInterceptor @Inject constructor(
             return chain.proceed()
         }
 
-        val coverArtId = data
         val size = chain.request.sizeResolver.size().width.pxOrElse { 400 }
 
-        val authenticatedUrl = credentialsManager.getCoverArtUrl(coverArtId, size)
+        val authenticatedUrl = credentialsManager.getCoverArtUrl(data, size)
             ?: return chain.proceed()
 
         val newRequest = request.newBuilder()

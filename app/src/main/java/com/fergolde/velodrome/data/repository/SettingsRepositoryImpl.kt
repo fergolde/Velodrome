@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.core.content.edit
 
 // Extension property to create DataStore
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -68,7 +69,7 @@ class SettingsRepositoryImpl @Inject constructor(
         context.settingsDataStore.edit { it[PreferencesKeys.IMAGE_CACHE_SIZE_MB] = safeSize }
 
         // Sincronizar con SharedPreferences para el arranque de Coil
-        cachePrefs.edit().putInt("image_cache_size_mb", safeSize).apply()
+        cachePrefs.edit { putInt("image_cache_size_mb", safeSize) }
     }
 
     override suspend fun setMusicCacheSizeGb(sizeGb: Int) {
@@ -77,7 +78,7 @@ class SettingsRepositoryImpl @Inject constructor(
         context.settingsDataStore.edit { it[PreferencesKeys.MUSIC_CACHE_SIZE_GB] = safeSize }
 
         // 2. Persistimos en SharedPreferences para AudioModule
-        cachePrefs.edit().putInt("music_cache_size_gb", safeSize).apply()
+        cachePrefs.edit { putInt("music_cache_size_gb", safeSize) }
     }
 
     override suspend fun setAccentColor(hexColor: String) {

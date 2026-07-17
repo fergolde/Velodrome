@@ -38,6 +38,7 @@ import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import com.fergolde.velodrome.presentation.screen.home.ArtistAvatar
+import androidx.compose.ui.platform.LocalResources
 
 @Composable
 fun ArtistDetailScreen(
@@ -94,7 +95,6 @@ fun ArtistDetailScreen(
                         artist = uiState.artist,
                         albums = uiState.albums,
                         isPreparingPlayback = uiState.isPreparingPlayback,
-                        onBackClick = onBackClick,
                         onAlbumClick = onAlbumClick,
                         onPlayAllClick = {
                             viewModel.playAll()
@@ -147,14 +147,13 @@ fun ArtistAlbumsList(
     artist: com.fergolde.velodrome.domain.model.Artist?,
     albums: List<Album>,
     isPreparingPlayback: Boolean,
-    onBackClick: () -> Unit,
     onAlbumClick: (String) -> Unit,
     onPlayAllClick: () -> Unit,
     onShuffleAllClick: () -> Unit,
     onAddToQueueClick: () -> Unit
 ) {
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val isTablet = LocalContext.current.resources.getBoolean(R.bool.allow_rotation)
+    val isTablet = LocalResources.current.getBoolean(R.bool.allow_rotation)
     val gridColumns = when {
         isLandscape -> GridCells.Adaptive(180.dp)
         isTablet -> GridCells.Fixed(4)

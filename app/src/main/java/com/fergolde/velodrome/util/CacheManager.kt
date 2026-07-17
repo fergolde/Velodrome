@@ -7,6 +7,7 @@ import coil3.annotation.ExperimentalCoilApi
 import coil3.imageLoader
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -187,9 +188,9 @@ class CacheManager @Inject constructor(
      */
     private fun formatSize(bytes: Long): String {
         return when {
-            bytes >= 1024 * 1024 * 1024 -> String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024))
-            bytes >= 1024 * 1024 -> String.format("%.0f MB", bytes / (1024.0 * 1024))
-            bytes >= 1024 -> String.format("%.0f KB", bytes / 1024.0)
+            bytes >= 1024 * 1024 * 1024 -> String.format(Locale.ROOT, "%.1f GB", bytes / (1024.0 * 1024 * 1024))
+            bytes >= 1024 * 1024 -> String.format(Locale.ROOT, "%.0f MB", bytes / (1024.0 * 1024))
+            bytes >= 1024 -> String.format(Locale.ROOT, "%.0f KB", bytes / 1024.0)
             else -> "$bytes B"
         }
     }

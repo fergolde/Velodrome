@@ -53,6 +53,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -372,8 +374,9 @@ private fun AlbumHeader(
     onAddToQueueClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-    val headerHeight = screenHeight / 3
+    val headerHeight = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.height.toDp() / 3f
+    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Box(

@@ -75,12 +75,12 @@ class SyncLibraryWorker @AssistedInject constructor(
     }
 
     private fun classifyError(e: Throwable?): Result {
-        return when {
-            e is HttpException && e.code() == 401 -> Result.failure()
-            e is HttpException && e.code() == 403 -> Result.failure()
-            e is SocketTimeoutException -> Result.retry()
-            e is UnknownHostException -> Result.retry()
-            e is HttpException -> Result.failure()
+        return when (e) {
+            is HttpException if e.code() == 401 -> Result.failure()
+            is HttpException if e.code() == 403 -> Result.failure()
+            is SocketTimeoutException -> Result.retry()
+            is UnknownHostException -> Result.retry()
+            is HttpException -> Result.failure()
             else -> Result.retry()
         }
     }

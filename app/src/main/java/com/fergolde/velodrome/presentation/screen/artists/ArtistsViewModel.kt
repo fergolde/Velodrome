@@ -26,8 +26,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val TAG = "ArtistsViewModel"
-
 data class ArtistsUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
@@ -92,9 +90,9 @@ class ArtistsViewModel @Inject constructor(
             // Sync all albums and gather all tracks
             albums.map { album -> async { trackUseCases.syncTracksForAlbum(album.id) } }.awaitAll()
 
-            val allTracks = albums.map { album ->
+            val allTracks = albums.flatMap { album ->
                 trackUseCases.observeTracksByAlbum(album.id).first()
-            }.flatten()
+            }
 
             playerManager.playNow(allTracks)
         }
@@ -107,9 +105,9 @@ class ArtistsViewModel @Inject constructor(
 
             albums.map { album -> async { trackUseCases.syncTracksForAlbum(album.id) } }.awaitAll()
 
-            val allTracks = albums.map { album ->
+            val allTracks = albums.flatMap { album ->
                 trackUseCases.observeTracksByAlbum(album.id).first()
-            }.flatten()
+            }
 
             playerManager.playNext(allTracks)
         }
@@ -122,9 +120,9 @@ class ArtistsViewModel @Inject constructor(
 
             albums.map { album -> async { trackUseCases.syncTracksForAlbum(album.id) } }.awaitAll()
 
-            val allTracks = albums.map { album ->
+            val allTracks = albums.flatMap { album ->
                 trackUseCases.observeTracksByAlbum(album.id).first()
-            }.flatten()
+            }
 
             playerManager.addToQueue(allTracks)
         }

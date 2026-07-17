@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Manager for audio playback with MediaController.
@@ -130,7 +131,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                                 scrobbleManager.checkAndScrobble(trackId, pos, dur)
                             }
                         }
-                        kotlinx.coroutines.delay(1000L)
+                        kotlinx.coroutines.delay(1000L.milliseconds)
                     }
                 }
                 // Si no está reproduciendo, la corrutina se suspende automáticamente
@@ -281,7 +282,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
      */
     fun addToPlaylist(tracks: List<Track>) {
         if (tracks.isEmpty()) return
-        _playlist.value = _playlist.value + tracks
+        _playlist.value += tracks
 
         val mediaItems = tracks.map { buildMediaItem(it) }
 

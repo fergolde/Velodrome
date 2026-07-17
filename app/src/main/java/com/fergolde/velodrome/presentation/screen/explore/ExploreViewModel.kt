@@ -23,8 +23,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
-private const val TAG = "ExploreViewModel"
 
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
@@ -49,7 +49,7 @@ class ExploreViewModel @Inject constructor(
     private fun observeSearchQuery() {
         viewModelScope.launch {
             searchQueryFlow
-                .debounce(500L) // Espera 500 ms tras dejar de escribir
+                .debounce(500L.milliseconds) // Espera 500 ms tras dejar de escribir
                 .distinctUntilChanged() // No busca si la query es idéntica a la anterior
                 .collectLatest { query ->
                     // 1. Limpiar resultados si la query está vacía

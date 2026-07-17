@@ -24,7 +24,7 @@ import com.fergolde.velodrome.ui.theme.TextSecondary
  * @param onClick Callback when album is clicked
  * @param modifier Modifier for the component
  */
-@Composable
+/*@Composable
 fun AlbumItem(
     album: Album,
     onClick: () -> Unit,
@@ -63,4 +63,4 @@ fun AlbumItem(
             overflow = TextOverflow.Ellipsis
         )
     }
-}
+}*/

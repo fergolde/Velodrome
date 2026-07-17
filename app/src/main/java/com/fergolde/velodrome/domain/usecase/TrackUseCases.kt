@@ -96,7 +96,6 @@ class GetTopGlobalTracksUseCase @Inject constructor(
 class TrackUseCases @Inject constructor(
     val observeTracksByAlbum: ObserveTracksByAlbumUseCase,
     val syncTracksForAlbum: SyncTracksForAlbumUseCase,
-    val getRandomSongsByGenre: GetRandomSongsByGenreUseCase,
     val getRandomSongs: GetRandomSongsUseCase,
     val searchRemoteTracks: SearchRemoteTracksUseCase,
     val getOfflineTracks: GetOfflineTracksUseCase,

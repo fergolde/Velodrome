@@ -3,6 +3,7 @@ package com.fergolde.velodrome.util
 import android.content.SharedPreferences
 import javax.inject.Inject
 import javax.inject.Singleton
+import androidx.core.content.edit
 
 
 private const val STREAMING_BITRATE_ORIGINAL = 999
@@ -57,16 +58,16 @@ class CredentialsManager @Inject constructor(
     // -------------------------
 
     fun saveCredentials(username: String, password: String, serverUrl: String) {
-        encryptedPrefs.edit()
-            .putString(KEY_USERNAME, username)
-            .putString(KEY_PASSWORD, password)
-            .putString(KEY_SERVER_URL, serverUrl)
-            .apply()
+        encryptedPrefs.edit {
+            putString(KEY_USERNAME, username)
+                .putString(KEY_PASSWORD, password)
+                .putString(KEY_SERVER_URL, serverUrl)
+        }
         invalidateAuth() // Importante: al cambiar credenciales, limpiar caché
     }
 
     fun clearCredentials() {
-        encryptedPrefs.edit().clear().apply()
+        encryptedPrefs.edit { clear() }
         invalidateAuth() // Importante: al salir, limpiar caché
     }
 

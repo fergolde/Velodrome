@@ -1,5 +1,6 @@
 package com.fergolde.velodrome
 
+import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -32,14 +33,15 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
+    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Phone: locked to portrait. Tablet (sw600dp+): allows sensor-based rotation.
-        if (resources.getBoolean(R.bool.allow_rotation)) {
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        requestedOrientation = if (resources.getBoolean(R.bool.allow_rotation)) {
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR
         } else {
-            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
 
         enableEdgeToEdge()

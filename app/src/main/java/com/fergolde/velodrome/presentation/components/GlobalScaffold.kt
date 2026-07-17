@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun SharedBottomNavigationBar(
+    modifier: Modifier = Modifier,
     currentRoute: String = "home",
     showHome: Boolean = true,
     showExplore: Boolean = true,
@@ -28,7 +29,6 @@ fun SharedBottomNavigationBar(
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
 
     NavigationBar(

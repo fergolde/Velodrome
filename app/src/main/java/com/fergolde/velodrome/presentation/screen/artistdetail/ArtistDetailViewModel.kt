@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val TAG = "ArtistDetailViewModel"
 
 data class ArtistDetailUiState(
     val artist: Artist? = null,
@@ -83,9 +82,9 @@ class ArtistDetailViewModel @Inject constructor(
         }.awaitAll()
 
         // 2. Obtener las canciones de la DB local
-        val allTracks = albums.map { album ->
+        val allTracks = albums.flatMap { album ->
             trackUseCases.observeTracksByAlbum(album.id).first()
-        }.flatten()
+        }
 
         allTracks
     }

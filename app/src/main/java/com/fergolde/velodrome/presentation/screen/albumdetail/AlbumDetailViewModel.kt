@@ -16,8 +16,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private const val TAG = "AlbumDetailViewModel"
-
 data class AlbumDetailUiState(
     val album: Album? = null,
     val tracks: List<Track> = emptyList(),

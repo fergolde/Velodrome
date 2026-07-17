@@ -10,13 +10,9 @@
     <string name="show_password">Mostrar contraseña</string>
     <string name="hide_password">Ocultar contraseña</string>
     <string name="server_url">URL del Servidor</string>
-    <string name="login_error">Error de inicio de sesión. Comprueba tus credenciales.</string>
-    <string name="loading">Cargando…</string>
 
     <!-- Navigation -->
-    <string name="nav_home">Inicio</string>
     <string name="nav_explore">EXPLORAR</string>
-    <string name="nav_settings">Ajustes</string>
 
     <!-- Home -->
     <string name="home_shuffle">Aleatorio</string>
@@ -28,8 +24,6 @@
     <string name="home_just_for_you">JUSTO PARA TI</string>
     <string name="home_random">Aleatorio</string>
     <string name="home_discover">DESCUBRE</string>
-    <string name="home_retry">Reintentar</string>
-    <string name="home_search_hint">Buscar artistas, álbumes o canciones…</string>
     <string name="home_feature_offline_title">Sin datos</string>
     <string name="home_feature_offline_subtitle">Solo offline</string>
 
@@ -43,63 +37,38 @@
     <string name="player_now_playing">Reproduciendo Ahora</string>
     <string name="player_unknown_track">Tema Desconocido</string>
     <string name="player_minimize">Minimizar</string>
-    <string name="player_menu">Menú</string>
     <string name="player_shuffle">Aleatorio</string>
     <string name="player_previous">Anterior</string>
     <string name="player_next">Siguiente</string>
     <string name="player_repeat">Repetir</string>
     <string name="player_next_up">Playlist</string>
-    <string name="player_progress">Progreso</string>
     <string name="player_pause">Pausar</string>
 
     <!-- Explore -->
-    <string name="explore_title">Sonic Gallery</string>
     <string name="explore_artists">Artistas</string>
     <string name="explore_artists_discover">DESCUBRIR</string>
-    <string name="explore_curated_albums">Álbumes Seleccionados</string>
-    <string name="explore_based_on_activity">BASADOS EN TU ACTIVIDAD NOCTURNA</string>
     <string name="explore_random_albums">Álbumes Aleatorios</string>
-    <string name="explore_rising_artists">Artistas Emergentes</string>
-    <string name="explore_trending">TENDIENDO EN TU BIBLIOTECA</string>
     <string name="explore_genres">Géneros</string>
     <string name="explore_all_genres">TODOS LOS GÉNEROS</string>
-    <string name="explore_discover">DESCUBRIR</string>
     <string name="explore_search_hint">Artistas, álbumes o temas</string>
-    <string name="explore_loading">Cargando…</string>
-    <string name="explore_artist_of_month">ARTISTA DEL MES</string>
-    <string name="explore_monthly_listeners">oyentes mensuales</string>
     <string name="explore_range_years">RANGO DE AÑOS</string>
     <string name="explore_years">Años</string>
 
 <!-- Artists -->
-    <string name="artists_title">Artistas</string>
     <string name="artists_search_hint">Buscar artistas…</string>
-    <string name="artists_albums_count">ÁLBUMES</string>
     <string name="artists_unknown">Artista Desconocido</string>
 
     <!-- Albums -->
-    <string name="albums_title">Álbumes</string>
     <string name="albums_search_hint">Buscar albumes…</string>
     <string name="albums_unknown_title">Álbum Desconocido</string>
-    <string name="albums_unknown_artist">Artista Desconocido</string>
 
     <!-- Artist Detail -->
-    <string name="artist_detail_title">Artista</string>
     <string name="artist_detail_albums">Álbumes</string>
     <string name="artist_detail_albums_count">%d álbumes</string>
-    <string name="artist_detail_tracks">Temas</string>
 
     <!-- Album Detail -->
-    <string name="album_detail_title">Álbum</string>
-    <string name="album_detail_tracks">Temas</string>
-    <string name="album_detail_play_all">Reproducir Todo</string>
-    <string name="album_detail_shuffle">Aleatorio</string>
-    <string name="album_detail_add_to_queue">Añadir a la Cola</string>
 
     <!-- Track Options -->
-    <string name="track_options_play_next">Reproducir Siguiente</string>
-    <string name="track_options_add_to_queue">Añadir a la Cola</string>
-    <string name="track_options_add_to_favorites">Añadir a Favoritos</string>
 
     <!-- Settings -->
     <string name="settings_title">Ajustes</string>
@@ -110,10 +79,8 @@
     <string name="settings_music_cache">Caché de Música</string>
     <string name="settings_music_cache_desc">Almacenamiento para canciones</string>
     <string name="settings_clear_cache">Limpiar Caché</string>
-    <string name="settings_current">Actual</string>
     <string name="settings_appearance">Apariencia</string>
     <string name="settings_accent_color">Color de Acento</string>
-    <string name="settings_scrobble">Integraciones</string>
     <string name="settings_scrobble_enabled">Scrobbling</string>
     <string name="settings_scrobble_desc">Enviar reproducción al servidor</string>
     <string name="settings_about">Acerca de</string>
@@ -132,7 +99,5 @@
     <string name="nav_back">Atrás</string>
     <string name="view_all">Ver Todo</string>
     <string name="play">Reproducir</string>
-    <string name="search">Buscar</string>
-    <string name="error_occurred">Ha ocurrido un error</string>
     <string name="error_loading">Error al cargar</string>
 </resources>

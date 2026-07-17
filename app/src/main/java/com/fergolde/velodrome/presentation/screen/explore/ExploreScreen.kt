@@ -313,9 +313,9 @@ fun VeloArtistCircle(
 @Composable
 fun VeloGenreGrid(
     genres: List<String>,
+    modifier: Modifier = Modifier,
     selectedGenres: Set<String> = emptySet(),
     onGenreToggle: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     if (genres.isEmpty()) {
         Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -360,9 +360,9 @@ fun VeloGenreGrid(
 @Composable
 fun VeloGenreChip(
     genre: String,
+    modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     onClick: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     val bgColor = if (isSelected) MaterialTheme.colorScheme.primary else VeloPalette.Bg3
     val borderColor = if (isSelected) Color.Transparent else VeloPalette.Border

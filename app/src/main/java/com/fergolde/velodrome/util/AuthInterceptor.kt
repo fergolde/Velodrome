@@ -3,7 +3,6 @@ package com.fergolde.velodrome.util
 import com.fergolde.velodrome.data.remote.NavidromeApi
 import okhttp3.Interceptor
 import okhttp3.Response
-import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 

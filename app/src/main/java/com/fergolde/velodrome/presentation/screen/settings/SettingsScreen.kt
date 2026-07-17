@@ -525,7 +525,7 @@ fun CacheConfigRow(
     unit: String,
     onValueChange: (Int) -> Unit,
 ) {
-    var selected by remember { mutableStateOf(pendingValue) }
+    var selected by remember { mutableIntStateOf(pendingValue) }
     LaunchedEffect(pendingValue) { selected = pendingValue }
 
     Column(modifier = Modifier.padding(vertical = 10.dp)) {

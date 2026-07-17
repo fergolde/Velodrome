@@ -47,6 +47,7 @@ import com.fergolde.velodrome.domain.model.Artist
 import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
 import com.fergolde.velodrome.presentation.components.VeloSearchBar
 import com.fergolde.velodrome.presentation.screen.home.ArtistAvatar
+import androidx.compose.ui.platform.LocalResources
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,7 +62,7 @@ fun ArtistsScreen(
     var selectedArtist by remember { mutableStateOf<Artist?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val isTablet = LocalContext.current.resources.getBoolean(R.bool.allow_rotation)
+    val isTablet = LocalResources.current.getBoolean(R.bool.allow_rotation)
     val gridColumns = when {
         isLandscape -> GridCells.Adaptive(180.dp)
         isTablet -> GridCells.Fixed(4)

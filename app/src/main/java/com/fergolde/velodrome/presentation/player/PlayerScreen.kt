@@ -305,8 +305,8 @@ fun PlayerScreen(
 
 @Composable
 fun PlayerTopBar(
-    onMinimizeClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onMinimizeClick: () -> Unit = {}
 ) {
     Box(
         modifier = modifier.fillMaxWidth(),
@@ -846,9 +846,10 @@ fun MarqueeText(
     text: String,
     color: Color,
     fontSize: TextUnit,
+    modifier: Modifier = Modifier,
     fontWeight: FontWeight = FontWeight.Normal,
-    textAlign: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Start,
-    modifier: Modifier = Modifier
+    textAlign: androidx.compose.ui.text.style.TextAlign = androidx.compose.ui.text.style.TextAlign.Start
+
 ) {
     Text(
         text = text,

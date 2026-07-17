@@ -126,11 +126,14 @@ class SettingsViewModel @Inject constructor(
      */
     fun confirmChanges() {
         viewModelScope.launch {
+            val imageMb = _pendingImageCacheMb.value
             val musicGb = _pendingMusicCacheGb.value
+            settingsRepository.setImageCacheSizeMb(imageMb)
             settingsRepository.setMusicCacheSizeGb(musicGb)
 
-            // Note: Music cache limit is applied automatically on next app restart via AudioModule
-            // The SimpleCache evictor is created with the configured limit at startup
+            // Both cache limits are applied on next app restart:
+            // - Image: Coil SingletonImageLoader reads the pref in newImageLoader()
+            // - Music: AudioModule builds the SimpleCache evictor with the configured limit at startup
 
             refreshCacheSizes()
             _hasPendingChanges.value = false

@@ -10,8 +10,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
-private const val TAG = "PlayerViewModel"
-
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     private val playerManager: PlayerManager
