@@ -20,13 +20,6 @@
         android:theme="@style/Theme.Velodrome">
         <profileable android:shell="true" />
 
-        <provider
-            android:name="androidx.startup.InitializationProvider"
-            android:authorities="${applicationId}.androidx-startup"
-            android:exported="false"
-            tools:node="merge">
-        </provider>
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
