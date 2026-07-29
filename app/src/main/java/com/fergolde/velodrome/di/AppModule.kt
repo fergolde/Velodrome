@@ -2,9 +2,6 @@ package com.fergolde.velodrome.di
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
 import com.fergolde.velodrome.BuildConfig
 import com.fergolde.velodrome.data.remote.NavidromeApi
 import com.fergolde.velodrome.util.AuthInterceptor
@@ -28,8 +25,6 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
-
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "velodrome_prefs")
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -102,13 +97,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideNavidromeApi(retrofit: Retrofit): NavidromeApi = retrofit.create(NavidromeApi::class.java)
-
-    // -------------------------
-    // DATASTORE
-    // -------------------------
-    @Provides
-    @Singleton
-    fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> = context.dataStore
 
     // -------------------------
     // ENCRYPTED PREFS (Para credenciales)

@@ -1,25 +1,18 @@
 package com.fergolde.velodrome.data.repository
 
-import android.content.Context
 import android.content.SharedPreferences
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
-import androidx.datastore.preferences.preferencesDataStore
 import com.fergolde.velodrome.domain.repository.SettingsRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.content.edit
 
-// Extension property to create DataStore
-private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
-
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
-    @param:ApplicationContext private val context: Context,
-    // Inyectamos el SharedPreferences para la caché síncrona
+    private val dataStore: DataStore<Preferences>,
     private val cachePrefs: SharedPreferences
 ) : SettingsRepository {
 
@@ -44,29 +37,29 @@ class SettingsRepositoryImpl @Inject constructor(
 
     // --- Cache Settings ---
 
-    override val imageCacheSizeMb: Flow<Int> = context.settingsDataStore.data
+    override val imageCacheSizeMb: Flow<Int> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.IMAGE_CACHE_SIZE_MB] ?: DEFAULT_IMAGE_CACHE_SIZE_MB }
 
-    override val musicCacheSizeGb: Flow<Int> = context.settingsDataStore.data
+    override val musicCacheSizeGb: Flow<Int> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.MUSIC_CACHE_SIZE_GB] ?: DEFAULT_MUSIC_CACHE_SIZE_GB }
 
-    override val accentColor: Flow<String> = context.settingsDataStore.data
+    override val accentColor: Flow<String> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.ACCENT_COLOR] ?: DEFAULT_ACCENT_COLOR }
 
-    override val scrobbleEnabled: Flow<Boolean> = context.settingsDataStore.data
+    override val scrobbleEnabled: Flow<Boolean> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.SCROBBLE_ENABLED] ?: DEFAULT_SCROBBLE_ENABLED }
 
-    override val lastSyncTimestamp: Flow<Long> = context.settingsDataStore.data
+    override val lastSyncTimestamp: Flow<Long> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.LAST_SYNC_TIMESTAMP] ?: DEFAULT_LAST_SYNC_TIMESTAMP }
 
-    override val lastSyncOffset: Flow<Int> = context.settingsDataStore.data
+    override val lastSyncOffset: Flow<Int> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.LAST_SYNC_OFFSET] ?: DEFAULT_LAST_SYNC_OFFSET }
 
     // --- Actions ---
 
     override suspend fun setImageCacheSizeMb(sizeMb: Int) {
         val safeSize = sizeMb.coerceIn(0, 1000)
-        context.settingsDataStore.edit { it[PreferencesKeys.IMAGE_CACHE_SIZE_MB] = safeSize }
+        dataStore.edit { it[PreferencesKeys.IMAGE_CACHE_SIZE_MB] = safeSize }
 
         // Sincronizar con SharedPreferences para el arranque de Coil
         cachePrefs.edit { putInt("image_cache_size_mb", safeSize) }
@@ -75,25 +68,25 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setMusicCacheSizeGb(sizeGb: Int) {
         val safeSize = sizeGb.coerceIn(0, 20)
         // 1. Persistimos en DataStore
-        context.settingsDataStore.edit { it[PreferencesKeys.MUSIC_CACHE_SIZE_GB] = safeSize }
+        dataStore.edit { it[PreferencesKeys.MUSIC_CACHE_SIZE_GB] = safeSize }
 
         // 2. Persistimos en SharedPreferences para AudioModule
         cachePrefs.edit { putInt("music_cache_size_gb", safeSize) }
     }
 
     override suspend fun setAccentColor(hexColor: String) {
-        context.settingsDataStore.edit { it[PreferencesKeys.ACCENT_COLOR] = hexColor }
+        dataStore.edit { it[PreferencesKeys.ACCENT_COLOR] = hexColor }
     }
 
     override suspend fun setScrobbleEnabled(enabled: Boolean) {
-        context.settingsDataStore.edit { it[PreferencesKeys.SCROBBLE_ENABLED] = enabled }
+        dataStore.edit { it[PreferencesKeys.SCROBBLE_ENABLED] = enabled }
     }
 
     override suspend fun setLastSyncTimestamp(timestamp: Long) {
-        context.settingsDataStore.edit { it[PreferencesKeys.LAST_SYNC_TIMESTAMP] = timestamp }
+        dataStore.edit { it[PreferencesKeys.LAST_SYNC_TIMESTAMP] = timestamp }
     }
 
     override suspend fun setLastSyncOffset(offset: Int) {
-        context.settingsDataStore.edit { it[PreferencesKeys.LAST_SYNC_OFFSET] = offset }
+        dataStore.edit { it[PreferencesKeys.LAST_SYNC_OFFSET] = offset }
     }
 }
