@@ -17,6 +17,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,6 +46,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
 
     private val _duration = MutableStateFlow(0L)
+    val duration: StateFlow<Long> = _duration.asStateFlow()
 
     private val _currentTrack = MutableStateFlow<Track?>(null)
     val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
@@ -115,16 +117,19 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     }
 
+    /**
+     * Position polling + scrobble check. Runs every 1s while playing.
+     * Dual purpose: updates currentPosition for UI progress bar AND checks scrobble threshold.
+     * Changing interval affects both UI responsiveness and scrobble accuracy.
+     */
     private fun startPositionPolling() {
         playerScope.launch {
             isPlaying.collectLatest { playing ->
                 if (playing) {
-                    // Solo hacer polling cuando está reproduciendo
                     while (true) {
                         mediaController?.let { controller ->
                             val pos = controller.currentPosition
                             _currentPosition.value = pos
-                            // Comprobar si hay que scrobblear (50% de la duración alcanzado)
                             val dur = controller.duration
                             val trackId = _currentTrackId.value
                             if (trackId != null && dur > 0) {
@@ -134,8 +139,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                         kotlinx.coroutines.delay(1000L.milliseconds)
                     }
                 }
-                // Si no está reproduciendo, la corrutina se suspende automáticamente
-                // y se reactiva cuando isPlaying cambie a true
             }
         }
     }
@@ -178,13 +181,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         // del MediaController es la única fuente de verdad
         isLoadingMoreCallbackInvoked = false
 
-        val mediaItems = playlist.mapIndexed { index, t ->
-            val streamUrl = getStreamUrl(t)
-            val coverUrl = t.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
-            MediaItem.Builder().setMediaId(t.id).setUri(streamUrl)
-                .setMediaMetadata(MediaMetadata.Builder().setTitle(t.title).setArtist(t.artistName).setAlbumTitle(t.albumName)
-                    .apply { coverUrl?.let { setArtworkUri(it.toUri()) } }.build()).build()
-        }
+        val mediaItems = playlist.map { buildMediaItem(it) }
 
         doPlayWithController(mediaItems, startIndex)
     }
@@ -260,6 +257,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val currentPlaylist = _playlist.value.toMutableList()
         currentPlaylist.addAll(index, tracks)
         _playlist.value = currentPlaylist
+        isLoadingMoreCallbackInvoked = false
 
         val mediaItems = tracks.map { buildMediaItem(it) }
 
@@ -364,8 +362,20 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         }
     }
     fun seekTo(positionMs: Long) { mediaController?.seekTo(positionMs); _currentPosition.value = positionMs }
-    fun next(): Boolean = mediaController?.hasNextMediaItem()?.also { mediaController?.seekToNextMediaItem() } ?: false
-    fun previous(): Boolean = mediaController?.hasPreviousMediaItem()?.also { mediaController?.seekToPreviousMediaItem() } ?: false
+
+    fun next(): Boolean {
+        val controller = mediaController ?: return false
+        return controller.hasNextMediaItem().also { hasNext ->
+            if (hasNext) controller.seekToNextMediaItem()
+        }
+    }
+
+    fun previous(): Boolean {
+        val controller = mediaController ?: return false
+        return controller.hasPreviousMediaItem().also { hasPrevious ->
+            if (hasPrevious) controller.seekToPreviousMediaItem()
+        }
+    }
 
     private fun handlePlaybackEnded() {
         val hasNext = mediaController?.hasNextMediaItem() == true
@@ -416,5 +426,11 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     fun setPlaylist(playlist: List<Track>) { _playlist.value = playlist }
 
     fun setLoadMoreCallback(callback: () -> Unit) { loadMoreCallback = callback }
+
+    fun release() {
+        playerScope.cancel()
+        controllerFuture?.let { MediaController.releaseFuture(it) }
+        mediaController = null
+    }
 
 }
