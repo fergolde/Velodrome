@@ -18,15 +18,17 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.fergolde.velodrome"
     compileSdk {
-        version = release(37)
+        version = release(37) {
+            minorApiLevel = 1
+        }
     }
 
     defaultConfig {
         applicationId = "com.fergolde.velodrome"
         minSdk = 34
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 5
-        versionName = "2.0.3"
+        versionName = "2.0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
