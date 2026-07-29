@@ -147,25 +147,9 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
     @OptIn(UnstableApi::class)
     override suspend fun getTopGlobalTracks(size: Int): Result<List<Track>> {
         return runCatching {
-            val response = api.getAlbumList2(type = "frequent", size = 50)
-            val albums = response.response.albumList2?.albums ?: emptyList()
-
-            val allTracks = mutableListOf<Track>()
-
-            for (album in albums) {
-                val albumResponse = api.getAlbum(album.id)
-                val songs = albumResponse.response.album?.songs ?: emptyList()
-                songs.forEach { allTracks.add(mapSongDto(it, album.id)) }
-            }
-
-            val result = allTracks
-                .filter { it.playCount > 0 }
-                .distinctBy { it.id }
-                .sortedByDescending { it.playCount }
-                .take(size)
-                .shuffled()
-
-            result
+            val response = api.getTopSongs(count = size)
+            val songDtos = response.response.topSongs?.song ?: emptyList()
+            songDtos.map { mapSongDto(it, it.albumId ?: "") }
         }
     }
 
