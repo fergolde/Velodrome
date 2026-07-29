@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -27,8 +28,8 @@ android {
         applicationId = "com.fergolde.velodrome"
         minSdk = 34
         targetSdk = 37
-        versionCode = 11
-        versionName = "2.0.12"
+        versionCode = 12
+        versionName = "2.0.13"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -73,6 +74,11 @@ android {
     }
 }
 
+baselineProfile {
+    // Genera el profile automáticamente en cada build de release
+    automaticGenerationDuringBuild = true
+}
+
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
@@ -81,6 +87,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
+
+    // Baseline Profile
+    implementation(libs.androidx.profileinstaller)
 
     // Compose
     implementation(platform(libs.androidx.compose.bom))

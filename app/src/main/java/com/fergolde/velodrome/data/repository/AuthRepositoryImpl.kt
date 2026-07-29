@@ -23,7 +23,7 @@ class AuthRepositoryImpl @Inject constructor(
                 val response = api.ping()
 
                 if (response.response.status == "ok") {
-                    AuthResult(success = true, token = password)
+                    AuthResult(success = true)
                 } else {
                     credentialsManager.clearCredentials()
                     val errorMsg = response.response.error?.message ?: "Invalid credentials"
