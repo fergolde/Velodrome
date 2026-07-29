@@ -86,7 +86,6 @@ class HomeViewModel @Inject constructor(
         loadRecentlyPlayedAlbums()
         loadRandomAlbums()
         loadGenres()
-        loadAvailableYears()
     }
 
     /**
@@ -105,6 +104,7 @@ class HomeViewModel @Inject constructor(
                             isRefreshing = false
                         )
                     }
+                    updateAvailableYears(albums)
                 }
                 .onFailure { error ->
                     _uiState.update {
@@ -177,19 +177,14 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Loads available years from albums for filtering.
+     * Derives available years from albums. No API call — pure state derivation.
      */
-    private fun loadAvailableYears() {
-        viewModelScope.launch {
-            albumUseCases.getLatestAlbums(50)
-                .onSuccess { albums ->
-                    val years = albums
-                        .mapNotNull { it.year }
-                        .distinct()
-                        .sortedDescending()
-                    _uiState.update { it.copy(availableYears = years) }
-                }
-        }
+    private fun updateAvailableYears(albums: List<com.fergolde.velodrome.domain.model.Album>) {
+        val years = albums
+            .mapNotNull { it.year }
+            .distinct()
+            .sortedDescending()
+        _uiState.update { it.copy(availableYears = years) }
     }
 
     /**
