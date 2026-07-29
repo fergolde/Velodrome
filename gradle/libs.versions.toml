@@ -30,8 +30,6 @@ room = "2.8.4"
 uiText = "1.11.4"
 mockk = "1.14.11"
 turbine = "1.2.1"
-profileinstaller = "1.4.1"
-benchmarkMacro = "1.4.1"
 baselineprofile = "1.4.1"
 
 
@@ -91,9 +89,6 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
-androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
-androidx-benchmark-macro = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmarkMacro" }
-androidx-benchmark-junit4 = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 
 
 [plugins]
@@ -102,5 +97,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-serialization = {id = "org.jetbrains.kotlin.plugin.serialization",version.ref = "serializationPlugin"}
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-androidx-baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }
 
