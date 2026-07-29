@@ -27,8 +27,8 @@ android {
         applicationId = "com.fergolde.velodrome"
         minSdk = 34
         targetSdk = 37
-        versionCode = 6
-        versionName = "2.0.7"
+        versionCode = 7
+        versionName = "2.0.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
