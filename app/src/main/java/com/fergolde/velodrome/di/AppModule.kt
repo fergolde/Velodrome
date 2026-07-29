@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.fergolde.velodrome.BuildConfig
 import com.fergolde.velodrome.data.remote.NavidromeApi
 import com.fergolde.velodrome.util.AuthInterceptor
 import com.fergolde.velodrome.util.CredentialsManager
@@ -83,7 +84,7 @@ object AppModule {
         return OkHttpClient.Builder()
             .addInterceptor(urlRewriterInterceptor)
             .addInterceptor(authInterceptor)
-            .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
+            .addInterceptor(HttpLoggingInterceptor().apply { level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE })
             .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(TIMEOUT, TimeUnit.SECONDS)
