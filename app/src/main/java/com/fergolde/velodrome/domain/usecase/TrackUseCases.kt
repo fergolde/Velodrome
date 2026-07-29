@@ -17,28 +17,6 @@ class SyncTracksForAlbumUseCase @Inject constructor(
     suspend operator fun invoke(albumId: String): Result<Unit> = repository.syncTracksForAlbum(albumId)
 }
 
-class GetStreamUrlUseCase @Inject constructor(
-    private val repository: TrackRepository
-) {
-    suspend operator fun invoke(trackId: String) = repository.getStreamUrl(trackId)
-}
-
-class GetSongsByGenreUseCase @Inject constructor(
-    private val repository: TrackRepository
-) {
-    suspend operator fun invoke(genre: String, count: Int = 50, offset: Int = 0): Result<List<Track>> {
-        return repository.getSongsByGenre(genre, count, offset)
-    }
-}
-
-class GetRandomSongsByGenreUseCase @Inject constructor(
-    private val repository: TrackRepository
-) {
-    suspend operator fun invoke(genre: String, size: Int = 50): Result<List<Track>> {
-        return repository.getRandomSongsByGenre(genre, size)
-    }
-}
-
 class GetRandomSongsUseCase @Inject constructor(
     private val repository: TrackRepository
 ) {
@@ -52,27 +30,11 @@ class GetRandomSongsUseCase @Inject constructor(
     }
 }
 
-class GetRandomSongsByYearUseCase @Inject constructor(
-    private val repository: TrackRepository
-) {
-    suspend operator fun invoke(size: Int = 50, fromYear: Int? = null, toYear: Int? = null): Result<List<Track>> {
-        return repository.getRandomSongs(size, null, fromYear, toYear)
-    }
-}
-
 class SearchRemoteTracksUseCase @Inject constructor(
     private val repository: TrackRepository
 ) {
     suspend operator fun invoke(query: String): Result<List<Track>> {
         return repository.searchRemoteTracks(query)
-    }
-}
-
-class GetTopSongsUseCase @Inject constructor(
-    private val repository: TrackRepository
-) {
-    suspend operator fun invoke(count: Int = 100): Result<List<Track>> {
-        return repository.getTopSongs(count)
     }
 }
 
@@ -99,5 +61,5 @@ class TrackUseCases @Inject constructor(
     val getRandomSongs: GetRandomSongsUseCase,
     val searchRemoteTracks: SearchRemoteTracksUseCase,
     val getOfflineTracks: GetOfflineTracksUseCase,
-    val GetTopGlobalTracksUseCase : GetTopGlobalTracksUseCase
+    val getTopGlobalTracks: GetTopGlobalTracksUseCase
 )

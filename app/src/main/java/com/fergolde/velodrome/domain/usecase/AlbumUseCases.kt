@@ -21,22 +21,6 @@ class GetTopAlbumsUseCase @Inject constructor(
     }
 }
 
-class GetAlbumsByYearUseCase @Inject constructor(
-    private val repository: AlbumRepository
-) {
-    suspend operator fun invoke(year: Int, size: Int = 20): Result<List<Album>> {
-        return repository.getAlbumsByYear(year, size)
-    }
-}
-
-class GetAlbumsByGenreUseCase @Inject constructor(
-    private val repository: AlbumRepository
-) {
-    suspend operator fun invoke(genre: String, size: Int = 20): Result<List<Album>> {
-        return repository.getAlbumsByGenre(genre, size)
-    }
-}
-
 class GetGenresUseCase @Inject constructor(
     private val repository: AlbumRepository
 ) {
@@ -58,14 +42,6 @@ class GetRandomAlbumsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(size: Int = 20): Result<List<Album>> {
         return repository.getRandomAlbums(size)
-    }
-}
-
-class GetAllAlbumsUseCase @Inject constructor(
-    private val repository: AlbumRepository
-) {
-    suspend operator fun invoke(size: Int = 100): Result<List<Album>> {
-        return repository.getAllAlbums(size)
     }
 }
 

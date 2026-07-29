@@ -89,8 +89,6 @@ class AlbumDetailViewModel @Inject constructor(
         // Sincronizar tracks desde API en background
         viewModelScope.launch {
             trackUseCases.syncTracksForAlbum(albumId)
-                .onFailure { e ->
-                }
         }
     }
 
