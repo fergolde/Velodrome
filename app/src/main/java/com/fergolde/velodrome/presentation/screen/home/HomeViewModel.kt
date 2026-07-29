@@ -210,7 +210,7 @@ class HomeViewModel @Inject constructor(
     fun playTop100() {
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            trackUseCases.GetTopGlobalTracksUseCase(size = 100).onSuccess { tracks ->
+            trackUseCases.getTopGlobalTracks(size = 100).onSuccess { tracks ->
                 if (tracks.isNotEmpty()) {
                     playerManager.playNow(tracks)
                     playerManager.setLoadMoreCallback { /* no auto-load for static list */ }
