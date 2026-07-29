@@ -11,6 +11,9 @@ import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.TrackRepository
 import com.fergolde.velodrome.util.CacheManager
 import com.fergolde.velodrome.util.CredentialsManager
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -147,9 +150,25 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
     @OptIn(UnstableApi::class)
     override suspend fun getTopGlobalTracks(size: Int): Result<List<Track>> {
         return runCatching {
-            val response = api.getTopSongs(count = size)
-            val songDtos = response.response.topSongs?.song ?: emptyList()
-            songDtos.map { mapSongDto(it, it.albumId ?: "") }
+            val response = api.getAlbumList2(type = "frequent", size = 50)
+            val albums = response.response.albumList2?.albums ?: emptyList()
+
+            val allTracks = coroutineScope {
+                albums.map { album ->
+                    async {
+                        val albumResponse = api.getAlbum(album.id)
+                        val songs = albumResponse.response.album?.songs ?: emptyList()
+                        songs.map { mapSongDto(it, album.id) }
+                    }
+                }.awaitAll().flatten()
+            }
+
+            allTracks
+                .filter { it.playCount > 0 }
+                .distinctBy { it.id }
+                .sortedByDescending { it.playCount }
+                .take(size)
+                .shuffled()
         }
     }
 
