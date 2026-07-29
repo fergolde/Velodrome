@@ -11,6 +11,9 @@ import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.TrackRepository
 import com.fergolde.velodrome.util.CacheManager
 import com.fergolde.velodrome.util.CredentialsManager
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -150,22 +153,22 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
             val response = api.getAlbumList2(type = "frequent", size = 50)
             val albums = response.response.albumList2?.albums ?: emptyList()
 
-            val allTracks = mutableListOf<Track>()
-
-            for (album in albums) {
-                val albumResponse = api.getAlbum(album.id)
-                val songs = albumResponse.response.album?.songs ?: emptyList()
-                songs.forEach { allTracks.add(mapSongDto(it, album.id)) }
+            val allTracks = coroutineScope {
+                albums.map { album ->
+                    async {
+                        val albumResponse = api.getAlbum(album.id)
+                        val songs = albumResponse.response.album?.songs ?: emptyList()
+                        songs.map { mapSongDto(it, album.id) }
+                    }
+                }.awaitAll().flatten()
             }
 
-            val result = allTracks
+            allTracks
                 .filter { it.playCount > 0 }
                 .distinctBy { it.id }
                 .sortedByDescending { it.playCount }
                 .take(size)
                 .shuffled()
-
-            result
         }
     }
 
