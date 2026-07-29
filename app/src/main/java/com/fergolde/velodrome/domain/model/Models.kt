@@ -37,7 +37,6 @@ data class Track(
 
 data class AuthResult(
     val success: Boolean,
-    val token: String? = null,
     val error: String? = null
 )
 

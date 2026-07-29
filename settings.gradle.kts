@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Velodrome"
 include(":app")
+include(":benchmark")

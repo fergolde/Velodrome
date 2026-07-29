@@ -85,7 +85,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `successful login delegates to repository`() = runTest {
-        val authResult = AuthResult(success = true, token = "token123")
+        val authResult = AuthResult(success = true)
         coEvery { repository.login("user", "pass", "https://server.com/") } returns
                 Result.success(authResult)
 
