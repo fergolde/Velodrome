@@ -630,7 +630,7 @@ fun ColorPickerPanel(
                 .padding(bottom = 32.dp),
         ) {
             Text(
-                text = "Color de Acento",
+                text = stringResource(R.string.settings_accent_color),
                 fontFamily = SyneFontFamily,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 22.sp,

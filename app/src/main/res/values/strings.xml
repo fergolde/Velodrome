@@ -12,7 +12,10 @@
     <string name="server_url">URL del Servidor</string>
 
     <!-- Navigation -->
+    <string name="nav_home">Inicio</string>
     <string name="nav_explore">EXPLORAR</string>
+    <string name="nav_explore_label">Explorar</string>
+    <string name="nav_settings">Ajustes</string>
 
     <!-- Home -->
     <string name="home_shuffle">Aleatorio</string>

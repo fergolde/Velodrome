@@ -13,7 +13,9 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.fergolde.velodrome.R
 
 /**
  * Bottom Navigation Bar unificada - reusable en TODOS los screens.
@@ -40,7 +42,7 @@ fun SharedBottomNavigationBar(
         if (showHome) {
             NavigationBarItem(
                 icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                label = { Text("Home") },
+                label = { Text(stringResource(R.string.nav_home)) },
                 selected = currentRoute == "home",
                 onClick = {
                     onHomeClick() 
@@ -56,7 +58,7 @@ fun SharedBottomNavigationBar(
         if (showExplore) {
             NavigationBarItem(
                 icon = { Icon(Icons.Default.Explore, contentDescription = null) },
-                label = { Text("Explore") },
+                label = { Text(stringResource(R.string.nav_explore_label)) },
                 selected = currentRoute == "explore",
                 onClick = {
                     onExploreClick() 
@@ -72,7 +74,7 @@ fun SharedBottomNavigationBar(
         if (showSettings) {
             NavigationBarItem(
                 icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                label = { Text("Settings") },
+                label = { Text(stringResource(R.string.nav_settings)) },
                 selected = currentRoute == "settings",
                 onClick = {
                     onSettingsClick() 
