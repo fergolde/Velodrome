@@ -16,8 +16,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.fergolde.velodrome.ui.theme.SurfaceDark
-import com.fergolde.velodrome.ui.theme.TextSecondary
+import com.fergolde.velodrome.ui.theme.VeloPalette
 
 @Composable
 fun AlbumCover(
@@ -31,7 +30,7 @@ fun AlbumCover(
         modifier = modifier
             .then(if (size > 0.dp) Modifier.size(size) else Modifier)
             .clip(RoundedCornerShape(cornerRadius))
-            .background(SurfaceDark),
+            .background(VeloPalette.Bg3),
         contentAlignment = Alignment.Center
     ) {
         when {
@@ -56,13 +55,13 @@ fun AlbumCover(
 @Composable
 private fun PlaceholderCover(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier.background(SurfaceDark),
+        modifier = modifier.background(VeloPalette.Bg3),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = Icons.Default.Album,
             contentDescription = null,
-            tint = TextSecondary,
+            tint = VeloPalette.TextSecondary,
             modifier = Modifier.size(48.dp)
         )
     }

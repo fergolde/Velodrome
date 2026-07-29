@@ -17,7 +17,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.fergolde.velodrome.ui.theme.TextSecondary
+import com.fergolde.velodrome.ui.theme.VeloPalette
 
 @Composable
 fun ArtistAvatar(
@@ -63,7 +63,7 @@ private fun PlaceholderAvatar(
         Icon(
             imageVector = Icons.Default.Person,
             contentDescription = null,
-            tint = TextSecondary,
+            tint = VeloPalette.TextSecondary,
             modifier = Modifier.size(24.dp)
         )
     }
