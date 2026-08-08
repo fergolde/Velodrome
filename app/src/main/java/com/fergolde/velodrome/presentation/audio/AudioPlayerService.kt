@@ -77,6 +77,15 @@ class AudioPlayerService : MediaSessionService() {
             )
             .build()
 
+        // Precarga de la siguiente canción de la playlist mientras suena la actual.
+        // ExoPlayer precarga el próximo item cuando termina de bufferizar el actual
+        // (con el buffer de 20 min, la canción actual se cachea completa en segundos).
+        // La precarga pasa por el mismo CacheDataSource -> la siguiente queda en SimpleCache
+        // y al llegar su turno arranca desde disco sin esperar a la red.
+        exoPlayer?.setPreloadConfiguration(
+            ExoPlayer.PreloadConfiguration(PRELOAD_TARGET_DURATION_US)
+        )
+
         // Escuchas para scrobbling y logs (sin llamadas estáticas)
         exoPlayer?.addAnalyticsListener(analyticsListener)
         exoPlayer?.addListener(playerListener)
@@ -186,5 +195,13 @@ class AudioPlayerService : MediaSessionService() {
                 }
             }
         }
+    }
+
+    companion object {
+        // Target de precarga de la siguiente canción: 20 minutos en microsegundos.
+        // Alinea con el buffer máximo del LoadControl (1200000 ms): garantiza que la
+        // siguiente canción de la playlist se descargue completa al SimpleCache mientras
+        // suena la actual. En microsegundos: 20 * 60 * 1_000_000.
+        private const val PRELOAD_TARGET_DURATION_US = 1_200_000_000L
     }
 }
