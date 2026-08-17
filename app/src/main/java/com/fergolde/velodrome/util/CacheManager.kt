@@ -17,7 +17,7 @@ import javax.inject.Singleton
  *
  * Cache strategy:
  * - Images: stored in context.cacheDir (internal storage)
- * - Music: stored in context.filesDir/musicCache (app-specific external storage)
+ * - Music: stored in context.filesDir/audioCache (internal app storage)
  *
  * Cleanup uses official APIs from Media3 (SimpleCache) and Coil (ImageLoader).
  * File.deleteRecursively() is NOT used to avoid corrupting Media3's cache index.
@@ -26,7 +26,8 @@ import javax.inject.Singleton
 @Singleton
 class CacheManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val simpleCache: androidx.media3.datasource.cache.SimpleCache
+    private val simpleCache: androidx.media3.datasource.cache.SimpleCache,
+    private val musicCacheEvictor: ConfigurableLruCacheEvictor
 ) {
 
     /**
@@ -51,7 +52,7 @@ class CacheManager @Inject constructor(
         get() = File(context.cacheDir, IMAGE_CACHE_DIR).also { it.mkdirs() }
 
     /**
-     * Directory for music cache (app-specific external storage).
+     * Directory for music cache (internal app storage).
      * Persists until explicitly cleared or when storage is low.
      */
     val musicCacheDir: File
@@ -70,7 +71,7 @@ class CacheManager @Inject constructor(
      * Get current music cache size in bytes.
      */
     fun getMusicCacheSizeBytes(): Long {
-        return calculateDirectorySize(musicCacheDir)
+        return simpleCache.cacheSpace
     }
 
     /**
@@ -121,6 +122,12 @@ class CacheManager @Inject constructor(
         simpleCache.keys.forEach { key ->
             simpleCache.removeResource(key)
         }
+    }
+
+    /** Updates music cache limit and evicts oldest spans immediately when needed. */
+    fun setMusicCacheLimitGb(sizeGb: Int) {
+        val limitBytes = sizeGb.coerceIn(0, 20).toLong() * 1024 * 1024 * 1024
+        musicCacheEvictor.setMaxBytes(simpleCache, limitBytes)
     }
 
     /**

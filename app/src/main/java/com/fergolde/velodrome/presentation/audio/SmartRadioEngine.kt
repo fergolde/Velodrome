@@ -1,5 +1,6 @@
 package com.fergolde.velodrome.presentation.audio
 
+import android.util.Log
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.player.PlayerManager
@@ -80,19 +81,45 @@ class SmartRadioEngine @Inject constructor(
 
             val newSongs = when (ctx) {
                 is RadioContext.Random -> {
-                    trackUseCases.getRandomSongs(size = 50).getOrDefault(emptyList())
+                    fetchWithRetry { trackUseCases.getRandomSongs(size = 50) }
                 }
                 is RadioContext.GenreAndYear -> {
                     val songs = mutableListOf<Track>()
                     if (ctx.genres.isEmpty()) {
-                        songs.addAll(trackUseCases.getRandomSongs(size = 50, fromYear = ctx.fromYear, toYear = ctx.toYear).getOrDefault(emptyList()))
+                        songs.addAll(
+                            fetchWithRetry {
+                                trackUseCases.getRandomSongs(
+                                    size = 50,
+                                    fromYear = ctx.fromYear,
+                                    toYear = ctx.toYear
+                                )
+                            }
+                        )
                     } else if (ctx.genres.size == 1) {
-                        songs.addAll(trackUseCases.getRandomSongs(size = 50, genre = ctx.genres.first(), fromYear = ctx.fromYear, toYear = ctx.toYear).getOrDefault(emptyList()))
+                        songs.addAll(
+                            fetchWithRetry {
+                                trackUseCases.getRandomSongs(
+                                    size = 50,
+                                    genre = ctx.genres.first(),
+                                    fromYear = ctx.fromYear,
+                                    toYear = ctx.toYear
+                                )
+                            }
+                        )
                     } else {
                         val limitPerGenre = 50 / ctx.genres.size
                         coroutineScope {
                             val deferreds = ctx.genres.map { genre ->
-                                async { trackUseCases.getRandomSongs(size = limitPerGenre, genre = genre, fromYear = ctx.fromYear, toYear = ctx.toYear).getOrDefault(emptyList()) }
+                                async {
+                                    fetchWithRetry {
+                                        trackUseCases.getRandomSongs(
+                                            size = limitPerGenre,
+                                            genre = genre,
+                                            fromYear = ctx.fromYear,
+                                            toYear = ctx.toYear
+                                        )
+                                    }
+                                }
                             }
                             deferreds.awaitAll().forEach { songs.addAll(it) }
                         }
@@ -117,6 +144,31 @@ class SmartRadioEngine @Inject constructor(
         } finally {
             isRefilling = false
         }
+    }
+
+    private suspend fun fetchWithRetry(
+        request: suspend () -> Result<List<Track>>
+    ): List<Track> {
+        repeat(MAX_FETCH_ATTEMPTS) { attempt ->
+            val result = try {
+                request()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                Result.failure(error)
+            }
+
+            if (result.isSuccess) {
+                return result.getOrDefault(emptyList())
+            }
+
+            if (attempt == MAX_FETCH_ATTEMPTS - 1) {
+                Log.w(TAG, "Track fetch failed after retries", result.exceptionOrNull())
+            } else {
+                delay(RETRY_DELAY_MS * (attempt + 1))
+            }
+        }
+        return emptyList()
     }
 
     // Subfase 2.5 — pickNext(count: Int): List<Track>
@@ -152,5 +204,11 @@ class SmartRadioEngine @Inject constructor(
         }
 
         return selected
+    }
+
+    private companion object {
+        const val MAX_FETCH_ATTEMPTS = 3
+        const val RETRY_DELAY_MS = 500L
+        const val TAG = "SmartRadioEngine"
     }
 }

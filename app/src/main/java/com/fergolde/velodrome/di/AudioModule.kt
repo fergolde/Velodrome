@@ -5,11 +5,11 @@ import android.content.SharedPreferences
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.CacheDataSource
-import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import com.fergolde.velodrome.presentation.audio.AudioPlayerManager
 import com.fergolde.velodrome.presentation.audio.ScrobbleManager
+import com.fergolde.velodrome.util.ConfigurableLruCacheEvictor
 import com.fergolde.velodrome.util.CredentialsManager
 import com.fergolde.velodrome.util.NavidromeCacheKeyFactory
 import dagger.Module
@@ -29,20 +29,22 @@ object AudioModule {
 
     @Provides
     @Singleton
+    fun provideMusicCacheEvictor(
+        @Named("cache_prefs") sharedPreferences: SharedPreferences
+    ): ConfigurableLruCacheEvictor {
+        val limitGb = sharedPreferences.getInt("music_cache_size_gb", 2)
+        return ConfigurableLruCacheEvictor(limitGb.toLong() * 1024 * 1024 * 1024)
+    }
+
+    @Provides
+    @Singleton
     fun provideSimpleCache(
         @ApplicationContext context: Context,
-        @Named("cache_prefs") sharedPreferences: SharedPreferences // Inyectamos el provider con nombre
+        cacheEvictor: ConfigurableLruCacheEvictor
     ): SimpleCache {
         val cacheDir = File(context.filesDir, "audioCache").also { it.mkdirs() }
         val databaseProvider = StandaloneDatabaseProvider(context)
-
-        // LECTURA SÍNCRONA: Ya no hace falta runBlocking ni DataStore.
-        // Si el usuario nunca ha configurado nada, usará 2GB por defecto.
-        val limitGb = sharedPreferences.getInt("music_cache_size_gb", 2)
-        val limitBytes = limitGb.toLong() * 1024 * 1024 * 1024
-
-        val evictor = LeastRecentlyUsedCacheEvictor(limitBytes)
-        return SimpleCache(cacheDir, evictor, databaseProvider)
+        return SimpleCache(cacheDir, cacheEvictor, databaseProvider)
     }
 
     @Provides
@@ -57,6 +59,18 @@ object AudioModule {
             .setUpstreamDataSourceFactory(httpDataSourceFactory)
             .setCacheKeyFactory(NavidromeCacheKeyFactory())
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+            .setEventListener(object : CacheDataSource.EventListener {
+                override fun onCachedBytesRead(cacheSizeBytes: Long, cachedBytesRead: Long) {
+                    android.util.Log.d(
+                        "AudioCache",
+                        "read=$cachedBytesRead cacheSize=$cacheSizeBytes"
+                    )
+                }
+
+                override fun onCacheIgnored(reason: Int) {
+                    android.util.Log.w("AudioCache", "cache ignored reason=$reason")
+                }
+            })
     }
 
     @Provides

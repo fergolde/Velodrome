@@ -8,12 +8,14 @@ import com.fergolde.velodrome.BuildConfig
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.util.CacheManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -130,10 +132,9 @@ class SettingsViewModel @Inject constructor(
             val musicGb = _pendingMusicCacheGb.value
             settingsRepository.setImageCacheSizeMb(imageMb)
             settingsRepository.setMusicCacheSizeGb(musicGb)
-
-            // Both cache limits are applied on next app restart:
-            // - Image: Coil SingletonImageLoader reads the pref in newImageLoader()
-            // - Music: AudioModule builds the SimpleCache evictor with the configured limit at startup
+            withContext(Dispatchers.IO) {
+                cacheManager.setMusicCacheLimitGb(musicGb)
+            }
 
             refreshCacheSizes()
             _hasPendingChanges.value = false

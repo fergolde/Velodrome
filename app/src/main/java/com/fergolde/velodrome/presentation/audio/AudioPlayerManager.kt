@@ -2,11 +2,13 @@ package com.fergolde.velodrome.presentation.audio
 
 import android.content.ComponentName
 import android.content.Context
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -74,6 +76,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     private val playerScope = CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
     private var loadMoreCallback: (() -> Unit)? = null
+    private val retryAttempts = mutableMapOf<String, Int>()
 
     init {
         val sessionToken = SessionToken(context, ComponentName(context, AudioPlayerService::class.java))
@@ -82,7 +85,9 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             try {
                 mediaController = controllerFuture?.get()
                 setupControllerListener()
-            } catch (_: Exception) { }
+            } catch (error: Exception) {
+                Log.e(TAG, "Unable to connect MediaController", error)
+            }
         }, MoreExecutors.directExecutor())
     }
 
@@ -103,8 +108,29 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 mediaItem?.let {
+                    retryAttempts.remove(it.mediaId)
                     updateCurrentTrackFromMediaItem(it)
                     checkIfNeedMoreSongs()
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                val controller = mediaController ?: return
+                val trackId = controller.currentMediaItem?.mediaId ?: "unknown"
+                val attempts = retryAttempts[trackId] ?: 0
+                Log.e(TAG, "Playback failed track=$trackId code=${error.errorCodeName}", error)
+
+                if (attempts == 0) {
+                    retryAttempts[trackId] = 1
+                    controller.prepare()
+                    controller.play()
+                } else if (controller.hasNextMediaItem()) {
+                    retryAttempts.remove(trackId)
+                    controller.seekToNextMediaItem()
+                    controller.play()
+                } else {
+                    retryAttempts.remove(trackId)
+                    handlePlaybackEnded()
                 }
             }
 
@@ -154,8 +180,10 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
         // Si quedan menos de 3, no hemos disparado el callback Y no hay shuffle/repeat activo
         if (remaining <= 3 && !isLoadingMoreCallbackInvoked && !shuffle && !repeat) {
-            isLoadingMoreCallbackInvoked = true
-            loadMoreCallback?.invoke()
+            loadMoreCallback?.let { callback ->
+                isLoadingMoreCallbackInvoked = true
+                callback()
+            }
         }
     }
 
@@ -218,7 +246,9 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             try {
                 mediaController = future.get()
                 doPlayWithController(mediaItems, startIndex)
-            } catch (_: Exception) { }
+            } catch (error: Exception) {
+                Log.e(TAG, "Unable to prepare playlist", error)
+            }
             return
         }
 
@@ -227,7 +257,9 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             try {
                 mediaController = future.get()
                 doPlayWithController(mediaItems, startIndex)
-            } catch (_: Exception) { }
+            } catch (error: Exception) {
+                Log.e(TAG, "Unable to connect MediaController for playlist", error)
+            }
         }, MoreExecutors.directExecutor())
     }
 
@@ -271,7 +303,9 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         try {
             mediaController = future.get()
             mediaController?.addMediaItems(index, mediaItems)
-        } catch (_: Exception) { }
+        } catch (error: Exception) {
+            Log.e(TAG, "Unable to insert tracks", error)
+        }
     }
 
     /**
@@ -294,33 +328,39 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         try {
             mediaController = future.get()
             mediaController?.addMediaItems(mediaItems)
-        } catch (_: Exception) { }
+        } catch (error: Exception) {
+            Log.e(TAG, "Unable to add tracks", error)
+        }
     }
 
     fun appendToPlaylist(tracks: List<Track>) {
-        if (tracks.isEmpty()) return
+        if (tracks.isEmpty()) {
+            isLoadingMoreCallbackInvoked = false
+            return
+        }
         _playlist.value += tracks
         val mediaItems = tracks.map { buildMediaItem(it) }
 
-        // Try to add directly if controller is ready
-        mediaController?.let { controller ->
-            controller.addMediaItems(mediaItems)
-            isLoadingMoreCallbackInvoked = false
-            return
-        }
-
-        // Wait for controller to be ready, then add
-        val future = controllerFuture
-        if (future == null || !future.isDone) {
-            isLoadingMoreCallbackInvoked = false
-            return
-        }
-
         try {
-            mediaController = future.get()
-            mediaController?.addMediaItems(mediaItems)
-        } catch (_: Exception) { }
-        isLoadingMoreCallbackInvoked = false
+            val controller = mediaController ?: run {
+                val future = controllerFuture
+                if (future == null || !future.isDone) return
+                mediaController = future.get()
+                mediaController ?: return
+            }
+
+            controller.addMediaItems(mediaItems)
+            if (controller.playbackState == Player.STATE_ENDED ||
+                controller.playbackState == Player.STATE_IDLE
+            ) {
+                controller.prepare()
+                controller.play()
+            }
+        } catch (error: Exception) {
+            Log.e(TAG, "Unable to append ${tracks.size} tracks", error)
+        } finally {
+            isLoadingMoreCallbackInvoked = false
+        }
     }
 
     fun togglePlayPause() { mediaController?.let { if (it.isPlaying) it.pause() else it.play() } }
@@ -385,8 +425,10 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val canLoadMore = !hasNext && !shuffle && !repeat
 
         if (canLoadMore) {
-            isLoadingMoreCallbackInvoked = true
-            loadMoreCallback?.invoke()
+            loadMoreCallback?.let { callback ->
+                isLoadingMoreCallbackInvoked = true
+                callback()
+            }
         }
     }
 
@@ -431,6 +473,11 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         playerScope.cancel()
         controllerFuture?.let { MediaController.releaseFuture(it) }
         mediaController = null
+        retryAttempts.clear()
+    }
+
+    private companion object {
+        const val TAG = "AudioPlayerManager"
     }
 
 }
