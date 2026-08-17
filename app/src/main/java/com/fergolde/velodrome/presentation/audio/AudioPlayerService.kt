@@ -2,13 +2,17 @@ package com.fergolde.velodrome.presentation.audio
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.util.Log
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.cache.CacheDataSource
-import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.datasource.cache.CacheWriter
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.session.MediaSession
@@ -18,9 +22,13 @@ import com.fergolde.velodrome.data.local.dao.TrackDao
 import com.fergolde.velodrome.data.local.entity.TrackEntity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 /**
@@ -45,6 +53,7 @@ class AudioPlayerService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
     private var exoPlayer: ExoPlayer? = null
+    private val precacheJobs = ConcurrentHashMap<String, Job>()
 
 
     override fun onCreate() {
@@ -55,38 +64,14 @@ class AudioPlayerService : MediaSessionService() {
             .setUsage(C.USAGE_MEDIA)
             .build()
 
-        val loadControl = DefaultLoadControl.Builder()
-            // Configuramos el buffer máximo a 20 minutos (1.200.000 ms)
-            // ExoPlayer no parará de descargar hasta tener 20 mins cacheados.
-            // Esto significa que bajará la canción actual entera en segundos.
-            .setBufferDurationsMs(
-                DefaultLoadControl.DEFAULT_MIN_BUFFER_MS,
-                1200000, // 20 minutos
-                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS,
-                DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
-            )
-            .build()
-
-        // Configuramos ExoPlayer con soporte nativo para SimpleCache
         exoPlayer = ExoPlayer.Builder(this)
             .setAudioAttributes(audioAttributes, true)
             .setHandleAudioBecomingNoisy(true)
-            .setLoadControl(loadControl)
             .setMediaSourceFactory(
                 androidx.media3.exoplayer.source.ProgressiveMediaSource.Factory(cacheDataSourceFactory)
             )
             .build()
 
-        // Precarga de la siguiente canción de la playlist mientras suena la actual.
-        // ExoPlayer precarga el próximo item cuando termina de bufferizar el actual
-        // (con el buffer de 20 min, la canción actual se cachea completa en segundos).
-        // La precarga pasa por el mismo CacheDataSource -> la siguiente queda en SimpleCache
-        // y al llegar su turno arranca desde disco sin esperar a la red.
-        exoPlayer?.setPreloadConfiguration(
-            ExoPlayer.PreloadConfiguration(PRELOAD_TARGET_DURATION_US)
-        )
-
-        // Escuchas para scrobbling y logs (sin llamadas estáticas)
         exoPlayer?.addAnalyticsListener(analyticsListener)
         exoPlayer?.addListener(playerListener)
 
@@ -114,6 +99,7 @@ class AudioPlayerService : MediaSessionService() {
             mediaSession = null
         }
         exoPlayer = null
+        precacheJobs.clear()
         serviceJob.cancel()
         super.onDestroy()
     }
@@ -124,14 +110,62 @@ class AudioPlayerService : MediaSessionService() {
      * El AudioPlayerManager recibirá estas actualizaciones automáticamente a través de su MediaController.
      */
     private val playerListener = object : Player.Listener {
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            precacheNextTrack()
         }
 
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            when (playbackState) {
-                else -> Unit
+        override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+            precacheNextTrack()
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            val trackId = exoPlayer?.currentMediaItem?.mediaId ?: "unknown"
+            Log.e(TAG, "Playback failed track=$trackId code=${error.errorCodeName}", error)
+        }
+    }
+
+    private fun precacheNextTrack() {
+        val player = exoPlayer ?: return
+        val nextIndex = player.currentMediaItemIndex + 1
+        if (nextIndex !in 0 until player.mediaItemCount) return
+
+        val mediaItem = player.getMediaItemAt(nextIndex)
+        val uri = mediaItem.localConfiguration?.uri ?: return
+        val trackId = mediaItem.mediaId
+        if (precacheJobs[trackId]?.isActive == true) return
+
+        val job = serviceScope.launch {
+            try {
+                repeat(PRECACHE_ATTEMPTS) { attempt ->
+                    try {
+                        val dataSource = cacheDataSourceFactory.createDataSourceForDownloading()
+                        val writer = CacheWriter(
+                            dataSource,
+                            DataSpec.Builder().setUri(uri).build(),
+                            null,
+                            null
+                        )
+                        writer.cache()
+                        Log.d(TAG, "Precached track=$trackId")
+                        return@launch
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
+                        if (attempt == PRECACHE_ATTEMPTS - 1) {
+                            throw error
+                        }
+                        delay(PRECACHE_RETRY_DELAY_MS * (attempt + 1))
+                    }
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                Log.w(TAG, "Precache failed track=$trackId", error)
+            } finally {
+                precacheJobs.remove(trackId)
             }
         }
+        precacheJobs[trackId] = job
     }
 
     /**
@@ -198,10 +232,8 @@ class AudioPlayerService : MediaSessionService() {
     }
 
     companion object {
-        // Target de precarga de la siguiente canción: 20 minutos en microsegundos.
-        // Alinea con el buffer máximo del LoadControl (1200000 ms): garantiza que la
-        // siguiente canción de la playlist se descargue completa al SimpleCache mientras
-        // suena la actual. En microsegundos: 20 * 60 * 1_000_000.
-        private const val PRELOAD_TARGET_DURATION_US = 1_200_000_000L
+        private const val TAG = "AudioPlayerService"
+        private const val PRECACHE_ATTEMPTS = 3
+        private const val PRECACHE_RETRY_DELAY_MS = 500L
     }
 }
