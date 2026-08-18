@@ -1,7 +1,6 @@
 package com.fergolde.velodrome.di
 
 import android.content.Context
-import android.content.SharedPreferences
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.CacheDataSource
@@ -19,7 +18,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import java.io.File
-import javax.inject.Named
 import javax.inject.Singleton
 
 @UnstableApi
@@ -27,13 +25,15 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AudioModule {
 
+    /**
+     * El evictor arranca sin límite efectivo (Long.MAX_VALUE) para que la inicialización de
+     * SimpleCache nunca evicta la cache con un límite stale. CacheManager lo reconcilia con el
+     * valor real de DataStore al arranque de la app.
+     */
     @Provides
     @Singleton
-    fun provideMusicCacheEvictor(
-        @Named("cache_prefs") sharedPreferences: SharedPreferences
-    ): ConfigurableLruCacheEvictor {
-        val limitGb = sharedPreferences.getInt("music_cache_size_gb", 2)
-        return ConfigurableLruCacheEvictor(limitGb.toLong() * 1024 * 1024 * 1024)
+    fun provideMusicCacheEvictor(): ConfigurableLruCacheEvictor {
+        return ConfigurableLruCacheEvictor(Long.MAX_VALUE)
     }
 
     @Provides

@@ -15,6 +15,9 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import dev.spght.encryptedprefs.EncryptedSharedPreferences
 import dev.spght.encryptedprefs.MasterKey
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -41,6 +44,16 @@ object AppModule {
     @Named("cache_prefs")
     fun provideCacheSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
         return context.getSharedPreferences("velodrome_cache_prefs", Context.MODE_PRIVATE)
+    }
+
+    // -------------------------
+    // APP SCOPE (Coroutines)
+    // -------------------------
+    @Provides
+    @Singleton
+    @Named("app_scope")
+    fun provideApplicationScope(): CoroutineScope {
+        return CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 
     // -------------------------

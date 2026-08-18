@@ -62,7 +62,7 @@ class SettingsRepositoryImpl @Inject constructor(
         dataStore.edit { it[PreferencesKeys.IMAGE_CACHE_SIZE_MB] = safeSize }
 
         // Sincronizar con SharedPreferences para el arranque de Coil
-        cachePrefs.edit { putInt("image_cache_size_mb", safeSize) }
+        cachePrefs.edit(commit = true) { putInt("image_cache_size_mb", safeSize) }
     }
 
     override suspend fun setMusicCacheSizeGb(sizeGb: Int) {
@@ -71,7 +71,7 @@ class SettingsRepositoryImpl @Inject constructor(
         dataStore.edit { it[PreferencesKeys.MUSIC_CACHE_SIZE_GB] = safeSize }
 
         // 2. Persistimos en SharedPreferences para AudioModule
-        cachePrefs.edit { putInt("music_cache_size_gb", safeSize) }
+        cachePrefs.edit(commit = true) { putInt("music_cache_size_gb", safeSize) }
     }
 
     override suspend fun setAccentColor(hexColor: String) {
