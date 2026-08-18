@@ -46,9 +46,7 @@ class SettingsViewModel @Inject constructor(
     private val cacheManager: CacheManager
 ) : ViewModel() {
 
-    private val _currentCacheSizes = MutableStateFlow(
-        Pair(cacheManager.getImageCacheSizeFormatted(), cacheManager.getMusicCacheSizeFormatted())
-    )
+    private val _currentCacheSizes = MutableStateFlow(Pair("0 MB", "0 GB"))
 
     private val _isClearingCache = MutableStateFlow(false)
 
@@ -92,6 +90,9 @@ class SettingsViewModel @Inject constructor(
     )
 
     init {
+        // Medir tamaños de cache sin bloquear el main thread
+        refreshCacheSizes()
+
         // Initialize pending values from current settings
         viewModelScope.launch {
             settingsRepository.imageCacheSizeMb.collect { limitMb ->
@@ -192,13 +193,19 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * Refresh current cache sizes display.
+     * Runs on IO so the settings screen never blocks on directory scans.
      */
     @OptIn(UnstableApi::class)
-    private fun refreshCacheSizes() {
-        _currentCacheSizes.value = Pair(
-            cacheManager.getImageCacheSizeFormatted(),
-            cacheManager.getMusicCacheSizeFormatted()
-        )
+    fun refreshCacheSizes() {
+        viewModelScope.launch {
+            val sizes = withContext(Dispatchers.IO) {
+                Pair(
+                    cacheManager.getImageCacheSizeFormatted(),
+                    cacheManager.getMusicCacheSizeFormatted()
+                )
+            }
+            _currentCacheSizes.value = sizes
+        }
     }
 
     // --- Available Accent Colors ---

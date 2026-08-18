@@ -1,15 +1,20 @@
 package com.fergolde.velodrome.util
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.media3.common.util.UnstableApi
 import coil3.ImageLoader
 import coil3.annotation.ExperimentalCoilApi
 import coil3.imageLoader
+import com.fergolde.velodrome.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.File
 import java.util.Locale
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * Manages app cache for images and music.
@@ -27,7 +32,10 @@ import javax.inject.Singleton
 class CacheManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val simpleCache: androidx.media3.datasource.cache.SimpleCache,
-    private val musicCacheEvictor: ConfigurableLruCacheEvictor
+    private val musicCacheEvictor: ConfigurableLruCacheEvictor,
+    private val settingsRepository: SettingsRepository,
+    @Named("app_scope") private val appScope: CoroutineScope,
+    @Named("cache_prefs") private val cachePrefs: SharedPreferences
 ) {
 
     /**
@@ -38,33 +46,28 @@ class CacheManager @Inject constructor(
         get() = context.imageLoader
 
     companion object {
-        private const val MUSIC_CACHE_DIR = "audioCache"
-        private const val IMAGE_CACHE_DIR = "image_cache"
+        private const val DEFAULT_MUSIC_LIMIT_GB = 2
     }
 
-    // --- Directory Access ---
-
-    /**
-     * Directory for image cache (internal storage).
-     * Managed by the system and can be cleared at any time.
-     */
-    val imageCacheDir: File
-        get() = File(context.cacheDir, IMAGE_CACHE_DIR).also { it.mkdirs() }
-
-    /**
-     * Directory for music cache (internal app storage).
-     * Persists until explicitly cleared or when storage is low.
-     */
-    val musicCacheDir: File
-        get() = File(context.filesDir, "audioCache").also { it.mkdirs() }
+    init {
+        // La fuente de verdad del límite musical es DataStore (lo que muestra la UI).
+        // Se reconcilia el evictor al arranque para que nunca quede con un límite stale
+        // (SharedPreferences) que pudiera evictar la cache a 2 GB por defecto.
+        appScope.launch {
+            val limitGb = runCatching { settingsRepository.musicCacheSizeGb.first() }
+                .getOrElse { cachePrefs.getInt("music_cache_size_gb", DEFAULT_MUSIC_LIMIT_GB) }
+            setMusicCacheLimitGb(limitGb)
+        }
+    }
 
     // --- Size Calculation ---
 
     /**
      * Get current image cache size in bytes.
+     * Uses Coil's tracked disk cache size instead of walking the directory.
      */
     fun getImageCacheSizeBytes(): Long {
-        return calculateDirectorySize(imageCacheDir)
+        return imageLoader.diskCache?.size ?: 0L
     }
 
     /**
@@ -178,17 +181,6 @@ class CacheManager @Inject constructor(
 
 
     // --- Private Helpers ---
-
-    /**
-     * Calculate total size of a directory in bytes.
-     */
-    private fun calculateDirectorySize(directory: File): Long {
-        if (!directory.exists()) return 0L
-
-        return directory.walkTopDown()
-            .filter { it.isFile }
-            .sumOf { it.length() }
-    }
 
     /**
      * Format size in bytes to human readable string.

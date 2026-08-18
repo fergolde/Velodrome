@@ -55,6 +55,11 @@ fun SettingsScreen(
         if (uiState.hasPendingChanges) showConfirmDialog = true
     }
 
+    // Refrescar tamaños de cache cada vez que se entra a la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.refreshCacheSizes()
+    }
+
     // ── Confirm dialog ─────────────────────────────────────────────────────
     if (showConfirmDialog) {
         AlertDialog(
