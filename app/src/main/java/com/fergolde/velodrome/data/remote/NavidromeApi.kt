@@ -106,4 +106,10 @@ interface NavidromeApi {
         @Query("id") id: String,
         @Query("count") count: Int = 50
     ): SubsonicResponse
+
+    @GET("rest/getPlaylists.view")
+    suspend fun getPlaylists(): SubsonicResponse
+
+    @GET("rest/getPlaylist.view")
+    suspend fun getPlaylist(@Query("id") id: String): SubsonicResponse
 }

@@ -26,6 +26,8 @@
     <string name="home_recently_played">Recent</string>
     <string name="home_just_for_you">JUST FOR YOU</string>
     <string name="home_random">Shuffle</string>
+    <string name="home_playlists">Your Playlists</string>
+    <string name="home_playlist_songs">songs</string>
     <string name="home_discover">DISCOVER</string>
     <string name="home_feature_offline_title">No Data</string>
     <string name="home_feature_offline_subtitle">Offline only</string>

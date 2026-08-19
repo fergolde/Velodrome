@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.ArtistUseCases
+import com.fergolde.velodrome.domain.usecase.PlaylistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
@@ -34,6 +35,7 @@ class HomeViewModel @Inject constructor(
     private val albumUseCases: AlbumUseCases,
     private val artistUseCases: ArtistUseCases,
     private val trackUseCases: TrackUseCases,
+    private val playlistUseCases: PlaylistUseCases,
     private val playerManager: PlayerManager,
     private val smartRadioEngine: SmartRadioEngine
 ) : ViewModel() {
@@ -86,6 +88,7 @@ class HomeViewModel @Inject constructor(
         loadRecentlyPlayedAlbums()
         loadRandomAlbums()
         loadGenres()
+        loadPlaylists()
     }
 
     /**
@@ -185,6 +188,44 @@ class HomeViewModel @Inject constructor(
             .distinct()
             .sortedDescending()
         _uiState.update { it.copy(availableYears = years) }
+    }
+
+    private fun loadPlaylists() {
+        viewModelScope.launch {
+            runCatching {
+                playlistUseCases.getPlaylists().getOrDefault(emptyList())
+            }.onSuccess { list ->
+                _uiState.update { it.copy(playlists = list.take(10)) }
+            }
+        }
+    }
+
+    fun playPlaylist(id: String) {
+        if (_uiState.value.isPlaylistLoading) return
+        _uiState.update { it.copy(isPlaylistLoading = true) }
+        viewModelScope.launch {
+            runCatching {
+                smartRadioEngine.stopRadio()
+                playlistUseCases.getPlaylist(id).getOrThrow()
+            }.onSuccess { playlist ->
+                if (playlist.tracks.isNotEmpty()) {
+                    playerManager.setPlaylist(playlist.tracks, startPlaying = true)
+                    playerManager.setLoadMoreCallback { }
+                    _uiState.update {
+                        it.copy(
+                            isPlaylistLoading = false,
+                            playingPlaylistId = id,
+                            currentTrackId = playerManager.currentTrackId.value,
+                            isPlaying = true
+                        )
+                    }
+                } else {
+                    _uiState.update { it.copy(isPlaylistLoading = false) }
+                }
+            }.onFailure {
+                _uiState.update { it.copy(isPlaylistLoading = false) }
+            }
+        }
     }
 
     /**
