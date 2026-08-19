@@ -5,6 +5,7 @@ import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.ArtistUseCases
+import com.fergolde.velodrome.domain.usecase.PlaylistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
@@ -31,6 +32,7 @@ class HomeViewModelTest {
     private val trackUseCases: TrackUseCases = mockk(relaxed = true)
     private val playerManager: PlayerManager = mockk(relaxed = true)
     private val smartRadioEngine: SmartRadioEngine = mockk(relaxed = true)
+    private val playlistUseCases: PlaylistUseCases = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
 
     private val sampleAlbum = Album(id = "a1", artistId = "art1", artistName = "Artist", title = "Album", year = 2020, genre = "Rock", coverUrl = "cov-1")
@@ -63,7 +65,7 @@ class HomeViewModelTest {
     }
 
     private fun createViewModel(): HomeViewModel {
-        return HomeViewModel(albumUseCases, artistUseCases, trackUseCases, playerManager, smartRadioEngine)
+        return HomeViewModel(albumUseCases, artistUseCases, trackUseCases, playlistUseCases, playerManager, smartRadioEngine)
     }
 
     @Test

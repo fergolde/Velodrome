@@ -6,6 +6,7 @@ import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.ArtistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
+import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import io.mockk.*
@@ -31,6 +32,7 @@ class ExploreViewModelTest {
     private val trackUseCases: TrackUseCases = mockk()
     private val playerManager: PlayerManager = mockk(relaxed = true)
     private val smartRadioEngine: SmartRadioEngine = mockk(relaxed = true)
+    private val settingsRepository: SettingsRepository = mockk()
     private val testDispatcher = StandardTestDispatcher()
 
     private val sampleAlbum = Album(id = "a1", artistId = "art1", artistName = "Artist", title = "Album", year = 2020, genre = "Rock", coverUrl = "cov-1")
@@ -45,6 +47,7 @@ class ExploreViewModelTest {
         coEvery { albumUseCases.getRandomAlbums(20) } returns Result.success(emptyList())
         coEvery { albumUseCases.getRandomAlbums(10) } returns Result.success(emptyList())
         coEvery { albumUseCases.getGenres() } returns Result.success(emptyList())
+        every { settingsRepository.aiRadioEnabled } returns MutableStateFlow(false)
     }
 
     @After
@@ -53,7 +56,7 @@ class ExploreViewModelTest {
     }
 
     private fun createViewModel(): ExploreViewModel {
-        return ExploreViewModel(albumUseCases, artistUseCases, trackUseCases, playerManager, smartRadioEngine)
+        return ExploreViewModel(albumUseCases, artistUseCases, trackUseCases, playerManager, smartRadioEngine, settingsRepository)
     }
 
     @Test
