@@ -38,6 +38,14 @@ interface SettingsRepository {
      */
     val scrobbleEnabled: Flow<Boolean>
 
+    // --- AI Radio Settings ---
+
+    /**
+     * Whether AI Radio (AudioMuse similar-songs) is enabled.
+     * Default: false
+     */
+    val aiRadioEnabled: Flow<Boolean>
+
     // --- Sync State ---
 
     /**
@@ -61,6 +69,8 @@ interface SettingsRepository {
     suspend fun setAccentColor(hexColor: String)
 
     suspend fun setScrobbleEnabled(enabled: Boolean)
+
+    suspend fun setAiRadioEnabled(enabled: Boolean)
 
     suspend fun setLastSyncTimestamp(timestamp: Long)
 

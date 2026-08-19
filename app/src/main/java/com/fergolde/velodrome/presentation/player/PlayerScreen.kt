@@ -655,7 +655,7 @@ fun QueueContent(
         Spacer(modifier = Modifier.height(20.dp))
 
         LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            itemsIndexed(playlist, key = { _, track -> track.id }) { index, track ->
+            itemsIndexed(playlist, key = { index, _ -> index }) { index, track ->
                 QueueTrackItem(
                     track = track,
                     index = index,

@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.fergolde.velodrome.BuildConfig
 import com.fergolde.velodrome.domain.repository.SettingsRepository
+import com.fergolde.velodrome.domain.repository.TrackRepository
 import com.fergolde.velodrome.util.CacheManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -43,10 +45,22 @@ data class SettingsUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val cacheManager: CacheManager
+    private val cacheManager: CacheManager,
+    private val trackRepository: TrackRepository
 ) : ViewModel() {
 
     private val _currentCacheSizes = MutableStateFlow(Pair("0 MB", "0 GB"))
+
+    // AI Radio
+    val aiRadioEnabled: StateFlow<Boolean> = settingsRepository.aiRadioEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private val _aiRadioWarning = MutableStateFlow<String?>(null)
+    val aiRadioWarning: StateFlow<String?> = _aiRadioWarning.asStateFlow()
+
+    fun clearAiRadioWarning() {
+        _aiRadioWarning.value = null
+    }
 
     private val _isClearingCache = MutableStateFlow(false)
 
@@ -179,6 +193,32 @@ class SettingsViewModel @Inject constructor(
     }
 
     /**
+     * Toggle AI Radio. On enable, validate plugin support with a cheap probe
+     * using any locally cached track as seed. If unsupported, surface a warning
+     * (toggle still persists). If no seed available, skip validation.
+     */
+    fun setAiRadioEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setAiRadioEnabled(enabled)
+            if (enabled) {
+                val seed = trackRepository.getOfflineTracks().firstOrNull()?.id
+                if (seed != null) {
+                    val probe = trackRepository.getSimilarTracks(seed, 1)
+                    if (probe.isFailure || probe.getOrDefault(emptyList()).isEmpty()) {
+                        _aiRadioWarning.value = AI_RADIO_WARNING
+                    } else {
+                        _aiRadioWarning.value = null
+                    }
+                } else {
+                    _aiRadioWarning.value = null
+                }
+            } else {
+                _aiRadioWarning.value = null
+            }
+        }
+    }
+
+    /**
      * Clear all caches immediately.
      */
     @OptIn(UnstableApi::class)
@@ -213,6 +253,11 @@ class SettingsViewModel @Inject constructor(
     /**
      * List of available accent colors for the user to choose.
      */
+    companion object {
+        const val AI_RADIO_WARNING =
+            "No se detectó soporte de similitud sónica. Verifica que AudioMuse-AI-NV-plugin esté activo y bien priorizado en ND_AGENTS."
+    }
+
     val availableAccentColors = listOf(
         AccentColorOption("Velodrome Purple", "#B6A0FF"),
         AccentColorOption("Red", "#EF5350"),

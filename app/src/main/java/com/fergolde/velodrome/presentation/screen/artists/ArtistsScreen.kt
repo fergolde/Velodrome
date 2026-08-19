@@ -20,16 +20,22 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
@@ -55,7 +61,18 @@ fun ArtistsScreen(
     onArtistClick: (Artist) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val aiRadioEnabled by viewModel.aiRadioEnabled.collectAsState()
+    val radioError by viewModel.radioError.collectAsState()
     val pagedArtists = viewModel.pagedArtists.collectAsLazyPagingItems()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(radioError) {
+        radioError?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearRadioError()
+        }
+    }
 
     var showOptions by remember { mutableStateOf(false) }
     var selectedArtist by remember { mutableStateOf<Artist?>(null) }
@@ -137,6 +154,23 @@ fun ArtistsScreen(
             }
         }
 
+        SnackbarHost(hostState = snackbarHostState) { data ->
+            Snackbar(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                containerColor = MaterialTheme.colorScheme.primary,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = data.visuals.message,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
         if (showOptions && selectedArtist != null) {
             ModalBottomSheet(
                 onDismissRequest = { showOptions = false },
@@ -157,6 +191,14 @@ fun ArtistsScreen(
                     onAddToQueue = {
                         viewModel.onAddArtistToQueue(selectedArtist!!)
                         showOptions = false
+                    },
+                    aiRadioEnabled = aiRadioEnabled,
+                    aiRadioLabel = "Radio de Artista",
+                    onAiRadio = {
+                        val artist = selectedArtist!!
+                        showOptions = false
+                        scope.launch { snackbarHostState.showSnackbar("Generando radio...") }
+                        viewModel.generateArtistRadio(artist.id)
                     }
                 )
             }

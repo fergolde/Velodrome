@@ -6,17 +6,22 @@ import androidx.lifecycle.viewModelScope
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Artist
 import com.fergolde.velodrome.domain.model.Track
+import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.domain.usecase.GetArtistUseCase
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
+import com.fergolde.velodrome.presentation.audio.RadioContext
+import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -35,13 +40,29 @@ class ArtistDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val getArtistUseCase: GetArtistUseCase,
     private val trackUseCases: TrackUseCases, // <-- Inyectado
-    private val playerManager: PlayerManager  // <-- Inyectado
+    private val playerManager: PlayerManager,  // <-- Inyectado
+    private val settingsRepository: SettingsRepository,
+    private val smartRadioEngine: SmartRadioEngine
 ) : ViewModel() {
 
     private val artistId: String = savedStateHandle.get<String>("artistId") ?: ""
 
     private val _uiState = MutableStateFlow(ArtistDetailUiState())
     val uiState: StateFlow<ArtistDetailUiState> = _uiState.asStateFlow()
+
+    val aiRadioEnabled: StateFlow<Boolean> = settingsRepository.aiRadioEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val radioError: StateFlow<String?> = smartRadioEngine.error
+
+    fun clearRadioError() {
+        smartRadioEngine.clearError()
+    }
+
+    fun generateArtistRadio(artistId: String) {
+        if (_uiState.value.isPreparingPlayback) return
+        smartRadioEngine.startRadio(RadioContext.AiSimilar(artistId))
+    }
 
     init {
         loadArtistData()
@@ -90,6 +111,7 @@ class ArtistDetailViewModel @Inject constructor(
     }
 
     fun playAll() {
+        smartRadioEngine.stopRadio()
         viewModelScope.launch {
             _uiState.update { it.copy(isPreparingPlayback = true) }
             val tracks = gatherAllArtistTracks()
@@ -101,6 +123,7 @@ class ArtistDetailViewModel @Inject constructor(
     }
 
     fun shuffleAll() {
+        smartRadioEngine.stopRadio()
         viewModelScope.launch {
             _uiState.update { it.copy(isPreparingPlayback = true) }
             val tracks = gatherAllArtistTracks()
@@ -112,6 +135,7 @@ class ArtistDetailViewModel @Inject constructor(
     }
 
     fun addToQueue() {
+        smartRadioEngine.stopRadio()
         viewModelScope.launch {
             _uiState.update { it.copy(isPreparingPlayback = true) }
             val tracks = gatherAllArtistTracks()

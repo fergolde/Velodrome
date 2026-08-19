@@ -14,9 +14,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -47,8 +49,17 @@ fun ArtistDetailScreen(
     viewModel: ArtistDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val aiRadioEnabled by viewModel.aiRadioEnabled.collectAsState()
+    val radioError by viewModel.radioError.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(radioError) {
+        radioError?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearRadioError()
+        }
+    }
     Scaffold(
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) { data ->
@@ -113,6 +124,14 @@ fun ArtistDetailScreen(
                             scope.launch {
                                 snackbarHostState.showSnackbar("Álbumes añadidos a la cola")
                             }
+                        },
+                        aiRadioEnabled = aiRadioEnabled,
+                        onRadioClick = {
+                            val id = uiState.artist?.id
+                            if (id != null) {
+                                scope.launch { snackbarHostState.showSnackbar("Generando radio...") }
+                                viewModel.generateArtistRadio(id)
+                            }
                         }
                     )
                 }
@@ -150,7 +169,9 @@ fun ArtistAlbumsList(
     onAlbumClick: (String) -> Unit,
     onPlayAllClick: () -> Unit,
     onShuffleAllClick: () -> Unit,
-    onAddToQueueClick: () -> Unit
+    onAddToQueueClick: () -> Unit,
+    aiRadioEnabled: Boolean = false,
+    onRadioClick: () -> Unit = {}
 ) {
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val isTablet = LocalResources.current.getBoolean(R.bool.allow_rotation)
@@ -246,6 +267,19 @@ fun ArtistAlbumsList(
                         modifier = Modifier.height(48.dp)
                     ) {
                         Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
+                    }
+
+                    if (aiRadioEnabled) {
+                        Button(
+                            onClick = onRadioClick,
+                            shape = RoundedCornerShape(24.dp),
+                            enabled = !isPreparingPlayback,
+                            modifier = Modifier.height(48.dp)
+                        ) {
+                            Icon(Icons.Default.Radar, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Radio")
+                        }
                     }
                 }
 
