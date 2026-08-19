@@ -99,7 +99,11 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
-                    Player.STATE_READY -> { _isBuffering.value = false; _duration.value = mediaController?.duration ?: 0L }
+                    Player.STATE_READY -> {
+                        _isBuffering.value = false
+                        _duration.value = mediaController?.duration ?: 0L
+                        checkIfNeedMoreSongs()
+                    }
                     Player.STATE_BUFFERING -> { _isBuffering.value = true }
                     Player.STATE_ENDED -> { _isPlaying.value = false; handlePlaybackEnded() }
                     Player.STATE_IDLE -> { _isBuffering.value = false }
@@ -178,9 +182,12 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val shuffle = _isShuffleEnabled.value
         val repeat = _isRepeatEnabled.value
 
-        // Si quedan menos de 3, no hemos disparado el callback Y no hay shuffle/repeat activo
-        if (remaining <= 3 && !isLoadingMoreCallbackInvoked && !shuffle && !repeat) {
+        Log.d(TAG, "checkIfNeedMoreSongs: idx=$currentIndex total=$totalItems remaining=$remaining shuffle=$shuffle repeat=$repeat callback=${loadMoreCallback != null}")
+
+        // Si quedan menos de 3, no hay shuffle/repeat activo, disparar callback
+        if (remaining <= 3 && !shuffle && !repeat) {
             loadMoreCallback?.let { callback ->
+                Log.d(TAG, "checkIfNeedMoreSongs: triggering loadMoreCallback")
                 isLoadingMoreCallbackInvoked = true
                 callback()
             }
@@ -334,6 +341,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     }
 
     fun appendToPlaylist(tracks: List<Track>) {
+        Log.d(TAG, "appendToPlaylist: received ${tracks.size} tracks")
         if (tracks.isEmpty()) {
             isLoadingMoreCallbackInvoked = false
             return
@@ -350,6 +358,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             }
 
             controller.addMediaItems(mediaItems)
+            isLoadingMoreCallbackInvoked = false
+            Log.d(TAG, "appendToPlaylist: appended ${tracks.size} tracks, total=${controller.mediaItemCount}")
             if (controller.playbackState == Player.STATE_ENDED ||
                 controller.playbackState == Player.STATE_IDLE
             ) {
@@ -421,8 +431,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val hasNext = mediaController?.hasNextMediaItem() == true
         val shuffle = _isShuffleEnabled.value
         val repeat = _isRepeatEnabled.value
-        // Solo cargar más si no hay siguiente Y tanto shuffle como repeat están desactivados
         val canLoadMore = !hasNext && !shuffle && !repeat
+        Log.d(TAG, "handlePlaybackEnded: hasNext=$hasNext canLoadMore=$canLoadMore")
 
         if (canLoadMore) {
             loadMoreCallback?.let { callback ->

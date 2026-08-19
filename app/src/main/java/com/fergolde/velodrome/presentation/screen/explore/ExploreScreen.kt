@@ -34,6 +34,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,13 +47,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,6 +86,8 @@ fun ExploreScreen(
     onAlbumClick: (String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val aiRadioEnabled by viewModel.aiRadioEnabled.collectAsState()
+    val radioError by viewModel.radioError.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -113,6 +121,10 @@ fun ExploreScreen(
                     onPlayTrackNext   = viewModel::onPlayTrackNext,
                     onAddTrackToQueue = viewModel::onAddTrackToQueue,
                     onClearSearch   = viewModel::clearSearch,
+                    aiRadioEnabled = aiRadioEnabled,
+                    onAiRadio      = { viewModel.generateInstantMix(it.id) },
+                    radioError     = radioError,
+                    onClearRadioError = viewModel::clearRadioError,
                 )
             }
         } else {
@@ -531,10 +543,23 @@ fun SearchResultsView(
     onPlayTrackNext: (Track) -> Unit = {},
     onAddTrackToQueue: (Track) -> Unit = {},
     onClearSearch: () -> Unit = {},
+    aiRadioEnabled: Boolean = false,
+    onAiRadio: (Track) -> Unit = {},
+    radioError: String? = null,
+    onClearRadioError: () -> Unit = {},
 ) {
     var showOptions by remember { mutableStateOf(false) }
     var selectedTrack by remember { mutableStateOf<Track?>(null) }
     val sheetState = rememberModalBottomSheetState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(radioError) {
+        radioError?.let {
+            snackbarHostState.showSnackbar(it)
+            onClearRadioError()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -609,6 +634,23 @@ fun SearchResultsView(
         }
     }
 
+    SnackbarHost(hostState = snackbarHostState) { data ->
+        Snackbar(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            containerColor = MaterialTheme.colorScheme.primary,
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(
+                text = data.visuals.message,
+                color = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+
     if (showOptions && selectedTrack != null) {
         ModalBottomSheet(
             onDismissRequest = { showOptions = false },
@@ -622,6 +664,14 @@ fun SearchResultsView(
                 onPlayNow   = { onPlayTrackNow(selectedTrack!!); showOptions = false },
                 onPlayNext  = { onPlayTrackNext(selectedTrack!!); showOptions = false },
                 onAddToQueue = { onAddTrackToQueue(selectedTrack!!); showOptions = false },
+                aiRadioEnabled = aiRadioEnabled,
+                aiRadioLabel = "Instant Mix",
+                onAiRadio = {
+                    val track = selectedTrack!!
+                    showOptions = false
+                    scope.launch { snackbarHostState.showSnackbar("Generando radio...") }
+                    onAiRadio(track)
+                },
             )
         }
     }

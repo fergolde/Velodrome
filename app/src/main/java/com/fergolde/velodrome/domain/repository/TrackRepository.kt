@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
  */
 interface TrackRepository {
     fun observeTracksByAlbum(albumId: String): Flow<List<Track>>
+    suspend fun getTrackById(id: String): Track?
     suspend fun syncTracksForAlbum(albumId: String): Result<Unit>
     suspend fun getStreamUrl(trackId: String): String
     suspend fun getSongsByGenre(genre: String, count: Int = 50, offset: Int = 0): Result<List<Track>>
@@ -17,4 +18,5 @@ interface TrackRepository {
     suspend fun getTopSongs(count: Int = 100): Result<List<Track>>
     suspend fun getOfflineTracks(): List<Track>
     suspend fun getTopGlobalTracks(size: Int = 100): Result<List<Track>>
+    suspend fun getSimilarTracks(seedId: String, count: Int = 50): Result<List<Track>>
 }
