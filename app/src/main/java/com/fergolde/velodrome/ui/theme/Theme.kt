@@ -3,8 +3,6 @@ package com.fergolde.velodrome.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -33,7 +31,6 @@ val DmSansFontFamily = FontFamily(
 object VeloPalette {
     // Backgrounds
     val Bg         = Color(0xFF0A0B0F)
-    val Bg2        = Color(0xFF111318)
     val Bg3        = Color(0xFF161920)
     val Bg4        = Color(0xFF1E2129)
     val Border     = Color(0xFF2A2E3A)
@@ -59,15 +56,6 @@ object VeloPalette {
     // Scrobble red
     val LastFmRed = Color(0xFFE2231A)
 }
-
-// ─── EXTENDED THEME (accent override support) ────────────────────────────────
-
-data class VeloColors(
-    val accent: Color = VeloPalette.AccentDefault,
-    val onAccent: Color = Color.Black,
-)
-
-val LocalVeloColors = staticCompositionLocalOf { VeloColors() }
 
 // ─── MATERIAL COLOR SCHEME ───────────────────────────────────────────────────
 
@@ -154,17 +142,11 @@ fun VelodromeTheme(
     accentColor: Color = VeloPalette.AccentDefault,
     content: @Composable () -> Unit,
 ) {
-    val veloColors = VeloColors(
-        accent = accentColor,
-        onAccent = if (accentColor.luminance() > 0.4f) Color.Black else Color.White,
+    MaterialTheme(
+        colorScheme = veloColorScheme(accentColor),
+        typography = VeloTypography,
+        content = content,
     )
-    CompositionLocalProvider(LocalVeloColors provides veloColors) {
-        MaterialTheme(
-            colorScheme = veloColorScheme(accentColor),
-            typography = VeloTypography,
-            content = content,
-        )
-    }
 }
 
 // Luminance extension (avoids importing graphics package at call sites)

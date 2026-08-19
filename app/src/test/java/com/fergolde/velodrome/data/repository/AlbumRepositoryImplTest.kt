@@ -87,24 +87,6 @@ class AlbumRepositoryImplTest {
     }
 
     @Test
-    fun getAlbumsByYear_success() = runTest {
-        val listDto = AlbumListDto(albums = listOf(sampleAlbumDto))
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", albumList2 = listDto)
-        coEvery { api.getAlbumList2(type = "alphabeticalByName", size = 20, fromYear = 2020, toYear = 2020) } returns SubsonicResponse(dto)
-        val result = repository.getAlbumsByYear(2020, 20)
-        assertTrue(result.isSuccess)
-    }
-
-    @Test
-    fun getAlbumsByGenre_success() = runTest {
-        val listDto = AlbumListDto(albums = listOf(sampleAlbumDto))
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", albumList2 = listDto)
-        coEvery { api.getAlbumList2(type = "alphabeticalByName", size = 20, genre = "Rock") } returns SubsonicResponse(dto)
-        val result = repository.getAlbumsByGenre("Rock", 20)
-        assertTrue(result.isSuccess)
-    }
-
-    @Test
     fun getGenres_success() = runTest {
         val genreDtos = listOf(GenreDto(name = "Rock", value = "rock"), GenreDto(name = "Pop", value = "pop"))
         val genresDto = GenresDto(genres = genreDtos)

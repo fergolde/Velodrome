@@ -73,6 +73,7 @@ import com.fergolde.velodrome.presentation.screen.home.VeloAlbumCard
 import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 import com.fergolde.velodrome.ui.theme.SyneFontFamily
 import com.fergolde.velodrome.ui.theme.VeloPalette
+import com.fergolde.velodrome.util.formatDuration
 
 // ─── SCREEN ──────────────────────────────────────────────────────────────────
 
@@ -751,8 +752,3 @@ fun VeloTrackRow(
     }
 }
 
-private fun formatDuration(seconds: Int): String {
-    val m = seconds / 60
-    val s = seconds % 60
-    return "%d:%02d".format(m, s)
-}

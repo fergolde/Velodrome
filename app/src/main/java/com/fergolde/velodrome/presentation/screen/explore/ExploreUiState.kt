@@ -10,17 +10,14 @@ import java.util.Calendar
  */
 data class ExploreUiState(
     val isLoading: Boolean = false,
-    val isSyncing: Boolean = false,
     val error: String? = null,
     val randomArtists: List<Artist> = emptyList(),
     val randomAlbums: List<Album> = emptyList(),
-    val curatedAlbums: List<Album> = emptyList(),
     val genres: List<String> = emptyList(),
     val selectedGenres: Set<String> = emptySet(),
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val searchResults: SearchResults = SearchResults(),
-    val dynamicPlaylist: List<Track> = emptyList(),
     val minYear: Int = 0, // Will be loaded from DB
     val currentYear: Int = Calendar.getInstance().get(Calendar.YEAR),
     val selectedYearRange: IntRange? = null

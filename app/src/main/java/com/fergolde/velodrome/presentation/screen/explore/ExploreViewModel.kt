@@ -146,13 +146,6 @@ class ExploreViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            albumUseCases.getRandomAlbums(size = 10)
-                .onSuccess { albums ->
-                    _uiState.update { it.copy(curatedAlbums = albums) }
-                }
-        }
-
-        viewModelScope.launch {
             albumUseCases.getGenres()
                 .onSuccess { genres ->
                     _uiState.update { it.copy(genres = genres, isLoading = false) }

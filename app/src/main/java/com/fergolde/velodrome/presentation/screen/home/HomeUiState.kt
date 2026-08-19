@@ -29,16 +29,6 @@ data class HomeUiState(
     // Available genres for filtering
     val genres: List<String> = emptyList(),
 
-    // Available years for filtering (extracted from albums)
-    val availableYears: List<Int> = emptyList(),
-
-    // Current filter selections
-    val selectedGenre: String? = null,
-    val selectedYear: Int? = null,
-
-    // Filtered albums (displayed when filter is active)
-    val filteredAlbums: List<Album> = emptyList(),
-
     // Playback state
     val currentTrackId: String? = null,
     val isPlaying: Boolean = false,

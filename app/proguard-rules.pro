@@ -87,10 +87,9 @@
 # ---------- DataStore ----------
 -keep class * extends androidx.datastore.core.Serializer { *; }
 
-# ---------- Glide / Coil ----------
--keep class * extends com.bumptech.glide.module.AppGlideModule { *; }
--keep public class * extends com.bumptech.glide.module.LibraryGlideModule { *; }
--keep class com.bumptech.glide.load.data.ParcelFileDescriptorRewinder$InternalRewinder { *** rewind(); }
+# ---------- Coil ----------
+-keep class coil3.** { *; }
+-dontwarn coil3.**
 
 # ---------- ExoPlayer / Media3 ----------
 -keep class androidx.media3.** { *; }

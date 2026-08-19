@@ -72,7 +72,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     private var mediaController: MediaController? = null
     private var controllerFuture: ListenableFuture<MediaController>? = null
-    var isLoadingMoreCallbackInvoked = false
+    private var isLoadingMoreCallbackInvoked = false
 
     private val playerScope = CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
     private var loadMoreCallback: (() -> Unit)? = null
@@ -158,13 +158,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                 if (playing) {
                     while (true) {
                         mediaController?.let { controller ->
-                            val pos = controller.currentPosition
-                            _currentPosition.value = pos
-                            val dur = controller.duration
-                            val trackId = _currentTrackId.value
-                            if (trackId != null && dur > 0) {
-                                scrobbleManager.checkAndScrobble(trackId, pos, dur)
-                            }
+                            _currentPosition.value = controller.currentPosition
                         }
                         kotlinx.coroutines.delay(1000L.milliseconds)
                     }
@@ -478,13 +472,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     fun setPlaylist(playlist: List<Track>) { _playlist.value = playlist }
 
     fun setLoadMoreCallback(callback: () -> Unit) { loadMoreCallback = callback }
-
-    fun release() {
-        playerScope.cancel()
-        controllerFuture?.let { MediaController.releaseFuture(it) }
-        mediaController = null
-        retryAttempts.clear()
-    }
 
     private companion object {
         const val TAG = "AudioPlayerManager"

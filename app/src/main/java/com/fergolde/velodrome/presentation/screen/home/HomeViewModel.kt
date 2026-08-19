@@ -107,7 +107,6 @@ class HomeViewModel @Inject constructor(
                             isRefreshing = false
                         )
                     }
-                    updateAvailableYears(albums)
                 }
                 .onFailure { error ->
                     _uiState.update {
@@ -177,17 +176,6 @@ class HomeViewModel @Inject constructor(
                     _uiState.update { it.copy(genres = genres) }
                 }
         }
-    }
-
-    /**
-     * Derives available years from albums. No API call — pure state derivation.
-     */
-    private fun updateAvailableYears(albums: List<com.fergolde.velodrome.domain.model.Album>) {
-        val years = albums
-            .mapNotNull { it.year }
-            .distinct()
-            .sortedDescending()
-        _uiState.update { it.copy(availableYears = years) }
     }
 
     private fun loadPlaylists() {

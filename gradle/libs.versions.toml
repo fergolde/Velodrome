@@ -9,7 +9,6 @@ retrofit = "3.0.0"
 okhttp = "5.5.0"
 moshi = "1.15.2"
 dataStore = "1.2.1"
-tink = "1.23.0"
 navigationCompose = "2.9.8"
 encryptedprefs = "1.1.1"
 media3 = "1.11.0"
@@ -27,7 +26,6 @@ hiltNavigationCompose = "1.4.0"
 hiltWork = "1.4.0"
 paging = "3.5.1"
 room = "2.8.4"
-uiText = "1.12.0"
 mockk = "1.14.11"
 turbine = "1.2.1"
 
@@ -62,7 +60,6 @@ moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-code
 datastore = { group = "androidx.datastore", name = "datastore", version.ref = "dataStore" }
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "dataStore" }
 encryptedprefs-core = { group = "dev.spght", name = "encryptedprefs-core", version.ref = "encryptedprefs" }
-tink-android = { group = "com.google.crypto.tink", name = "tink-android", version.ref = "tink" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
 media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3" }
@@ -81,7 +78,6 @@ room-compiler = { group = "androidx.room", name = "room-compiler", version.ref =
 room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
 paging-runtime = { group = "androidx.paging", name = "paging-runtime-ktx", version.ref = "paging" }
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
-androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
 kotlinx-serialization-json = {group = "org.jetbrains.kotlinx",name = "kotlinx-serialization-json",version.ref = "serializationLib"}
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 

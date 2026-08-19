@@ -7,6 +7,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.fergolde.velodrome.domain.model.Album
+import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.AlbumRepository
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.player.PlayerManager
@@ -78,30 +79,26 @@ class AlbumsViewModel @Inject constructor(
         _uiState.update { it.copy(searchQuery = query, isSearching = query.isNotBlank()) }
     }
 
+    private suspend fun loadAlbumTracks(album: Album): List<Track> {
+        trackUseCases.syncTracksForAlbum(album.id)
+        return trackUseCases.observeTracksByAlbum(album.id).first().sortedBy { it.trackNumber }
+    }
+
     fun onPlayAlbumNow(album: Album) {
         viewModelScope.launch {
-            trackUseCases.syncTracksForAlbum(album.id)
-            trackUseCases.observeTracksByAlbum(album.id).first().let { tracks ->
-                playerManager.playNow(tracks.sortedBy { it.trackNumber })
-            }
+            playerManager.playNow(loadAlbumTracks(album))
         }
     }
 
     fun onPlayAlbumNext(album: Album) {
         viewModelScope.launch {
-            trackUseCases.syncTracksForAlbum(album.id)
-            trackUseCases.observeTracksByAlbum(album.id).first().let { tracks ->
-                playerManager.playNext(tracks.sortedBy { it.trackNumber })
-            }
+            playerManager.playNext(loadAlbumTracks(album))
         }
     }
 
     fun onAddAlbumToQueue(album: Album) {
         viewModelScope.launch {
-            trackUseCases.syncTracksForAlbum(album.id)
-            trackUseCases.observeTracksByAlbum(album.id).first().let { tracks ->
-                playerManager.addToQueue(tracks.sortedBy { it.trackNumber })
-            }
+            playerManager.addToQueue(loadAlbumTracks(album))
         }
     }
 }
