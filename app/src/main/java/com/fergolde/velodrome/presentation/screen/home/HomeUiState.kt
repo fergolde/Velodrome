@@ -1,6 +1,7 @@
 package com.fergolde.velodrome.presentation.screen.home
 
 import com.fergolde.velodrome.domain.model.Album
+import com.fergolde.velodrome.domain.model.Playlist
 
 /**
  * UI State for the Home screen.
@@ -43,5 +44,10 @@ data class HomeUiState(
     val isPlaying: Boolean = false,
 
     // Refresh state
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
+
+    // Server playlists (incl. AudioMuse auto-generated)
+    val playlists: List<Playlist> = emptyList(),
+    val isPlaylistLoading: Boolean = false,
+    val playingPlaylistId: String? = null
 )

@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.OfflinePin
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material3.Button
@@ -54,6 +55,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.Album
+import com.fergolde.velodrome.domain.model.Playlist
 import com.fergolde.velodrome.presentation.components.VeloSectionHeader
 import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 import com.fergolde.velodrome.ui.theme.VeloPalette
@@ -152,6 +154,25 @@ fun HomeScreen(
                 onDiscoveryClick  = { viewModel.playDiscovery() },
             )
             Spacer(Modifier.height(100.dp)) // mini-player clearance
+        }
+
+        // ── Tus Playlists (servidor Navidrome) ────────────────────────────
+        item {
+            if (state.playlists.isNotEmpty()) {
+                VeloSectionHeader(
+                    eyebrow = "Navidrome",
+                    title   = stringResource(R.string.home_playlists),
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    onViewAll = null
+                )
+                Spacer(Modifier.height(16.dp))
+                PlaylistCarousel(
+                    playlists = state.playlists,
+                    playingId = state.playingPlaylistId,
+                    onPlaylistClick = { viewModel.playPlaylist(it.id) }
+                )
+                Spacer(Modifier.height(100.dp)) // mini-player clearance
+            }
         }
     }
 }
@@ -372,4 +393,91 @@ fun VeloFeatureCard(
             }
         }
     }
+}
+
+// ─── PLAYLIST CAROUSEL ────────────────────────────────────────────────────────
+
+@Composable
+fun PlaylistCarousel(
+    playlists: List<Playlist>,
+    playingId: String?,
+    onPlaylistClick: (Playlist) -> Unit,
+    artSize: Dp = 130.dp,
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        items(playlists, key = { it.id }) { playlist ->
+            PlaylistCard(
+                playlist = playlist,
+                isPlaying = playlist.id == playingId,
+                onClick = { onPlaylistClick(playlist) },
+                artSize = artSize,
+            )
+        }
+    }
+}
+
+@Composable
+fun PlaylistCard(
+    playlist: Playlist,
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    artSize: Dp = 130.dp,
+) {
+    Column(
+        modifier = Modifier
+            .width(artSize)
+            .clickable(onClick = onClick),
+    ) {
+        Box(modifier = Modifier.size(artSize)) {
+            AlbumCover(
+                coverArtId = playlist.coverArtId,
+                contentDescription = playlist.name,
+                size = artSize,
+                cornerRadius = 14.dp,
+            )
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(40.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(
+            text = formatPlaylistName(playlist.name),
+            fontFamily = DmSansFontFamily,
+            fontWeight = if (isPlaying) FontWeight.Bold else FontWeight.SemiBold,
+            fontSize = 13.sp,
+            maxLines = 1,
+            color = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
+        )
+        Text(
+            text = "${playlist.songCount} ${stringResource(R.string.home_playlist_songs)}",
+            fontFamily = DmSansFontFamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 11.sp,
+            maxLines = 1,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
+
+private fun formatPlaylistName(raw: String): String {
+    return raw
+        .replace('_', ' ')
+        .replace(Regex("\\s*\\d+\\s*automatic$", RegexOption.IGNORE_CASE), "")
+        .replace(Regex("\\s+automatic$", RegexOption.IGNORE_CASE), "")
+        .trim()
 }

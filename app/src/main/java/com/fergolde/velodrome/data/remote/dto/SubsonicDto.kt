@@ -41,6 +41,10 @@ data class SubsonicResponseDto(
     // AI Radio (AudioMuse plugin) - similar sonic songs
     @param:Json(name = "similarSongs2") val similarSongs2: SimilarSongs2Dto? = null,
 
+    // Playlists (server-side, incl. AudioMuse auto-generated)
+    @param:Json(name = "playlists") val playlists: PlaylistsDto? = null,
+    @param:Json(name = "playlist") val playlistDetail: PlaylistDetailDto? = null,
+
     val error: ErrorDto? = null
 )
 
@@ -204,4 +208,27 @@ data class SongsByGenreDto(
 @JsonClass(generateAdapter = true)
 data class TopSongsDto(
     @param:Json(name = "song") val song: List<SongDto>? = null
+)
+
+// ================= PLAYLISTS =================
+
+@JsonClass(generateAdapter = true)
+data class PlaylistsDto(
+    @param:Json(name = "playlist") val playlist: List<PlaylistSummaryDto>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PlaylistSummaryDto(
+    val id: String,
+    val name: String,
+    @param:Json(name = "songCount") val songCount: Int? = null,
+    @param:Json(name = "coverArt") val coverArt: String? = null,
+    @param:Json(name = "duration") val duration: Int? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class PlaylistDetailDto(
+    val id: String,
+    val name: String,
+    @param:Json(name = "entry") val songs: List<SongDto>? = null
 )
