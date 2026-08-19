@@ -7,7 +7,7 @@ import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Artist
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.SettingsRepository
-import com.fergolde.velodrome.domain.usecase.GetArtistUseCase
+import com.fergolde.velodrome.domain.usecase.ArtistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
@@ -38,9 +38,9 @@ data class ArtistDetailUiState(
 @HiltViewModel
 class ArtistDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val getArtistUseCase: GetArtistUseCase,
-    private val trackUseCases: TrackUseCases, // <-- Inyectado
-    private val playerManager: PlayerManager,  // <-- Inyectado
+    private val artistUseCases: ArtistUseCases,
+    private val trackUseCases: TrackUseCases,
+    private val playerManager: PlayerManager,
     private val settingsRepository: SettingsRepository,
     private val smartRadioEngine: SmartRadioEngine
 ) : ViewModel() {
@@ -77,7 +77,7 @@ class ArtistDetailViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true, error = null) }
 
         viewModelScope.launch {
-            getArtistUseCase(artistId)
+            artistUseCases.getArtist(artistId)
                 .onSuccess { artistWithAlbums ->
                     // Ordenar álbumes por año ascendente (más viejo a más reciente)
                     val sortedAlbums = artistWithAlbums.albums.sortedBy { it.year ?: 0 }

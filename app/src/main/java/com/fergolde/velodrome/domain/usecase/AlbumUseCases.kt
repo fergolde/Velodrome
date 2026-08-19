@@ -84,6 +84,7 @@ class AlbumUseCases @Inject constructor(
     val getGenres: GetGenresUseCase,
     val getRecentlyPlayedAlbums: GetRecentlyPlayedAlbumsUseCase,
     val getRandomAlbums: GetRandomAlbumsUseCase,
+    val getAlbum: GetAlbumUseCase,
     val searchLocal: SearchLocalAlbumsUseCase,
     val syncAlbums: SyncAlbumsUseCase,
     val observeAlbums: ObserveAlbumsUseCase,

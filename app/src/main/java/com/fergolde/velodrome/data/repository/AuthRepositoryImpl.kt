@@ -43,24 +43,4 @@ class AuthRepositoryImpl @Inject constructor(
             }
         }
     }
-
-    override fun isLoggedIn(): Boolean {
-        return credentialsManager.hasCredentials()
-    }
-
-    override fun logout() {
-        credentialsManager.clearCredentials()
-    }
-
-    override fun getServerUrl(): String {
-        return credentialsManager.getServerUrl() ?: "https://your-navidrome-server.com/"
-    }
-
-    override fun setServerUrl(url: String) {
-        val currentUser = credentialsManager.getUsername()
-        val currentPass = credentialsManager.getPassword()
-        if (currentUser != null && currentPass != null) {
-            credentialsManager.saveCredentials(currentUser, currentPass, url)
-        }
-    }
 }

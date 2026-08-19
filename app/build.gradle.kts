@@ -28,7 +28,7 @@ android {
         minSdk = 34
         targetSdk = 37
         versionCode = 13
-        versionName = "2.2.1"
+        versionName = "2.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -94,7 +94,6 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
-    implementation(libs.androidx.compose.ui.text)
     ksp(libs.hilt.compiler)
 
     // Network
@@ -119,12 +118,8 @@ dependencies {
     // Security - encrypted-shared-preferences fork (post-deprecation)
     implementation(libs.encryptedprefs.core)
 
-    // Tink for encryption (replacing deprecated EncryptedSharedPreferences)
-    implementation(libs.tink.android)
-
     // Media3
     implementation(libs.media3.exoplayer)
-    implementation(libs.media3.ui)
     implementation(libs.media3.session)
     implementation(libs.media3.datasource)
     implementation(libs.media3.datasource.okhttp)

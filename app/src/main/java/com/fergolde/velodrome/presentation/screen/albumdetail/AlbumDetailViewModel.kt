@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.SettingsRepository
-import com.fergolde.velodrome.domain.usecase.GetAlbumUseCase
+import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
@@ -26,14 +26,13 @@ data class AlbumDetailUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val currentTrackId: String? = null,
-    val isPlaying: Boolean = false,
-    val currentPosition: Long = 0L
+    val isPlaying: Boolean = false
 )
 
 @HiltViewModel
 class AlbumDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val getAlbumUseCase: GetAlbumUseCase,
+    private val albumUseCases: AlbumUseCases,
     private val trackUseCases: TrackUseCases,
     private val playerManager: PlayerManager,
     private val settingsRepository: SettingsRepository,
@@ -71,11 +70,6 @@ class AlbumDetailViewModel @Inject constructor(
                 _uiState.update { it.copy(isPlaying = playing) }
             }
         }
-        viewModelScope.launch {
-            playerManager.currentPosition.collect { pos ->
-                _uiState.update { it.copy(currentPosition = pos) }
-            }
-        }
     }
 
     private fun loadAlbumData() {
@@ -88,7 +82,7 @@ class AlbumDetailViewModel @Inject constructor(
 
         viewModelScope.launch {
             // Load album details
-            getAlbumUseCase(albumId)
+            albumUseCases.getAlbum(albumId)
                 .onSuccess { album ->
                     _uiState.update { it.copy(album = album) }
                 }
@@ -160,9 +154,7 @@ class AlbumDetailViewModel @Inject constructor(
         val tracks = _uiState.value.tracks
         if (tracks.isEmpty()) return
 
-        tracks.forEach { track ->
-            playerManager.addToQueue(track)
-        }
+        playerManager.addToQueue(tracks)
     }
 
 }

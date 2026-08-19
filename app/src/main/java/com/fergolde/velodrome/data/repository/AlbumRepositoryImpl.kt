@@ -92,38 +92,9 @@ class AlbumRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getAllAlbums(size: Int): Result<List<Album>> {
-        return getAllAlbumsFromServer(offset = 0, size = size)
-    }
-
-    override suspend fun getAllAlbumsFromServer(offset: Int, size: Int): Result<List<Album>> {
+    private suspend fun getAllAlbumsFromServer(offset: Int, size: Int): Result<List<Album>> {
         return runCatching {
             val response = api.getAlbumList2(type = "alphabeticalByName", size = size, offset = offset)
-            val albums = response.response.albumList2?.albums ?: emptyList()
-            albums.map { mapAlbumDto(it) }
-        }
-    }
-
-    override suspend fun getAlbumsByYear(year: Int, size: Int): Result<List<Album>> {
-        return runCatching {
-            val response = api.getAlbumList2(
-                type = "alphabeticalByName",
-                size = size,
-                fromYear = year,
-                toYear = year
-            )
-            val albums = response.response.albumList2?.albums ?: emptyList()
-            albums.map { mapAlbumDto(it) }
-        }
-    }
-
-    override suspend fun getAlbumsByGenre(genre: String, size: Int): Result<List<Album>> {
-        return runCatching {
-            val response = api.getAlbumList2(
-                type = "alphabeticalByName",
-                size = size,
-                genre = genre
-            )
             val albums = response.response.albumList2?.albums ?: emptyList()
             albums.map { mapAlbumDto(it) }
         }

@@ -9,7 +9,7 @@ import androidx.paging.cachedIn
 import com.fergolde.velodrome.domain.model.Artist
 import com.fergolde.velodrome.domain.repository.ArtistRepository
 import com.fergolde.velodrome.domain.repository.SettingsRepository
-import com.fergolde.velodrome.domain.usecase.GetArtistUseCase
+import com.fergolde.velodrome.domain.usecase.ArtistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
@@ -42,7 +42,7 @@ data class ArtistsUiState(
 @HiltViewModel
 class ArtistsViewModel @Inject constructor(
     private val artistRepository: ArtistRepository,
-    private val getArtistUseCase: GetArtistUseCase,
+    private val artistUseCases: ArtistUseCases,
     private val playerManager: PlayerManager,
     private val trackUseCases: TrackUseCases,
     private val settingsRepository: SettingsRepository,
@@ -105,7 +105,7 @@ class ArtistsViewModel @Inject constructor(
     fun onPlayArtistNow(artist: Artist) {
         smartRadioEngine.stopRadio()
         viewModelScope.launch {
-            val artistWithAlbums = getArtistUseCase(artist.id).getOrNull() ?: return@launch
+            val artistWithAlbums = artistUseCases.getArtist(artist.id).getOrNull() ?: return@launch
             val albums = artistWithAlbums.albums
 
             // Sync all albums and gather all tracks
@@ -122,7 +122,7 @@ class ArtistsViewModel @Inject constructor(
     fun onPlayArtistNext(artist: Artist) {
         smartRadioEngine.stopRadio()
         viewModelScope.launch {
-            val artistWithAlbums = getArtistUseCase(artist.id).getOrNull() ?: return@launch
+            val artistWithAlbums = artistUseCases.getArtist(artist.id).getOrNull() ?: return@launch
             val albums = artistWithAlbums.albums
 
             albums.map { album -> async { trackUseCases.syncTracksForAlbum(album.id) } }.awaitAll()
@@ -138,7 +138,7 @@ class ArtistsViewModel @Inject constructor(
     fun onAddArtistToQueue(artist: Artist) {
         smartRadioEngine.stopRadio()
         viewModelScope.launch {
-            val artistWithAlbums = getArtistUseCase(artist.id).getOrNull() ?: return@launch
+            val artistWithAlbums = artistUseCases.getArtist(artist.id).getOrNull() ?: return@launch
             val albums = artistWithAlbums.albums
 
             albums.map { album -> async { trackUseCases.syncTracksForAlbum(album.id) } }.awaitAll()

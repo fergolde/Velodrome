@@ -1,6 +1,6 @@
 package com.fergolde.velodrome.data.repository
 
-import com.fergolde.velodrome.data.local.VelodromeDatabase
+import com.fergolde.velodrome.data.local.dao.ScrobbleDao
 import com.fergolde.velodrome.data.local.entity.ScrobbleEntity
 import com.fergolde.velodrome.data.remote.NavidromeApi
 import com.fergolde.velodrome.domain.repository.ScrobbleRepository
@@ -10,7 +10,7 @@ import javax.inject.Singleton
 @Singleton
 class ScrobbleRepositoryImpl @Inject constructor(
     private val api: NavidromeApi,
-    private val database: VelodromeDatabase
+    private val scrobbleDao: ScrobbleDao
 ) : ScrobbleRepository {
 
     override suspend fun scrobble(trackId: String, time: Long?, submission: Boolean): Result<Unit> {
@@ -25,6 +25,6 @@ class ScrobbleRepositoryImpl @Inject constructor(
             timestamp = timestamp,
             isSubmitted = false
         )
-        database.scrobbleDao().insertScrobble(entity)
+        scrobbleDao.insertScrobble(entity)
     }
 }

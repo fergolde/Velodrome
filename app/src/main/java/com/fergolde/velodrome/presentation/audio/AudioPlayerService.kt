@@ -55,6 +55,10 @@ class AudioPlayerService : MediaSessionService() {
     private var exoPlayer: ExoPlayer? = null
     private val precacheJobs = ConcurrentHashMap<String, Job>()
 
+    // Track currently being played (used to scrobble the previous track on transition)
+    private var currentTrackId: String? = null
+    private var currentDuration: Long = 0L
+
 
     override fun onCreate() {
         super.onCreate()
@@ -111,6 +115,10 @@ class AudioPlayerService : MediaSessionService() {
      */
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            mediaItem?.let {
+                currentTrackId = it.mediaId
+                currentDuration = exoPlayer?.duration ?: 0L
+            }
             precacheNextTrack()
         }
 
@@ -118,9 +126,35 @@ class AudioPlayerService : MediaSessionService() {
             precacheNextTrack()
         }
 
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int
+        ) {
+            // Scrobble the previous track when the user changes to another song.
+            if (oldPosition.mediaItemIndex != newPosition.mediaItemIndex) {
+                scrobbleCurrentTrack(oldPosition.positionMs)
+            }
+        }
+
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_ENDED) {
+                // Playlist ended: scrobble the last track as fully played.
+                scrobbleCurrentTrack(currentDuration)
+            }
+        }
+
         override fun onPlayerError(error: PlaybackException) {
             val trackId = exoPlayer?.currentMediaItem?.mediaId ?: "unknown"
             Log.e(TAG, "Playback failed track=$trackId code=${error.errorCodeName}", error)
+        }
+    }
+
+    private fun scrobbleCurrentTrack(playedMs: Long) {
+        val trackId = currentTrackId ?: return
+        val duration = currentDuration
+        if (duration > 0) {
+            scrobbleManager.checkAndScrobble(trackId, playedMs, duration)
         }
     }
 
@@ -169,20 +203,9 @@ class AudioPlayerService : MediaSessionService() {
     }
 
     /**
-     * AnalyticsListener exclusivo para lógica de negocio de Scrobbling (Last.fm / Navidrome).
+     * AnalyticsListener para notificar "now playing" y persistir tracks en Room.
      */
     private val analyticsListener = object : AnalyticsListener {
-        private val scrobbledTracks = mutableSetOf<String>()
-
-        override fun onPositionDiscontinuity(
-            eventTime: AnalyticsListener.EventTime,
-            oldPosition: Player.PositionInfo,
-            newPosition: Player.PositionInfo,
-            reason: Int
-        ) {
-            checkScrobble(newPosition.positionMs)
-        }
-
         override fun onMediaItemTransition(
             eventTime: AnalyticsListener.EventTime,
             mediaItem: MediaItem?,
@@ -190,7 +213,6 @@ class AudioPlayerService : MediaSessionService() {
         ) {
             mediaItem?.let {
                 val trackId = it.mediaId
-                scrobbledTracks.remove(trackId)
                 scrobbleManager.onTrackChanged()
                 scrobbleManager.sendNowPlaying(trackId)
 
@@ -213,19 +235,6 @@ class AudioPlayerService : MediaSessionService() {
                             )
                         )
                     }
-                }
-            }
-        }
-
-        private fun checkScrobble(currentPositionMs: Long) {
-            val duration = exoPlayer?.duration ?: 0L
-            val trackId = exoPlayer?.currentMediaItem?.mediaId ?: return
-
-            if (duration > 0) {
-                val halfwayPoint = duration / 2
-                if (currentPositionMs >= halfwayPoint && trackId !in scrobbledTracks) {
-                    scrobbledTracks.add(trackId)
-                    scrobbleManager.checkAndScrobble(trackId, currentPositionMs, duration)
                 }
             }
         }

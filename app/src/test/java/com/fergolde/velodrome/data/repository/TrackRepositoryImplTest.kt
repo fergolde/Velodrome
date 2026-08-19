@@ -68,12 +68,6 @@ class TrackRepositoryImplTest {
     }
 
     @Test
-    fun getStreamUrl_delegates() = runTest {
-        every { credentialsManager.getStreamUrl("t1") } returns "https://server.com/stream?id=t1"
-        assertEquals("https://server.com/stream?id=t1", repository.getStreamUrl("t1"))
-    }
-
-    @Test
     fun getRandomSongs_success() = runTest {
         val randomDto = RandomSongsDto(song = listOf(sampleSongDto))
         val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", randomSongs = randomDto)

@@ -27,12 +27,6 @@ interface NavidromeApi {
         @Query("id") albumId: String
     ): SubsonicResponse
 
-    @GET("rest/search2.view")
-    suspend fun search(
-        @Query("query") query: String,
-        @Query("size") size: Int = 20
-    ): SubsonicResponse
-
     @GET("rest/search3.view")
     suspend fun search3(
         @Query("query") query: String,
@@ -73,14 +67,6 @@ interface NavidromeApi {
         @Query("submission") submission: Boolean = true
     ): SubsonicResponse
 
-    // Genre-based song retrieval
-    @GET("rest/getSongsByGenre.view")
-    suspend fun getSongsByGenre(
-        @Query("genre") genre: String,
-        @Query("count") count: Int = 50,
-        @Query("offset") offset: Int = 0
-    ): SubsonicResponse
-
     @GET("rest/getRandomSongs.view")
     suspend fun getRandomSongs(
         @Query("size") size: Int = 50,
@@ -92,12 +78,6 @@ interface NavidromeApi {
     @GET("rest/getMusicDirectory.view")
     suspend fun getMusicDirectory(
         @Query("id") id: String
-    ): SubsonicResponse
-
-    // Top songs endpoint for HomeScreen exploration
-    @GET("rest/getTopSongs.view")
-    suspend fun getTopSongs(
-        @Query("count") count: Int = 100
     ): SubsonicResponse
 
     // AI Radio - similar sonic songs via AudioMuse-AI plugin (getSimilarSongs2)

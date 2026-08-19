@@ -77,23 +77,6 @@ class ArtistRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun search(query: String): Result<List<Artist>> {
-        return runCatching {
-            val response = api.search3(query = query, artistCount = 50)
-            val artists = response.response.searchResult3?.artists
-                ?: response.response.searchResult2?.artists
-                ?: emptyList()
-            artists.map { dto ->
-                Artist(
-                    id = dto.id,
-                    name = dto.name,
-                    albumCount = dto.albumCount ?: 0,
-                    coverUrl = dto.coverArt
-                )
-            }
-        }
-    }
-
     private fun mapAlbumDto(dto: AlbumDto): Album {
         return Album(
             id = dto.id,

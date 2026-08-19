@@ -22,9 +22,6 @@ import javax.inject.Inject
 class VelodromeApp : Application(), SingletonImageLoader.Factory, Configuration.Provider {
 
     @Inject
-    lateinit var scrobbleManager: ScrobbleManager
-
-    @Inject
     lateinit var credentialsManager: CredentialsManager
 
     @Inject

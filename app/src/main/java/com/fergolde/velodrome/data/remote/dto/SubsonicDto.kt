@@ -28,15 +28,11 @@ data class SubsonicResponseDto(
     @param:Json(name = "directory") val directory: DirectoryDto? = null,
 
     // Search / genres
-    @param:Json(name = "searchResult2") val searchResult2: SearchResultDto? = null,
     @param:Json(name = "searchResult3") val searchResult3: SearchResultDto? = null,
     @param:Json(name = "genres") val genres: GenresDto? = null,
 
     // Songs endpoints (fallbacks reales Subsonic)
-    @param:Json(name = "songs") val songs: List<SongDto>? = null,
     @param:Json(name = "randomSongs") val randomSongs: RandomSongsDto? = null,
-    @param:Json(name = "songsByGenre") val songsByGenre: SongsByGenreDto? = null,
-    @param:Json(name = "topSongs") val topSongs: TopSongsDto? = null,
 
     // AI Radio (AudioMuse plugin) - similar sonic songs
     @param:Json(name = "similarSongs2") val similarSongs2: SimilarSongs2Dto? = null,
@@ -191,22 +187,10 @@ data class GenreDto(
     @param:Json(name = "albumCount") val albumCount: Int? = null
 )
 
-// ================= RANDOM / BY GENRE =================
+// ================= RANDOM SONGS =================
 
 @JsonClass(generateAdapter = true)
 data class RandomSongsDto(
-    @param:Json(name = "song") val song: List<SongDto>? = null
-)
-
-@JsonClass(generateAdapter = true)
-data class SongsByGenreDto(
-    @param:Json(name = "song") val song: List<SongDto>? = null
-)
-
-// ================= TOP SONGS =================
-
-@JsonClass(generateAdapter = true)
-data class TopSongsDto(
     @param:Json(name = "song") val song: List<SongDto>? = null
 )
 

@@ -67,10 +67,6 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
         }
     }
 
-    override suspend fun getStreamUrl(trackId: String): String {
-        return credentialsManager.getStreamUrl(trackId)
-    }
-
     private fun mapSongDto(dto: SongDto, albumId: String): Track {
         val effectiveCoverArtId = dto.coverArt ?: "al-$albumId"
         return Track(
@@ -90,22 +86,6 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
         )
     }
 
-    override suspend fun getSongsByGenre(genre: String, count: Int, offset: Int): Result<List<Track>> {
-        return runCatching {
-            val response = api.getSongsByGenre(genre, count, offset)
-            val songDtos = response.response.songsByGenre?.song ?: emptyList()
-            songDtos.map { mapSongDto(it, it.albumId ?: genre) }
-        }
-    }
-
-    override suspend fun getRandomSongsByGenre(genre: String, size: Int): Result<List<Track>> {
-        return runCatching {
-            val response = api.getRandomSongs(size, genre)
-            val songDtos = response.response.randomSongs?.song ?: emptyList()
-            songDtos.map { mapSongDto(it, it.albumId ?: genre) }
-        }
-    }
-
     override suspend fun getRandomSongs(size: Int, genre: String?, fromYear: Int?, toYear: Int?): Result<List<Track>> {
         return runCatching {
             val response = api.getRandomSongs(size, genre, fromYear, toYear)
@@ -122,21 +102,8 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
     override suspend fun searchRemoteTracks(query: String): Result<List<Track>> {
         return runCatching {
             val response = api.search3(query = query, songCount = 100)
-            val res = response.response
-
-            val songDtos = res.searchResult3?.songs
-                ?: res.searchResult2?.songs
-                ?: emptyList()
-
+            val songDtos = response.response.searchResult3?.songs ?: emptyList()
             songDtos.map { mapSongDto(it, it.albumId ?: "search_res") }
-        }
-    }
-
-    override suspend fun getTopSongs(count: Int): Result<List<Track>> {
-        return runCatching {
-            val response = api.getTopSongs(count)
-            val songDtos = response.response.topSongs?.song ?: emptyList()
-            songDtos.map { mapSongDto(it, it.albumId ?: "") }
         }
     }
 

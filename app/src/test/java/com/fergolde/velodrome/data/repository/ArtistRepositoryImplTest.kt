@@ -92,18 +92,6 @@ class ArtistRepositoryImplTest {
     }
 
     @Test
-    fun search_success() = runTest {
-        val artistDto = ArtistDto(id = "1", name = "Artist", albumCount = 3, coverArt = "art-1")
-        val searchDto = SearchResultDto(artists = listOf(artistDto), albums = null, songs = null)
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", searchResult3 = searchDto)
-        coEvery { api.search3(query = "query", artistCount = 50) } returns SubsonicResponse(dto)
-
-        val result = repository.search("query")
-        assertTrue(result.isSuccess)
-        assertEquals(1, result.getOrNull()!!.size)
-    }
-
-    @Test
     fun searchLocal_delegates() = runTest {
         val entity = ArtistEntity(id = "1", name = "Artist", albumCount = 3, coverUrl = "art-1")
         coEvery { localDataSource.searchArtists("query") } returns listOf(entity)

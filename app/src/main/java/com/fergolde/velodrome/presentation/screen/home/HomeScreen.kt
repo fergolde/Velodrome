@@ -153,7 +153,7 @@ fun HomeScreen(
                 onTop100Click     = { viewModel.playTop100() },
                 onDiscoveryClick  = { viewModel.playDiscovery() },
             )
-            Spacer(Modifier.height(100.dp)) // mini-player clearance
+            Spacer(Modifier.height(36.dp)) // mini-player clearance
         }
 
         // ── Tus Playlists (servidor Navidrome) ────────────────────────────

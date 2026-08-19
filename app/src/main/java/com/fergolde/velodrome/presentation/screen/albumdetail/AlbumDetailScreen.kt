@@ -66,6 +66,7 @@ import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
+import com.fergolde.velodrome.util.formatDuration
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -528,12 +529,6 @@ private fun TrackItem(
         Spacer(modifier = Modifier.width(12.dp))
         Text(text = trackDuration, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
     }
-}
-
-private fun formatDuration(seconds: Int): String {
-    val mins = seconds / 60
-    val secs = seconds % 60
-    return "$mins:${secs.toString().padStart(2, '0')}"
 }
 
 private fun durationDisk(tracks: List<Track>): Int {

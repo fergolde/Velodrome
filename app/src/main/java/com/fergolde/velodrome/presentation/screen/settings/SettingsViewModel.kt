@@ -58,10 +58,6 @@ class SettingsViewModel @Inject constructor(
     private val _aiRadioWarning = MutableStateFlow<String?>(null)
     val aiRadioWarning: StateFlow<String?> = _aiRadioWarning.asStateFlow()
 
-    fun clearAiRadioWarning() {
-        _aiRadioWarning.value = null
-    }
-
     private val _isClearingCache = MutableStateFlow(false)
 
     // Pending changes for confirmation dialog

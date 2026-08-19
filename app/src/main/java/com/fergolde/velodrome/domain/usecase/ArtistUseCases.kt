@@ -36,6 +36,7 @@ class ObserveArtistsUseCase @Inject constructor(
 
 // ========== WRAPPER ==========
 class ArtistUseCases @Inject constructor(
+    val getArtist: GetArtistUseCase,
     val searchLocal: SearchLocalArtistsUseCase,
     val syncArtists: SyncArtistsUseCase,
     val observeArtists: ObserveArtistsUseCase
