@@ -104,8 +104,7 @@ class HomeViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             latestAlbums = albums,
-                            isLoading = false,
-                            isRefreshing = false
+                            isLoading = false
                         )
                     }
                 }
@@ -113,8 +112,7 @@ class HomeViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             error = error.message ?: "Failed to load latest albums",
-                            isLoading = false,
-                            isRefreshing = false
+                            isLoading = false
                         )
                     }
                 }
@@ -130,10 +128,7 @@ class HomeViewModel @Inject constructor(
             albumUseCases.getTopAlbums(size)
                 .onSuccess { albums ->
                     _uiState.update {
-                        it.copy(
-                            topAlbums = albums,
-                            featuredAlbum = albums.firstOrNull()
-                        )
+                        it.copy(topAlbums = albums)
                     }
                 }
         }

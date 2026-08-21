@@ -14,7 +14,6 @@ class PlaylistShuffleTest {
         artistName = artist,
         durationSec = 180,
         sizeBytes = 5_000_000,
-        bitrate = 320,
         trackNumber = 1
     )
 

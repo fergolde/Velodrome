@@ -33,7 +33,7 @@ class ArtistRepositoryImpl @Inject constructor(
         return ArtistPagingSource(localMusicDataSource)
     }
 
-    override suspend fun getArtists(offset: Int, size: Int): Result<List<Artist>> {
+    private suspend fun getArtists(offset: Int, size: Int): Result<List<Artist>> {
         return runCatching {
             val response = api.getArtists(size, offset)
 

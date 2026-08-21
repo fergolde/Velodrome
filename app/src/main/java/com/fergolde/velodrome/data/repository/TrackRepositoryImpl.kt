@@ -51,7 +51,6 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
                     albumName = song.album ?: "",
                     durationSec = song.duration ?: 0,
                     sizeBytes = song.size ?: 0L,
-                    bitrate = song.bitRate ?: 0,
                     trackNumber = song.track ?: 0,
                     coverArtId = song.coverArt
                 ).toEntity()
@@ -73,10 +72,7 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
             albumName = dto.album ?: albumId,
             durationSec = dto.duration ?: 0,
             sizeBytes = dto.size ?: 0L,
-            bitrate = dto.bitRate ?: 0,
             trackNumber = dto.track ?: 0,
-            year = dto.year,
-            isCached = false,
             coverArtId = effectiveCoverArtId,
             playCount = dto.playCount ?: 0
         )

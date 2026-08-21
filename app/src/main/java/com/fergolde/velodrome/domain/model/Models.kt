@@ -14,9 +14,7 @@ data class Album(
     val title: String,
     val year: Int?,
     val genre: String?,
-    val coverUrl: String?,
-    val songCount: Int = 0,
-    val duration: Int = 0
+    val coverUrl: String?
 )
 
 data class Track(
@@ -27,10 +25,7 @@ data class Track(
     val title: String,
     val durationSec: Int,
     val sizeBytes: Long,
-    val bitrate: Int,
     val trackNumber: Int,
-    val year: Int? = null,
-    val isCached: Boolean = false,
     val playCount: Int = 0,
     val coverArtId: String? = null
 )

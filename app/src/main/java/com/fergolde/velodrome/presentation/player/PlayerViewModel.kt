@@ -27,7 +27,6 @@ class PlayerViewModel @Inject constructor(
         playerManager.currentPosition,
         playerManager.currentTrack,
         playerManager.currentIndex,
-        playerManager.isBuffering,
         playerManager.isShuffleEnabled,
         playerManager.isRepeatEnabled
     ) { values: Array<*> ->
@@ -39,9 +38,8 @@ class PlayerViewModel @Inject constructor(
             currentPosition = ((values[2] as Long) / 1000).toInt(),
             currentTrack = values[3] as Track?,
             currentIndex = values[4] as Int,
-            isBuffering = values[5] as Boolean,
-            isShuffleEnabled = values[6] as Boolean,
-            isRepeatEnabled = values[7] as Boolean
+            isShuffleEnabled = values[5] as Boolean,
+            isRepeatEnabled = values[6] as Boolean
         )
     }.stateIn(
         scope = viewModelScope,

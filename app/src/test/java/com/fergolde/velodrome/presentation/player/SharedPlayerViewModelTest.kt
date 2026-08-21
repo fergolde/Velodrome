@@ -67,7 +67,7 @@ class SharedPlayerViewModelTest {
 
     @Test
     fun currentTrack_updatesFromManager() {
-        val track = Track(id = "t1", albumId = "a1", title = "Song", durationSec = 180, sizeBytes = 5000000, bitrate = 320, trackNumber = 1)
+        val track = Track(id = "t1", albumId = "a1", title = "Song", durationSec = 180, sizeBytes = 5000000, trackNumber = 1)
         currentTrackFlow.value = track
         assertEquals(track, viewModel.currentTrack.value)
     }
