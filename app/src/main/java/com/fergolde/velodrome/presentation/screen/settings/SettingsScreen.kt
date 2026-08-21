@@ -47,8 +47,6 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val aiRadioEnabled by viewModel.aiRadioEnabled.collectAsState()
-    val aiRadioWarning by viewModel.aiRadioWarning.collectAsState()
     var showColorPicker by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showClearCacheDialog by remember { mutableStateOf(false) }
@@ -219,28 +217,6 @@ fun SettingsScreen(
                     checked  = uiState.scrobbleEnabled,
                     onCheckedChange = viewModel::setScrobbleEnabled,
                 )
-            }
-
-            // AI Radio
-            VeloSettingsSection(eyebrow = stringResource(R.string.settings_ai_radio_section)) {
-                VeloSettingsSwitchRow(
-                    icon     = Icons.Default.Radar,
-                    iconTint = MaterialTheme.colorScheme.primary,
-                    title    = stringResource(R.string.settings_ai_radio),
-                    subtitle = stringResource(R.string.settings_ai_radio_desc),
-                    checked  = aiRadioEnabled,
-                    onCheckedChange = viewModel::setAiRadioEnabled,
-                )
-
-                if (aiRadioWarning != null) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = aiRadioWarning!!,
-                        fontSize = 12.sp,
-                        color = VeloPalette.Destructive,
-                        modifier = Modifier.padding(horizontal = 4.dp),
-                    )
-                }
             }
 
             // Cache

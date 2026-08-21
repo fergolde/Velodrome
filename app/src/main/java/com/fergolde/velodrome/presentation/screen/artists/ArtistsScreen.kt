@@ -27,12 +27,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.launch
@@ -61,18 +59,8 @@ fun ArtistsScreen(
     onArtistClick: (Artist) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val aiRadioEnabled by viewModel.aiRadioEnabled.collectAsState()
-    val radioError by viewModel.radioError.collectAsState()
     val pagedArtists = viewModel.pagedArtists.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(radioError) {
-        radioError?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearRadioError()
-        }
-    }
 
     var showOptions by remember { mutableStateOf(false) }
     var selectedArtist by remember { mutableStateOf<Artist?>(null) }
@@ -191,14 +179,6 @@ fun ArtistsScreen(
                     onAddToQueue = {
                         viewModel.onAddArtistToQueue(selectedArtist!!)
                         showOptions = false
-                    },
-                    aiRadioEnabled = aiRadioEnabled,
-                    aiRadioLabel = "Radio de Artista",
-                    onAiRadio = {
-                        val artist = selectedArtist!!
-                        showOptions = false
-                        scope.launch { snackbarHostState.showSnackbar("Generando radio...") }
-                        viewModel.generateArtistRadio(artist.id)
                     }
                 )
             }

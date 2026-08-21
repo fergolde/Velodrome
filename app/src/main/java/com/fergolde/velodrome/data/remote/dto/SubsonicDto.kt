@@ -34,21 +34,11 @@ data class SubsonicResponseDto(
     // Songs endpoints (fallbacks reales Subsonic)
     @param:Json(name = "randomSongs") val randomSongs: RandomSongsDto? = null,
 
-    // AI Radio (AudioMuse plugin) - similar sonic songs
-    @param:Json(name = "similarSongs2") val similarSongs2: SimilarSongs2Dto? = null,
-
     // Playlists (server-side, incl. AudioMuse auto-generated)
     @param:Json(name = "playlists") val playlists: PlaylistsDto? = null,
     @param:Json(name = "playlist") val playlistDetail: PlaylistDetailDto? = null,
 
     val error: ErrorDto? = null
-)
-
-// ================= SIMILAR SONGS (AI RADIO) =================
-
-@JsonClass(generateAdapter = true)
-data class SimilarSongs2Dto(
-    @param:Json(name = "song") val song: List<SongDto>? = null
 )
 
 // ================= MUSIC DIRECTORY (CLAVE) =================

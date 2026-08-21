@@ -80,13 +80,6 @@ interface NavidromeApi {
         @Query("id") id: String
     ): SubsonicResponse
 
-    // AI Radio - similar sonic songs via AudioMuse-AI plugin (getSimilarSongs2)
-    @GET("rest/getSimilarSongs2.view")
-    suspend fun getSimilarSongs2(
-        @Query("id") id: String,
-        @Query("count") count: Int = 50
-    ): SubsonicResponse
-
     @GET("rest/getPlaylists.view")
     suspend fun getPlaylists(): SubsonicResponse
 

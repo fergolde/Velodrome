@@ -6,10 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Artist
 import com.fergolde.velodrome.domain.model.Track
-import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.domain.usecase.ArtistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
-import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,11 +15,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -41,7 +37,6 @@ class ArtistDetailViewModel @Inject constructor(
     private val artistUseCases: ArtistUseCases,
     private val trackUseCases: TrackUseCases,
     private val playerManager: PlayerManager,
-    private val settingsRepository: SettingsRepository,
     private val smartRadioEngine: SmartRadioEngine
 ) : ViewModel() {
 
@@ -49,20 +44,6 @@ class ArtistDetailViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(ArtistDetailUiState())
     val uiState: StateFlow<ArtistDetailUiState> = _uiState.asStateFlow()
-
-    val aiRadioEnabled: StateFlow<Boolean> = settingsRepository.aiRadioEnabled
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
-    val radioError: StateFlow<String?> = smartRadioEngine.error
-
-    fun clearRadioError() {
-        smartRadioEngine.clearError()
-    }
-
-    fun generateArtistRadio(artistId: String) {
-        if (_uiState.value.isPreparingPlayback) return
-        smartRadioEngine.startRadio(RadioContext.AiSimilar(artistId))
-    }
 
     init {
         loadArtistData()

@@ -41,7 +41,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,20 +75,11 @@ fun AlbumDetailScreen(
     viewModel: AlbumDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val aiRadioEnabled by viewModel.aiRadioEnabled.collectAsState()
-    val radioError by viewModel.radioError.collectAsState()
     var showTrackOptions by remember { mutableStateOf(false) }
     var selectedTrack by remember { mutableStateOf<Track?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(radioError) {
-        radioError?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.clearRadioError()
-        }
-    }
 
     Scaffold(
         snackbarHost = {
@@ -192,16 +182,6 @@ fun AlbumDetailScreen(
                             viewModel.addToQueue(track)
                             snackbarHostState.showSnackbar("Añadido a la cola")
                         }
-                    },
-                    aiRadioEnabled = aiRadioEnabled,
-                    aiRadioLabel = "Instant Mix",
-                    onAiRadio = {
-                        val track = selectedTrack!!
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            showTrackOptions = false
-                        }
-                        scope.launch { snackbarHostState.showSnackbar("Generando radio...") }
-                        viewModel.generateInstantMix(track.id)
                     }
                 )
             }

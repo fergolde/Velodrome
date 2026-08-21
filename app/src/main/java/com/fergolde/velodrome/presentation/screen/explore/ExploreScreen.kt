@@ -47,7 +47,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.launch
@@ -87,8 +86,6 @@ fun ExploreScreen(
     onAlbumClick: (String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val aiRadioEnabled by viewModel.aiRadioEnabled.collectAsState()
-    val radioError by viewModel.radioError.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -122,10 +119,6 @@ fun ExploreScreen(
                     onPlayTrackNext   = viewModel::onPlayTrackNext,
                     onAddTrackToQueue = viewModel::onAddTrackToQueue,
                     onClearSearch   = viewModel::clearSearch,
-                    aiRadioEnabled = aiRadioEnabled,
-                    onAiRadio      = { viewModel.generateInstantMix(it.id) },
-                    radioError     = radioError,
-                    onClearRadioError = viewModel::clearRadioError,
                 )
             }
         } else {
@@ -544,23 +537,11 @@ fun SearchResultsView(
     onPlayTrackNext: (Track) -> Unit = {},
     onAddTrackToQueue: (Track) -> Unit = {},
     onClearSearch: () -> Unit = {},
-    aiRadioEnabled: Boolean = false,
-    onAiRadio: (Track) -> Unit = {},
-    radioError: String? = null,
-    onClearRadioError: () -> Unit = {},
 ) {
     var showOptions by remember { mutableStateOf(false) }
     var selectedTrack by remember { mutableStateOf<Track?>(null) }
     val sheetState = rememberModalBottomSheetState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-
-    LaunchedEffect(radioError) {
-        radioError?.let {
-            snackbarHostState.showSnackbar(it)
-            onClearRadioError()
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -665,14 +646,6 @@ fun SearchResultsView(
                 onPlayNow   = { onPlayTrackNow(selectedTrack!!); showOptions = false },
                 onPlayNext  = { onPlayTrackNext(selectedTrack!!); showOptions = false },
                 onAddToQueue = { onAddTrackToQueue(selectedTrack!!); showOptions = false },
-                aiRadioEnabled = aiRadioEnabled,
-                aiRadioLabel = "Instant Mix",
-                onAiRadio = {
-                    val track = selectedTrack!!
-                    showOptions = false
-                    scope.launch { snackbarHostState.showSnackbar("Generando radio...") }
-                    onAiRadio(track)
-                },
             )
         }
     }
