@@ -7,7 +7,6 @@ import com.fergolde.velodrome.data.remote.NavidromeApi
 import com.fergolde.velodrome.util.AuthInterceptor
 import com.fergolde.velodrome.util.CredentialsManager
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -61,7 +60,7 @@ object AppModule {
     // -------------------------
     @Provides
     @Singleton
-    fun provideMoshi(): Moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+    fun provideMoshi(): Moshi = Moshi.Builder().build()
 
     // -------------------------
     // OKHTTP

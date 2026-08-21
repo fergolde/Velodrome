@@ -20,7 +20,6 @@ interface ArtistRepository {
      */
     fun getArtistsPaged(): PagingSource<Int, Artist>
 
-    suspend fun getArtists(offset: Int = 0, size: Int = 50): Result<List<Artist>>
     suspend fun getArtist(artistId: String): Result<ArtistWithAlbums>
 
     /**

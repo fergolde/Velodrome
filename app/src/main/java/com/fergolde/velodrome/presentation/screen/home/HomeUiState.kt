@@ -23,18 +23,12 @@ data class HomeUiState(
     // Random albums
     val randomAlbums: List<Album> = emptyList(),
 
-    // Featured album (first from most played)
-    val featuredAlbum: Album? = null,
-
     // Available genres for filtering
     val genres: List<String> = emptyList(),
 
     // Playback state
     val currentTrackId: String? = null,
     val isPlaying: Boolean = false,
-
-    // Refresh state
-    val isRefreshing: Boolean = false,
 
     // Server playlists (incl. AudioMuse auto-generated)
     val playlists: List<Playlist> = emptyList(),

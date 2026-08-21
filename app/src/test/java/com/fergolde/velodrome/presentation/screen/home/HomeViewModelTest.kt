@@ -36,7 +36,7 @@ class HomeViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private val sampleAlbum = Album(id = "a1", artistId = "art1", artistName = "Artist", title = "Album", year = 2020, genre = "Rock", coverUrl = "cov-1")
-    private val sampleTrack = Track(id = "t1", albumId = "a1", title = "Song", durationSec = 180, sizeBytes = 5000000, bitrate = 320, trackNumber = 1)
+    private val sampleTrack = Track(id = "t1", albumId = "a1", title = "Song", durationSec = 180, sizeBytes = 5000000, trackNumber = 1)
 
     private val isPlayingFlow = MutableStateFlow(false)
     private val currentTrackFlow = MutableStateFlow<Track?>(null)
@@ -104,7 +104,6 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf(sampleAlbum), vm.uiState.value.topAlbums)
-        assertEquals(sampleAlbum, vm.uiState.value.featuredAlbum)
     }
 
     @Test

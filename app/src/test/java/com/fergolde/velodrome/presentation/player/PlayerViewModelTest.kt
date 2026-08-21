@@ -29,7 +29,6 @@ class PlayerViewModelTest {
     private val currentPositionFlow = MutableStateFlow(0L)
     private val currentTrackFlow = MutableStateFlow<Track?>(null)
     private val currentIndexFlow = MutableStateFlow(0)
-    private val isBufferingFlow = MutableStateFlow(false)
     private val isShuffleFlow = MutableStateFlow(false)
     private val isRepeatFlow = MutableStateFlow(false)
 
@@ -41,7 +40,6 @@ class PlayerViewModelTest {
         every { playerManager.currentPosition } returns currentPositionFlow
         every { playerManager.currentTrack } returns currentTrackFlow
         every { playerManager.currentIndex } returns currentIndexFlow
-        every { playerManager.isBuffering } returns isBufferingFlow
         every { playerManager.isShuffleEnabled } returns isShuffleFlow
         every { playerManager.isRepeatEnabled } returns isRepeatFlow
         viewModel = PlayerViewModel(playerManager)
@@ -61,7 +59,6 @@ class PlayerViewModelTest {
         assertEquals(0, state.currentPosition)
         assertNull(state.currentTrack)
         assertEquals(0, state.currentIndex)
-        assertFalse(state.isBuffering)
         assertFalse(state.isShuffleEnabled)
         assertFalse(state.isRepeatEnabled)
     }

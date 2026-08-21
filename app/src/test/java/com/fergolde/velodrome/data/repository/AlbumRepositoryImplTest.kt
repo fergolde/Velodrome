@@ -21,8 +21,7 @@ class AlbumRepositoryImplTest {
 
     private val sampleAlbumDto = AlbumDto(
         id = "1", name = "Album Name", title = "Album Title", artist = "Artist",
-        artistId = "a1", coverArt = "cov-1", year = 2020, genre = "Rock",
-        songCount = 10, duration = 3600
+        artistId = "a1", coverArt = "cov-1", year = 2020, genre = "Rock"
     )
 
     private val sampleAlbum = Album(

@@ -76,8 +76,7 @@ data class ArtistDto(
     val id: String,
     val name: String,
     @param:Json(name = "albumCount") val albumCount: Int? = null,
-    @param:Json(name = "coverArt") val coverArt: String? = null,
-    @param:Json(name = "artistImageUrl") val artistImageUrl: String? = null
+    @param:Json(name = "coverArt") val coverArt: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -105,10 +104,7 @@ data class AlbumDto(
     @param:Json(name = "artistId") val artistId: String? = null,
     @param:Json(name = "coverArt") val coverArt: String? = null,
     @param:Json(name = "year") val year: Int? = null,
-    @param:Json(name = "genre") val genre: String? = null,
-    @param:Json(name = "songCount") val songCount: Int? = null,
-    @param:Json(name = "duration") val duration: Int? = null,
-    @param:Json(name = "albumCount") val albumCount: Int? = null
+    @param:Json(name = "genre") val genre: String? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -121,9 +117,7 @@ data class AlbumDetailDto(
     @param:Json(name = "coverArt") val coverArt: String? = null,
     @param:Json(name = "year") val year: Int? = null,
     @param:Json(name = "genre") val genre: String? = null,
-    @param:Json(name = "song") val songs: List<SongDto>? = null,
-    @param:Json(name = "songCount") val songCount: Int? = null,
-    @param:Json(name = "duration") val duration: Int? = null
+    @param:Json(name = "song") val songs: List<SongDto>? = null
 )
 
 // ================= SONGS =================
@@ -140,17 +134,11 @@ data class SongDto(
     @param:Json(name = "artistId") val artistId: String? = null,
 
     @param:Json(name = "track") val track: Int? = null,
-    @param:Json(name = "year") val year: Int? = null,
-    @param:Json(name = "genre") val genre: String? = null,
     @param:Json(name = "coverArt") val coverArt: String? = null,
 
     @param:Json(name = "size") val size: Long? = null,
-    @param:Json(name = "contentType") val contentType: String? = null,
-    @param:Json(name = "suffix") val suffix: String? = null,
     @param:Json(name = "duration") val duration: Int? = null,
-    @param:Json(name = "bitRate") val bitRate: Int? = null,
-    @param:Json(name = "playCount") val playCount: Int? = null,
-    @param:Json(name = "path") val path: String? = null
+    @param:Json(name = "playCount") val playCount: Int? = null
 )
 
 // ================= SEARCH =================
@@ -172,9 +160,7 @@ data class GenresDto(
 @JsonClass(generateAdapter = true)
 data class GenreDto(
     @param:Json(name = "name") val name: String? = null,
-    @param:Json(name = "value") val value: String? = null,
-    @param:Json(name = "songCount") val songCount: Int? = null,
-    @param:Json(name = "albumCount") val albumCount: Int? = null
+    @param:Json(name = "value") val value: String? = null
 )
 
 // ================= RANDOM SONGS =================
@@ -196,8 +182,7 @@ data class PlaylistSummaryDto(
     val id: String,
     val name: String,
     @param:Json(name = "songCount") val songCount: Int? = null,
-    @param:Json(name = "coverArt") val coverArt: String? = null,
-    @param:Json(name = "duration") val duration: Int? = null
+    @param:Json(name = "coverArt") val coverArt: String? = null
 )
 
 @JsonClass(generateAdapter = true)

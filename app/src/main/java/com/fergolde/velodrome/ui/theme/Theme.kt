@@ -9,7 +9,6 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import kotlin.math.pow
 
 // ─── FONTS ───────────────────────────────────────────────────────────────────
 // Add syne_bold.ttf and Syne-ExtraBold.ttf to res/font/
@@ -46,7 +45,6 @@ object VeloPalette {
 
     // Semantic
     val Destructive = Color(0xFFEF5350)
-    val DestructiveBg = Color(0x1AEF5350)
 
     // Feature card backgrounds (dark tints, not saturated fills)
     val FeatureOffline    = Color(0xFF0F1F18)
@@ -148,13 +146,3 @@ fun VelodromeTheme(
         content = content,
     )
 }
-
-// Luminance extension (avoids importing graphics package at call sites)
-private fun Color.luminance(): Float {
-    val r = red.linearize()
-    val g = green.linearize()
-    val b = blue.linearize()
-    return 0.2126f * r + 0.7152f * g + 0.0722f * b
-}
-private fun Float.linearize() = if (this <= 0.04045f) this / 12.92f else ((this + 0.055f) / 1.055f).toDouble()
-    .pow(2.4).toFloat()

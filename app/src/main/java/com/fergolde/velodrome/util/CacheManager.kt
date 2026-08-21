@@ -78,20 +78,6 @@ class CacheManager @Inject constructor(
     }
 
     /**
-     * Get current image cache size in MB.
-     */
-    fun getImageCacheSizeMb(): Int {
-        return (getImageCacheSizeBytes() / (1024 * 1024)).toInt()
-    }
-
-    /**
-     * Get current music cache size in GB.
-     */
-    fun getMusicCacheSizeGb(): Int {
-        return (getMusicCacheSizeBytes() / (1024 * 1024 * 1024)).toInt()
-    }
-
-    /**
      * Get current image cache size in a formatted string (e.g., "45 MB").
      */
     fun getImageCacheSizeFormatted(): String {
@@ -140,12 +126,6 @@ class CacheManager @Inject constructor(
         clearImageCache()
         clearMusicCache()
     }
-
-    /**
-     * Returns the set of cached audio keys from Media3 SimpleCache.
-     * Used to determine which tracks are available offline.
-     */
-    fun getCachedKeys(): Set<String> = simpleCache.keys
 
     /**
      * Validates if a track is fully cached by comparing downloaded bytes vs expected size.

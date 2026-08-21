@@ -26,7 +26,7 @@ class TrackRepositoryImplTest {
     private val sampleSongDto = SongDto(
         id = "t1", title = "Song 1", album = "Album", albumId = "a1",
         artist = "Artist", track = 1, duration = 200, size = 5000000L,
-        bitRate = 320, coverArt = "cov-1", playCount = 10, year = 2020
+        coverArt = "cov-1", playCount = 10
     )
 
     @Test

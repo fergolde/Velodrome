@@ -20,7 +20,6 @@ class PlayerManager @Inject constructor(
     val currentPosition: StateFlow<Long> = audioPlayerManager.currentPosition
     val currentTrack: StateFlow<Track?> = audioPlayerManager.currentTrack
     val currentTrackId: StateFlow<String?> = audioPlayerManager.currentTrackId
-    val isBuffering: StateFlow<Boolean> = audioPlayerManager.isBuffering
     val isShuffleEnabled: StateFlow<Boolean> = audioPlayerManager.isShuffleEnabled
     val isRepeatEnabled: StateFlow<Boolean> = audioPlayerManager.isRepeatEnabled
 

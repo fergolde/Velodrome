@@ -51,10 +51,7 @@ class PlaylistRepositoryImpl @Inject constructor(
             albumName = dto.album ?: albumId,
             durationSec = dto.duration ?: 0,
             sizeBytes = dto.size ?: 0L,
-            bitrate = dto.bitRate ?: 0,
             trackNumber = dto.track ?: 0,
-            year = dto.year,
-            isCached = false,
             coverArtId = effectiveCoverArtId,
             playCount = dto.playCount ?: 0
         )

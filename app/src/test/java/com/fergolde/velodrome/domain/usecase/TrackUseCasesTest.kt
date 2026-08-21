@@ -23,7 +23,7 @@ class TrackUseCasesTest {
 
     private val sampleTrack = Track(
         id = "t1", albumId = "a1", albumName = "Album", artistName = "Artist",
-        title = "Song", durationSec = 200, sizeBytes = 5000000L, bitrate = 320,
+        title = "Song", durationSec = 200, sizeBytes = 5000000L,
         trackNumber = 1, coverArtId = "cov-1"
     )
 

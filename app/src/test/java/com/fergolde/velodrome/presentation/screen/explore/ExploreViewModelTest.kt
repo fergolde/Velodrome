@@ -34,7 +34,7 @@ class ExploreViewModelTest {
 
     private val sampleAlbum = Album(id = "a1", artistId = "art1", artistName = "Artist", title = "Album", year = 2020, genre = "Rock", coverUrl = "cov-1")
     private val sampleArtist = Artist(id = "art1", name = "Artist", albumCount = 3, coverUrl = null)
-    private val sampleTrack = Track(id = "t1", albumId = "a1", title = "Song", durationSec = 180, sizeBytes = 5000000, bitrate = 320, trackNumber = 1)
+    private val sampleTrack = Track(id = "t1", albumId = "a1", title = "Song", durationSec = 180, sizeBytes = 5000000, trackNumber = 1)
 
     @Before
     fun setup() {

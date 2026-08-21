@@ -55,7 +55,7 @@ class EntityMappersTest {
         val entity = AlbumEntity(
             id = "a1", artistId = "art1", artistName = "Artist",
             title = "Album Title", year = 2020, genre = "Rock",
-            coverUrl = "cov-1", songCount = 10, duration = 3600
+            coverUrl = "cov-1"
         )
         val domain = entity.toDomain()
         assertEquals("a1", domain.id)
@@ -65,8 +65,6 @@ class EntityMappersTest {
         assertEquals(2020, domain.year)
         assertEquals("Rock", domain.genre)
         assertEquals("cov-1", domain.coverUrl)
-        assertEquals(10, domain.songCount)
-        assertEquals(3600, domain.duration)
     }
 
     @Test
@@ -86,7 +84,7 @@ class EntityMappersTest {
         val original = Album(
             id = "a1", artistId = "art1", artistName = "Artist",
             title = "Album", year = 2020, genre = "Jazz",
-            coverUrl = "cov-1", songCount = 8, duration = 2400
+            coverUrl = "cov-1"
         )
         val entity = original.toEntity()
         val restored = entity.toDomain()
@@ -113,8 +111,6 @@ class EntityMappersTest {
         assertEquals(1, domain.trackNumber)
         assertEquals("cov-1", domain.coverArtId)
         assertEquals(5000000L, domain.sizeBytes)
-        assertTrue(domain.isCached)
-        assertEquals(0, domain.bitrate)
     }
 
     @Test
@@ -125,7 +121,6 @@ class EntityMappersTest {
             trackNumber = 2, coverArtId = null, localFilePath = null
         )
         val domain = entity.toDomain()
-        assertFalse(domain.isCached)
         assertNull(domain.coverArtId)
     }
 
@@ -134,7 +129,7 @@ class EntityMappersTest {
         val original = Track(
             id = "t1", albumId = "a1", albumName = "Album",
             artistName = "Artist", title = "Track 1", durationSec = 180,
-            sizeBytes = 5000000L, bitrate = 320, trackNumber = 1,
+            sizeBytes = 5000000L, trackNumber = 1,
             coverArtId = "cov-1"
         )
         val entity = original.toEntity()

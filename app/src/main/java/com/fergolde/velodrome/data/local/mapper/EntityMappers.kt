@@ -28,9 +28,7 @@ fun AlbumEntity.toDomain(): Album = Album(
     title = title,
     year = year,
     genre = genre,
-    coverUrl = coverUrl,
-    songCount = songCount,
-    duration = duration
+    coverUrl = coverUrl
 )
 
 fun Album.toEntity(): AlbumEntity = AlbumEntity(
@@ -40,9 +38,7 @@ fun Album.toEntity(): AlbumEntity = AlbumEntity(
     title = title,
     year = year,
     genre = genre,
-    coverUrl = coverUrl,
-    songCount = songCount,
-    duration = duration
+    coverUrl = coverUrl
 )
 
 fun TrackEntity.toDomain(): Track = Track(
@@ -53,9 +49,7 @@ fun TrackEntity.toDomain(): Track = Track(
     title = title,
     durationSec = durationSec,
     sizeBytes = sizeBytes,
-    bitrate = 0, // Not stored locally
     trackNumber = trackNumber,
-    isCached = localFilePath != null,
     coverArtId = coverArtId
 )
 

@@ -12,7 +12,5 @@ data class PlayerUiState(
     val playlist: List<Track> = emptyList(),
     val currentIndex: Int = 0,
     val isShuffleEnabled: Boolean = false,
-    val isRepeatEnabled: Boolean = false,
-    val isBuffering: Boolean = false,
-    val error: String? = null
+    val isRepeatEnabled: Boolean = false
 )

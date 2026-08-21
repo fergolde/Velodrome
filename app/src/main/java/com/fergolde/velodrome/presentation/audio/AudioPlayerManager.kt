@@ -46,16 +46,10 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     private val _currentPosition = MutableStateFlow(0L)
     val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
 
-    private val _duration = MutableStateFlow(0L)
-    val duration: StateFlow<Long> = _duration.asStateFlow()
-
     private val _currentTrack = MutableStateFlow<Track?>(null)
     val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
     private val _currentTrackId = MutableStateFlow<String?>(null)
     val currentTrackId: StateFlow<String?> = _currentTrackId.asStateFlow()
-
-    private val _isBuffering = MutableStateFlow(false)
-    val isBuffering: StateFlow<Boolean> = _isBuffering.asStateFlow()
 
     private val _playlist = MutableStateFlow<List<Track>>(emptyList())
     val playlist: StateFlow<List<Track>> = _playlist.asStateFlow()
@@ -98,14 +92,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
-                    Player.STATE_READY -> {
-                        _isBuffering.value = false
-                        _duration.value = mediaController?.duration ?: 0L
-                        checkIfNeedMoreSongs()
-                    }
-                    Player.STATE_BUFFERING -> { _isBuffering.value = true }
+                    Player.STATE_READY -> { checkIfNeedMoreSongs() }
                     Player.STATE_ENDED -> { _isPlaying.value = false; handlePlaybackEnded() }
-                    Player.STATE_IDLE -> { _isBuffering.value = false }
                 }
             }
 

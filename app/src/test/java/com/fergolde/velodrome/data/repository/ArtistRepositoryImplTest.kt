@@ -30,41 +30,53 @@ class ArtistRepositoryImplTest {
     }
 
     @Test
-    fun getArtists_withIndexes_flattensToArtists() = runTest {
+    fun syncArtists_withIndexes_flattensAndStores() = runTest {
         val artistDto = ArtistDto(id = "1", name = "Artist 1", albumCount = 3, coverArt = "art-1")
         val index = ArtistIndexDto(name = "A", artists = listOf(artistDto))
         val artistsDto = ArtistsDto(indexes = listOf(index), artistList = null)
         val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", artists = artistsDto)
-        coEvery { api.getArtists(50, 0) } returns SubsonicResponse(dto)
+        coEvery { api.getArtists(500, 0) } returns SubsonicResponse(dto)
+        coEvery { localDataSource.insertArtists(any()) } just runs
 
-        val result = repository.getArtists(0, 50)
+        val result = repository.syncArtistsFromServer()
         assertTrue(result.isSuccess)
-        assertEquals(1, result.getOrNull()!!.size)
-        assertEquals("Artist 1", result.getOrNull()!![0].name)
+        assertEquals(1, result.getOrNull())
+        coVerify {
+            localDataSource.insertArtists(withArg { entities ->
+                assertEquals(1, entities.size)
+                assertEquals("Artist 1", entities[0].name)
+            })
+        }
     }
 
     @Test
-    fun getArtists_decodesHtmlEntities() = runTest {
+    fun syncArtists_decodesHtmlEntities() = runTest {
         val artistDto = ArtistDto(id = "1", name = "Rock &amp; Roll Band", albumCount = 3, coverArt = "art-1")
         val index = ArtistIndexDto(name = "A", artists = listOf(artistDto))
         val artistsDto = ArtistsDto(indexes = listOf(index), artistList = null)
         val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", artists = artistsDto)
-        coEvery { api.getArtists(50, 0) } returns SubsonicResponse(dto)
+        coEvery { api.getArtists(500, 0) } returns SubsonicResponse(dto)
+        coEvery { localDataSource.insertArtists(any()) } just runs
 
-        val result = repository.getArtists(0, 50)
-        assertEquals("Rock & Roll Band", result.getOrNull()!![0].name)
+        repository.syncArtistsFromServer()
+        coVerify {
+            localDataSource.insertArtists(withArg { entities ->
+                assertEquals("Rock & Roll Band", entities[0].name)
+            })
+        }
     }
 
     @Test
-    fun getArtists_usesArtistListWhenNoIndexes() = runTest {
+    fun syncArtists_usesArtistListWhenNoIndexes() = runTest {
         val artistDto = ArtistDto(id = "1", name = "Artist", albumCount = 3, coverArt = "art-1")
         val artistsDto = ArtistsDto(indexes = null, artistList = listOf(artistDto))
         val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", artists = artistsDto)
-        coEvery { api.getArtists(50, 0) } returns SubsonicResponse(dto)
+        coEvery { api.getArtists(500, 0) } returns SubsonicResponse(dto)
+        coEvery { localDataSource.insertArtists(any()) } just runs
 
-        val result = repository.getArtists(0, 50)
+        val result = repository.syncArtistsFromServer()
         assertTrue(result.isSuccess)
-        assertEquals(1, result.getOrNull()!!.size)
+        assertEquals(1, result.getOrNull())
     }
 
     @Test
