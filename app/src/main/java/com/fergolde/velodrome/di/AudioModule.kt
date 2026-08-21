@@ -7,7 +7,6 @@ import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import com.fergolde.velodrome.presentation.audio.AudioPlayerManager
-import com.fergolde.velodrome.presentation.audio.ScrobbleManager
 import com.fergolde.velodrome.util.ConfigurableLruCacheEvictor
 import com.fergolde.velodrome.util.CredentialsManager
 import com.fergolde.velodrome.util.NavidromeCacheKeyFactory
@@ -77,12 +76,10 @@ object AudioModule {
     @Singleton
     fun provideAudioPlayerManager(
         @ApplicationContext context: Context,
-        scrobbleManager: ScrobbleManager,
         credentialsManager: CredentialsManager
     ): AudioPlayerManager {
         return AudioPlayerManager(
             context = context,
-            scrobbleManager = scrobbleManager,
             credentialsManager = credentialsManager
         )
     }

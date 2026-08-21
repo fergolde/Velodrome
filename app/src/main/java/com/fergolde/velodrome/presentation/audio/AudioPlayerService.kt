@@ -115,10 +115,23 @@ class AudioPlayerService : MediaSessionService() {
      */
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            val previousTrackId = currentTrackId
+            val previousDuration = currentDuration
+
             mediaItem?.let {
                 currentTrackId = it.mediaId
-                currentDuration = exoPlayer?.duration ?: 0L
+                currentDuration = exoPlayer?.duration?.takeIf { d -> d > 0 } ?: 0L
             }
+
+            // Fin natural de pista (auto-avance o repeat-one): marcar la anterior
+            // como reproducida. Un salto manual (SEEK) no acredita la anterior.
+            if ((reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO ||
+                reason == Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) &&
+                previousTrackId != null && previousDuration > 0
+            ) {
+                scrobbleManager.markTrackPlayed(previousTrackId)
+            }
+
             precacheNextTrack()
         }
 
@@ -126,35 +139,26 @@ class AudioPlayerService : MediaSessionService() {
             precacheNextTrack()
         }
 
-        override fun onPositionDiscontinuity(
-            oldPosition: Player.PositionInfo,
-            newPosition: Player.PositionInfo,
-            reason: Int
-        ) {
-            // Scrobble the previous track when the user changes to another song.
-            if (oldPosition.mediaItemIndex != newPosition.mediaItemIndex) {
-                scrobbleCurrentTrack(oldPosition.positionMs)
-            }
-        }
-
         override fun onPlaybackStateChanged(playbackState: Int) {
-            if (playbackState == Player.STATE_ENDED) {
-                // Playlist ended: scrobble the last track as fully played.
-                scrobbleCurrentTrack(currentDuration)
+            when (playbackState) {
+                Player.STATE_READY -> {
+                    // Duración real disponible solo al estar listo para reproducir.
+                    exoPlayer?.duration?.takeIf { it > 0 }?.let { currentDuration = it }
+                }
+                Player.STATE_ENDED -> {
+                    // Playlist terminada sin transición posterior: marcar la última.
+                    val trackId = currentTrackId
+                    if (trackId != null && currentDuration > 0) {
+                        scrobbleManager.markTrackPlayed(trackId)
+                    }
+                }
+                else -> Unit
             }
         }
 
         override fun onPlayerError(error: PlaybackException) {
             val trackId = exoPlayer?.currentMediaItem?.mediaId ?: "unknown"
             Log.e(TAG, "Playback failed track=$trackId code=${error.errorCodeName}", error)
-        }
-    }
-
-    private fun scrobbleCurrentTrack(playedMs: Long) {
-        val trackId = currentTrackId ?: return
-        val duration = currentDuration
-        if (duration > 0) {
-            scrobbleManager.checkAndScrobble(trackId, playedMs, duration)
         }
     }
 
