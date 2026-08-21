@@ -35,27 +35,21 @@ class ScrobbleManager @Inject constructor(
     private var currentScrobbleTrackId: String? = null
 
     /**
-     * Check if scrobbling should happen at the current position.
-     * Should be called periodically during playback.
+     * Mark a track as fully played (natural end or repeat transition).
+     * Skips the threshold logic: by definition the track was heard completely.
      */
-    fun checkAndScrobble(trackId: String, currentPositionMs: Long, durationMs: Long) {
-        if (durationMs <= 0) return
-        // Ya fue scrobbleada esta pista — no repetir
+    fun markTrackPlayed(trackId: String) {
         if (trackId == currentScrobbleTrackId) return
+
+        // Marcar de inmediato para que eventos solapados no dupliquen el envío
+        currentScrobbleTrackId = trackId
 
         scope.launch {
             try {
                 val scrobbleEnabled = settingsRepository.scrobbleEnabled.first()
                 if (!scrobbleEnabled) return@launch
 
-                // Last.fm spec: scrobblear al 50% de duración o a los 4 minutos, lo que ocurra antes
-                val scrobbleThreshold = minOf(durationMs / 2, 4 * 60 * 1000L)
-
-                if (currentPositionMs >= scrobbleThreshold) {
-                    // Marcar inmediatamente para evitar llamadas duplicadas del polling
-                    currentScrobbleTrackId = trackId
-                    scrobble(trackId)
-                }
+                scrobble(trackId)
             } catch (_: Exception) {
             }
         }

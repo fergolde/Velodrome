@@ -37,7 +37,6 @@ import kotlin.time.Duration.Companion.milliseconds
 class AudioPlayerManager @OptIn(UnstableApi::class)
 @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val scrobbleManager: ScrobbleManager,
     private val credentialsManager: CredentialsManager,
 ) {
 
@@ -192,15 +191,9 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val playlist = _playlist.value
         val index = playlist.indexOfFirst { it.id == mediaItem.mediaId }
         if (index in playlist.indices) {
-            val previousId = _currentTrackId.value  // guardar ANTES de actualizar
             _currentIndex.value = index
             _currentTrack.value = playlist[index]
             _currentTrackId.value = playlist[index].id
-            // Notificar scrobble solo si realmente cambió la canción
-            if (previousId != playlist[index].id) {
-                scrobbleManager.onTrackChanged()
-                scrobbleManager.sendNowPlaying(playlist[index].id)
-            }
         }
     }
 
