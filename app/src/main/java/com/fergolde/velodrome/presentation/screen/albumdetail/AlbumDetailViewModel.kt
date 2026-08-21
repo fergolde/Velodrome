@@ -5,17 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Track
-import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
-import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -35,24 +32,10 @@ class AlbumDetailViewModel @Inject constructor(
     private val albumUseCases: AlbumUseCases,
     private val trackUseCases: TrackUseCases,
     private val playerManager: PlayerManager,
-    private val settingsRepository: SettingsRepository,
     private val smartRadioEngine: SmartRadioEngine
 ) : ViewModel() {
 
     private val albumId: String = savedStateHandle.get<String>("albumId") ?: ""
-
-    val aiRadioEnabled: StateFlow<Boolean> = settingsRepository.aiRadioEnabled
-        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), false)
-
-    val radioError: StateFlow<String?> = smartRadioEngine.error
-
-    fun clearRadioError() {
-        smartRadioEngine.clearError()
-    }
-
-    fun generateInstantMix(trackId: String) {
-        smartRadioEngine.startRadio(RadioContext.AiSimilar(trackId))
-    }
 
     private val _uiState = MutableStateFlow(AlbumDetailUiState())
     val uiState: StateFlow<AlbumDetailUiState> = _uiState.asStateFlow()

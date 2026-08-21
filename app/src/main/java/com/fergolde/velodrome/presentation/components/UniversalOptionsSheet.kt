@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,10 +30,7 @@ fun UniversalOptionsSheet(
     coverArtId: String?,
     onPlayNow: () -> Unit,
     onPlayNext: () -> Unit,
-    onAddToQueue: () -> Unit,
-    aiRadioEnabled: Boolean = false,
-    aiRadioLabel: String = "Instant Mix",
-    onAiRadio: () -> Unit = {}
+    onAddToQueue: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -97,17 +93,6 @@ fun UniversalOptionsSheet(
             subtitle = "Se añade al final de la cola",
             onClick = onAddToQueue
         )
-
-        if (aiRadioEnabled) {
-            SheetOptionItem(
-                icon = Icons.Default.Radar,
-                iconTint = MaterialTheme.colorScheme.primary,
-                iconBackground = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                title = aiRadioLabel,
-                subtitle = "Reemplaza la cola con canciones similares",
-                onClick = onAiRadio
-            )
-        }
     }
 }
 

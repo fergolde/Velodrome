@@ -54,28 +54,12 @@ class GetTopGlobalTracksUseCase @Inject constructor(
     }
 }
 
-class GetTrackByIdUseCase @Inject constructor(
-    private val repository: TrackRepository
-) {
-    suspend operator fun invoke(id: String): Track? = repository.getTrackById(id)
-}
-
-class GetSimilarTracksUseCase @Inject constructor(
-    private val repository: TrackRepository
-) {
-    suspend operator fun invoke(seedId: String, count: Int = 50): Result<List<Track>> {
-        return repository.getSimilarTracks(seedId, count)
-    }
-}
-
 // ========== WRAPPER ==========
 class TrackUseCases @Inject constructor(
     val observeTracksByAlbum: ObserveTracksByAlbumUseCase,
     val syncTracksForAlbum: SyncTracksForAlbumUseCase,
-    val getTrackById: GetTrackByIdUseCase,
     val getRandomSongs: GetRandomSongsUseCase,
     val searchRemoteTracks: SearchRemoteTracksUseCase,
     val getOfflineTracks: GetOfflineTracksUseCase,
-    val getTopGlobalTracks: GetTopGlobalTracksUseCase,
-    val getSimilarTracks: GetSimilarTracksUseCase
+    val getTopGlobalTracks: GetTopGlobalTracksUseCase
 )

@@ -22,7 +22,6 @@ class SettingsRepositoryImpl @Inject constructor(
         val MUSIC_CACHE_SIZE_GB = intPreferencesKey("music_cache_size_gb")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
         val SCROBBLE_ENABLED = booleanPreferencesKey("scrobble_enabled")
-        val AI_RADIO_ENABLED = booleanPreferencesKey("ai_radio_enabled")
         val LAST_SYNC_TIMESTAMP = longPreferencesKey("last_sync_timestamp")
         val LAST_SYNC_OFFSET = intPreferencesKey("last_sync_offset")
     }
@@ -32,7 +31,6 @@ class SettingsRepositoryImpl @Inject constructor(
         const val DEFAULT_MUSIC_CACHE_SIZE_GB = 2
         const val DEFAULT_ACCENT_COLOR = "#B6A0FF"
         const val DEFAULT_SCROBBLE_ENABLED = false
-        const val DEFAULT_AI_RADIO_ENABLED = false
         const val DEFAULT_LAST_SYNC_TIMESTAMP = 0L
         const val DEFAULT_LAST_SYNC_OFFSET = 0
     }
@@ -50,9 +48,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override val scrobbleEnabled: Flow<Boolean> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.SCROBBLE_ENABLED] ?: DEFAULT_SCROBBLE_ENABLED }
-
-    override val aiRadioEnabled: Flow<Boolean> = dataStore.data
-        .map { preferences -> preferences[PreferencesKeys.AI_RADIO_ENABLED] ?: DEFAULT_AI_RADIO_ENABLED }
 
     override val lastSyncTimestamp: Flow<Long> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.LAST_SYNC_TIMESTAMP] ?: DEFAULT_LAST_SYNC_TIMESTAMP }
@@ -85,10 +80,6 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setScrobbleEnabled(enabled: Boolean) {
         dataStore.edit { it[PreferencesKeys.SCROBBLE_ENABLED] = enabled }
-    }
-
-    override suspend fun setAiRadioEnabled(enabled: Boolean) {
-        dataStore.edit { it[PreferencesKeys.AI_RADIO_ENABLED] = enabled }
     }
 
     override suspend fun setLastSyncTimestamp(timestamp: Long) {

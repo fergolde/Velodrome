@@ -34,10 +34,6 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
         }
     }
 
-    override suspend fun getTrackById(id: String): Track? {
-        return trackDao.getTrackById(id)?.toDomain()
-    }
-
     override suspend fun syncTracksForAlbum(albumId: String): Result<Unit> {
         return runCatching {
             val response = api.getMusicDirectory(albumId)
@@ -104,14 +100,6 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
             val response = api.search3(query = query, songCount = 100)
             val songDtos = response.response.searchResult3?.songs ?: emptyList()
             songDtos.map { mapSongDto(it, it.albumId ?: "search_res") }
-        }
-    }
-
-    override suspend fun getSimilarTracks(seedId: String, count: Int): Result<List<Track>> {
-        return runCatching {
-            val response = api.getSimilarSongs2(seedId, count)
-            val songDtos = response.response.similarSongs2?.song ?: emptyList()
-            songDtos.map { mapSongDto(it, it.albumId ?: "") }
         }
     }
 

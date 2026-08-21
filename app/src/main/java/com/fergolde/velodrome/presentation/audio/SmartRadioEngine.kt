@@ -5,14 +5,12 @@ import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 sealed class RadioContext {
     object Random : RadioContext()
     data class GenreAndYear(val genres: List<String>, val fromYear: Int?, val toYear: Int?) : RadioContext()
-    data class AiSimilar(val seedId: String) : RadioContext()
 }
 
 @Singleton
@@ -26,15 +24,7 @@ class SmartRadioEngine @Inject constructor(
     private val pool = mutableListOf<Track>()
     private val sessionPlayedIds = mutableSetOf<String>()
     private var isRefilling = false
-    private var currentSeedId: String? = null
     private val recentArtists = ArrayDeque<String>(2)
-
-    // Error de usuario para la Radio IA (plugin no disponible / vacío)
-    val error: MutableStateFlow<String?> = MutableStateFlow(null)
-
-    fun clearError() {
-        error.value = null
-    }
 
     /**
      * Detiene cualquier radio activa: limpia estado y desactiva el auto-extendido
@@ -45,7 +35,6 @@ class SmartRadioEngine @Inject constructor(
         pool.clear()
         sessionPlayedIds.clear()
         recentArtists.clear()
-        currentSeedId = null
         isRefilling = false
         playerManager.setLoadMoreCallback { }
     }
@@ -58,7 +47,6 @@ class SmartRadioEngine @Inject constructor(
             sessionPlayedIds.clear()
             recentArtists.clear()
             isRefilling = false
-            currentSeedId = (context as? RadioContext.AiSimilar)?.seedId
 
             // Awaiteado — el pool debe estar listo antes de continuar
             refillPool()
@@ -70,37 +58,12 @@ class SmartRadioEngine @Inject constructor(
                 lastTwo.forEach { recentArtists.addLast(it.artistName) }
             }
 
-            val initialCount = if (context is RadioContext.AiSimilar) 50 else 10
-            var initialTracks = pickNext(initialCount)
+            val initialTracks = pickNext(10)
             if (initialTracks.isNotEmpty()) {
-                // Para AI Similar: la canción semilla siempre es la primera
-                val seed = currentSeedId
-                if (seed != null) {
-                    val seedIdx = initialTracks.indexOfFirst { it.id == seed }
-                    if (seedIdx > 0) {
-                        val seedTrack = initialTracks[seedIdx]
-                        initialTracks = listOf(seedTrack) + initialTracks.filter { it.id != seed }
-                    } else if (seedIdx < 0) {
-                        val seedFromPool = pool.indexOfFirst { it.id == seed }
-                        if (seedFromPool >= 0) {
-                            val seedTrack = pool.removeAt(seedFromPool)
-                            sessionPlayedIds.add(seed)
-                            initialTracks = listOf(seedTrack) + initialTracks
-                        } else {
-                            val seedTrack = trackUseCases.getTrackById(seed)
-                            if (seedTrack != null) {
-                                sessionPlayedIds.add(seed)
-                                initialTracks = listOf(seedTrack) + initialTracks
-                            }
-                        }
-                    }
-                }
                 withContext(Dispatchers.Main) {
                     playerManager.setPlaylist(initialTracks, startPlaying = true)
                     playerManager.setLoadMoreCallback { onLoadMoreRequested() }
                 }
-            } else if (context is RadioContext.AiSimilar) {
-                error.value = AI_RADIO_ERROR_MESSAGE
             }
         }
     }
@@ -120,11 +83,6 @@ class SmartRadioEngine @Inject constructor(
                 withContext(Dispatchers.Main) {
                     playerManager.appendToPlaylist(nextTracks)
                 }
-                // Re-sembrar desde la última canción añadida: la radio "camina"
-                // por el espacio de similitud sin repetir (sessionPlayedIds lo filtra).
-                if (currentContext is RadioContext.AiSimilar) {
-                    currentSeedId = nextTracks.last().id
-                }
             }
         }
     }
@@ -136,15 +94,12 @@ class SmartRadioEngine @Inject constructor(
 
         try {
             val ctx = currentContext ?: return
-            Log.d(TAG, "refillPool: context=$ctx seedId=$currentSeedId")
+            Log.d(TAG, "refillPool: context=$ctx")
 
             val newSongs = when (ctx) {
                 is RadioContext.Random -> {
                     fetchWithRetry { trackUseCases.getRandomSongs(size = 50) }
                 }
-                is RadioContext.AiSimilar -> currentSeedId?.let { seed ->
-                    fetchWithRetry { trackUseCases.getSimilarTracks(seed, 50) }
-                } ?: emptyList()
                 is RadioContext.GenreAndYear -> {
                     val songs = mutableListOf<Track>()
                     if (ctx.genres.isEmpty()) {
@@ -272,7 +227,5 @@ class SmartRadioEngine @Inject constructor(
         const val MAX_FETCH_ATTEMPTS = 3
         const val RETRY_DELAY_MS = 500L
         const val TAG = "SmartRadioEngine"
-        const val AI_RADIO_ERROR_MESSAGE =
-            "No se pudo generar la radio IA. Comprueba la configuración del plugin AudioMuse-AI en Navidrome."
     }
 }

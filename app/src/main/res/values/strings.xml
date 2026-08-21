@@ -88,9 +88,6 @@
     <string name="settings_accent_color">Color de Acento</string>
     <string name="settings_scrobble_enabled">Scrobbling</string>
     <string name="settings_scrobble_desc">Enviar reproducción al servidor</string>
-    <string name="settings_ai_radio_section">Servidor</string>
-    <string name="settings_ai_radio">Radio IA</string>
-    <string name="settings_ai_radio_desc">Genera mixes con canciones sonicamente similares usando AudioMuse-AI</string>
     <string name="settings_about">Acerca de</string>
     <string name="settings_version">Versión</string>
     <string name="settings_version_desc">Versión de la aplicación</string>
