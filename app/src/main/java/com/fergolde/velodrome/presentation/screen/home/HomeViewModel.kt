@@ -10,6 +10,7 @@ import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
+import com.fergolde.velodrome.util.shuffledWithArtistSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -197,7 +198,7 @@ class HomeViewModel @Inject constructor(
                 playlistUseCases.getPlaylist(id).getOrThrow()
             }.onSuccess { playlist ->
                 if (playlist.tracks.isNotEmpty()) {
-                    playerManager.setPlaylist(playlist.tracks, startPlaying = true)
+                    playerManager.setPlaylist(playlist.tracks.shuffledWithArtistSpacing(), startPlaying = true)
                     playerManager.setLoadMoreCallback { }
                     _uiState.update {
                         it.copy(
@@ -236,7 +237,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             trackUseCases.getTopGlobalTracks(size = 100).onSuccess { tracks ->
                 if (tracks.isNotEmpty()) {
-                    playerManager.playNow(tracks)
+                    playerManager.playNow(tracks.shuffledWithArtistSpacing())
                     playerManager.setLoadMoreCallback { /* no auto-load for static list */ }
                 }
             }
@@ -256,7 +257,7 @@ class HomeViewModel @Inject constructor(
             Log.d(TAG_OFFLINE, "getOfflineTracks returned: ${offlineTracks.size} tracks")
             if (offlineTracks.isNotEmpty()) {
                 Log.d(TAG_OFFLINE, "Calling playerManager.playNow with ${offlineTracks.size} tracks")
-                playerManager.playNow(offlineTracks.shuffled())
+                playerManager.playNow(offlineTracks.shuffledWithArtistSpacing())
                 playerManager.setLoadMoreCallback { /* no auto-load for offline list */ }
                 Log.d(TAG_OFFLINE, "playerManager.playNow called successfully")
             } else {
