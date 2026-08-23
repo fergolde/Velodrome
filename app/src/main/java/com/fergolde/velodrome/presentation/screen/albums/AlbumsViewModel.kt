@@ -18,9 +18,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -57,20 +60,23 @@ class AlbumsViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeSearch() {
         viewModelScope.launch {
-            searchQuery.flatMapLatest { query ->
-                if (query.isBlank()) {
-                    flowOf(emptyList())
-                } else {
-                    flowOf(albumRepository.searchLocal(query))
+            searchQuery
+                .debounce(500L.milliseconds) // Espera 500 ms tras dejar de escribir
+                .distinctUntilChanged() // No busca si la query es idéntica a la anterior
+                .flatMapLatest { query ->
+                    if (query.isBlank()) {
+                        flowOf(emptyList())
+                    } else {
+                        flowOf(albumRepository.searchLocal(query))
+                    }
+                }.collect { results ->
+                    _uiState.update {
+                        it.copy(
+                            searchResults = results,
+                            isSearching = searchQuery.value.isNotBlank()
+                        )
+                    }
                 }
-            }.collect { results ->
-                _uiState.update {
-                    it.copy(
-                        searchResults = results,
-                        isSearching = searchQuery.value.isNotBlank()
-                    )
-                }
-            }
         }
     }
 

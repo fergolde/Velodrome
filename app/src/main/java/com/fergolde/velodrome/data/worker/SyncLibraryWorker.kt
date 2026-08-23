@@ -12,6 +12,8 @@ import com.fergolde.velodrome.domain.repository.SettingsRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -65,24 +67,36 @@ class SyncLibraryWorker @AssistedInject constructor(
                 return@withContext Result.success()
             }
 
-            val artistsResult = artistRepository.syncArtistsFromServer()
-            if (artistsResult.isFailure) {
-                return@withContext classifyError(artistsResult.exceptionOrNull())
-            }
+            // Artists and albums are independent tables/endpoints: fetch both
+            // streams concurrently so the initial sync costs the slower stream
+            // instead of the sum of both. Final stamps only land if BOTH succeed;
+            // otherwise lastSyncTimestamp stays 0 and the next open retries the
+            // full sync (re-upserting already-inserted rows is idempotent).
+            coroutineScope {
+                val artistsDeferred = async { artistRepository.syncArtistsFromServer() }
+                val albumsDeferred = async {
+                    albumRepository.syncAlbumsFromServer(
+                        startOffset = lastSyncOffset
+                    ) { newOffset ->
+                        settingsRepository.setLastSyncOffset(newOffset)
+                    }
+                }
 
-            val albumsResult = albumRepository.syncAlbumsFromServer(
-                startOffset = lastSyncOffset
-            ) { newOffset ->
-                settingsRepository.setLastSyncOffset(newOffset)
-            }
-            if (albumsResult.isFailure) {
-                return@withContext classifyError(albumsResult.exceptionOrNull())
-            }
+                val artistsResult = artistsDeferred.await()
+                val albumsResult = albumsDeferred.await()
 
-            settingsRepository.setLastSyncOffset(0)
-            settingsRepository.setLastSyncTimestamp(System.currentTimeMillis())
-            settingsRepository.setLastServerCheckAt(System.currentTimeMillis())
-            Result.success()
+                if (artistsResult.isFailure) {
+                    return@coroutineScope classifyError(artistsResult.exceptionOrNull())
+                }
+                if (albumsResult.isFailure) {
+                    return@coroutineScope classifyError(albumsResult.exceptionOrNull())
+                }
+
+                settingsRepository.setLastSyncOffset(0)
+                settingsRepository.setLastSyncTimestamp(System.currentTimeMillis())
+                settingsRepository.setLastServerCheckAt(System.currentTimeMillis())
+                Result.success()
+            }
 
         } catch (e: Exception) {
             classifyError(e)

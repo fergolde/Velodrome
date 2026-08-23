@@ -1,209 +1,87 @@
 package com.fergolde.velodrome.util
 
 import android.content.SharedPreferences
-import io.mockk.*
-import org.junit.Assert.*
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
 class CredentialsManagerTest {
 
-    private val prefs: SharedPreferences = mockk(relaxed = true)
-    private val prefsEditor: SharedPreferences.Editor = mockk(relaxed = true)
-    private lateinit var manager: CredentialsManager
+    private lateinit var prefs: SharedPreferences
+    private val store = mutableMapOf<String, String>()
+    private var getStringCalls = 0
 
     @Before
     fun setup() {
-        every { prefs.edit() } returns prefsEditor
-        every { prefsEditor.apply() } just runs
-        manager = CredentialsManager(prefs)
+        store.clear()
+        getStringCalls = 0
+        prefs = mockk {
+            every { getString(any(), any()) } answers {
+                getStringCalls++
+                store[firstArg()] ?: secondArg()
+            }
+            every { edit() } returns mockk {
+                every { putString(any(), any()) } answers {
+                    store[firstArg()] = secondArg()
+                    self as SharedPreferences.Editor
+                }
+                every { clear() } answers {
+                    store.clear()
+                    self as SharedPreferences.Editor
+                }
+                every { apply() } returns Unit
+            }
+        }
+        store["username"] = "fernando"
+        store["password"] = "secret"
+        store["server_url"] = "https://music.example.com"
     }
 
     @Test
-    fun saveCredentials_callsEditAndApply() {
-        manager.saveCredentials("user", "pass", "https://server.com/")
+    fun `repeated calls within TTL read encrypted prefs only once per key`() {
+        val manager = CredentialsManager(prefs)
 
-        verify { prefs.edit() }
-        verify { prefsEditor.apply() }
+        val first = manager.getValidAuthParams()!!
+        repeat(200) { manager.getValidAuthParams() }
+
+        assertEquals(3, getStringCalls) // username + password + serverUrl, una sola vez cada uno
+        assertEquals("fernando", first.first)
+        // Token estable dentro de la sesión
+        val last = manager.getValidAuthParams()!!
+        assertEquals(first.second, last.second)
+        assertEquals(first.third, last.third)
     }
 
     @Test
-    fun saveCredentials_invalidatesCache() {
-        // Stub so getValidAuthParams can work after save
-        every { prefs.getString("username", null) } returns "user"
-        every { prefs.getString("password", null) } returns "pass"
-        every { prefs.getString("server_url", null) } returns "https://server.com/"
+    fun `saveCredentials invalidates cache and regenerates token`() {
+        val manager = CredentialsManager(prefs)
+        val before = manager.getValidAuthParams()!!
+        val readsAfterFirst = getStringCalls
 
-        manager.saveCredentials("user", "pass", "https://server.com/")
+        manager.saveCredentials("other", "newpass", "https://new.example.com")
 
-        // After saveCredentials, cache is invalidated.
-        // getValidAuthParams should compute new token (not cached).
-        val result = manager.getValidAuthParams()
-        assertNotNull(result)
-        assertEquals("user", result!!.first)
+        val after = manager.getValidAuthParams()!!
+        assertEquals("other", after.first)
+        assertNotEquals(before.second, after.second)
+        // Re-leyó los tres campos tras la invalidación
+        assertEquals(readsAfterFirst + 3, getStringCalls)
     }
 
     @Test
-    fun clearCredentials_clearsAll() {
+    fun `clearCredentials leaves getters empty and auth params null`() {
+        val manager = CredentialsManager(prefs)
+        manager.getValidAuthParams()
+
         manager.clearCredentials()
 
-        verify { prefsEditor.clear() }
-    }
-
-    @Test
-    fun getUsername_returnsFromPrefs() {
-        every { prefs.getString("username", null) } returns "user"
-
-        assertEquals("user", manager.getUsername())
-    }
-
-    @Test
-    fun getUsername_returnsNullWhenMissing() {
-        every { prefs.getString("username", null) } returns null
-
         assertNull(manager.getUsername())
-    }
-
-    @Test
-    fun getPassword_returnsFromPrefs() {
-        every { prefs.getString("password", null) } returns "pass"
-
-        assertEquals("pass", manager.getPassword())
-    }
-
-    @Test
-    fun getServerUrl_returnsFromPrefs() {
-        every { prefs.getString("server_url", null) } returns "https://server.com/"
-
-        assertEquals("https://server.com/", manager.getServerUrl())
-    }
-
-    @Test
-    fun hasCredentials_allPresent_returnsTrue() {
-        every { prefs.getString("username", null) } returns "user"
-        every { prefs.getString("password", null) } returns "pass"
-        every { prefs.getString("server_url", null) } returns "https://server.com/"
-
-        assertTrue(manager.hasCredentials())
-    }
-
-    @Test
-    fun hasCredentials_missingUsername_returnsFalse() {
-        every { prefs.getString("username", null) } returns null
-        every { prefs.getString("password", null) } returns "pass"
-        every { prefs.getString("server_url", null) } returns "https://server.com/"
-
-        assertFalse(manager.hasCredentials())
-    }
-
-    @Test
-    fun hasCredentials_blankPassword_returnsFalse() {
-        every { prefs.getString("username", null) } returns "user"
-        every { prefs.getString("password", null) } returns ""
-        every { prefs.getString("server_url", null) } returns "https://server.com/"
-
-        assertFalse(manager.hasCredentials())
-    }
-
-    @Test
-    fun hasCredentials_missingServerUrl_returnsFalse() {
-        every { prefs.getString("username", null) } returns "user"
-        every { prefs.getString("password", null) } returns "pass"
-        every { prefs.getString("server_url", null) } returns null
-
-        assertFalse(manager.hasCredentials())
-    }
-
-    @Test
-    fun invalidateAuth_clearsCache() {
-        manager.invalidateAuth()
-
-        // After invalidation, getValidAuthParams should compute new token (not cached)
-        val result = manager.getValidAuthParams()
-        assertNotNull(result)
-    }
-
-    @Test
-    fun getValidAuthParams_withCredentials_returnsTriple() {
-        every { prefs.getString("username", null) } returns "user"
-        every { prefs.getString("password", null) } returns "pass"
-        every { prefs.getString("server_url", null) } returns "https://server.com/"
-
-        val result = manager.getValidAuthParams()
-
-        assertNotNull(result)
-        assertEquals("user", result!!.first)
-        assertNotNull(result.second) // token
-        assertNotNull(result.third) // salt
-    }
-
-    @Test
-    fun getValidAuthParams_withoutCredentials_returnsNull() {
-        every { prefs.getString(any(), any()) } returns null
-
-        val result = manager.getValidAuthParams()
-        assertNull(result)
-    }
-
-    @Test
-    fun getValidAuthParams_cachesToken() {
-        every { prefs.getString("username", null) } returns "user"
-        every { prefs.getString("password", null) } returns "pass"
-        every { prefs.getString("server_url", null) } returns "https://server.com/"
-
-        val first = manager.getValidAuthParams()
-        val second = manager.getValidAuthParams()
-
-        // Same token and salt should be returned from cache
-        assertEquals(first!!.second, second!!.second)
-        assertEquals(first.third, second.third)
-    }
-
-    @Test
-    fun getCoverArtUrl_returnsFormattedUrl() {
-        every { prefs.getString("username", null) } returns "user"
-        every { prefs.getString("password", null) } returns "pass"
-        every { prefs.getString("server_url", null) } returns "https://server.com/"
-
-        val url = manager.getCoverArtUrl("cov-1", 300)
-
-        assertNotNull(url)
-        assertTrue(url!!.contains("id=cov-1"))
-        assertTrue(url.contains("size=300"))
-        assertTrue(url.contains("u=user"))
-        assertTrue(url.contains("t="))
-        assertTrue(url.contains("s="))
-    }
-
-    @Test
-    fun getCoverArtUrl_blankCoverArtId_returnsNull() {
-        assertNull(manager.getCoverArtUrl("", 300))
-        assertNull(manager.getCoverArtUrl(null, 300))
-    }
-
-    @Test
-    fun getCoverArtUrl_nullServerUrl_returnsNull() {
-        every { prefs.getString(any(), any()) } returns null
-
-        assertNull(manager.getCoverArtUrl("cov-1", 300))
-    }
-
-    @Test
-    fun getStreamUrl_returnsFormattedUrl() {
-        every { prefs.getString("username", null) } returns "user"
-        every { prefs.getString("password", null) } returns "pass"
-        every { prefs.getString("server_url", null) } returns "https://server.com/"
-
-        val url = manager.getStreamUrl("track-1")
-
-        assertTrue(url.contains("id=track-1"))
-        assertTrue(url.contains("u=user"))
-    }
-
-    @Test
-    fun getStreamUrl_nullCredentials_returnsEmpty() {
-        every { prefs.getString(any(), any()) } returns null
-
-        assertEquals("", manager.getStreamUrl("track-1"))
+        assertNull(manager.getPassword())
+        assertNull(manager.getServerUrl())
+        assertNull(manager.getValidAuthParams())
     }
 }

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
@@ -119,7 +120,10 @@ fun AlbumsScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(count = pagedAlbums.itemCount) { index ->
+                            items(
+                                count = pagedAlbums.itemCount,
+                                key = pagedAlbums.itemKey { it.id }
+                            ) { index ->
                                 val album = pagedAlbums[index]
                                 if (album != null) {
                                     AlbumGridCard(

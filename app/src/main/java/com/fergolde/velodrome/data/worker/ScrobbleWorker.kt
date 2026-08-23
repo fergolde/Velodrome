@@ -32,10 +32,16 @@ class ScrobbleWorker @AssistedInject constructor(
             }
 
             var failedCount = 0
-            for (scrobble in pending) {
-                val result = scrobbleRepository.scrobble(scrobble.trackId, scrobble.timestamp, submission = true)
+            for (chunk in pending.chunked(BATCH_SIZE)) {
+                // One request per chunk: repeated id/time params preserve each
+                // track's original listen timestamp.
+                val result = scrobbleRepository.scrobbleBatch(
+                    ids = chunk.map { it.trackId },
+                    times = chunk.map { it.timestamp },
+                    submission = true
+                )
                 if (result.isSuccess) {
-                    scrobbleDao.deleteScrobble(scrobble.id)
+                    scrobbleDao.deleteScrobbles(chunk.map { it.id })
                 } else {
                     failedCount++
                 }
@@ -49,5 +55,10 @@ class ScrobbleWorker @AssistedInject constructor(
         } catch (_: Exception) {
             Result.retry()
         }
+    }
+
+    private companion object {
+        /** Scrobbles per HTTP request; bounds URL length. */
+        const val BATCH_SIZE = 50
     }
 }
