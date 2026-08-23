@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,21 +22,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun MiniPlayer(
     modifier: Modifier = Modifier,
     currentTrack: Track?,
     isPlaying: Boolean,
-    currentPosition: Long = 0L,
+    positionFlow: StateFlow<Long>,
     onPlayPauseClick: () -> Unit,
     onClick: () -> Unit = {},
     onNextClick: () -> Unit = {},
     onPreviousClick: () -> Unit = {}
 ) {
+    // Collected here (leaf) instead of at the app root: the 1Hz position updates
+    // only recompose this component, and stop entirely when it is not composed.
+    val currentPosition by positionFlow.collectAsStateWithLifecycle()
     val positionSec = (currentPosition / 1000).toInt()
     val progress = if (currentTrack != null && currentTrack.durationSec > 0)
         positionSec.toFloat() / currentTrack.durationSec.toFloat()

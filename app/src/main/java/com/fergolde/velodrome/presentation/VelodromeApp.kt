@@ -15,7 +15,6 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -90,9 +90,10 @@ fun MainScaffold(
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    val currentTrack by sharedPlayerViewModel.currentTrack.collectAsState()
-    val isPlaying by sharedPlayerViewModel.isPlaying.collectAsState()
-    val currentPosition by sharedPlayerViewModel.currentPosition.collectAsState()
+    // currentPosition intentionally NOT collected here: it ticks at 1Hz and would
+    // recompose the whole app tree. MiniPlayer collects it internally (leaf-scoped).
+    val currentTrack by sharedPlayerViewModel.currentTrack.collectAsStateWithLifecycle()
+    val isPlaying by sharedPlayerViewModel.isPlaying.collectAsStateWithLifecycle()
     val hasSong = currentTrack != null
     val scope = rememberCoroutineScope()
     val localContext = LocalContext.current
@@ -164,7 +165,7 @@ fun MainScaffold(
                                 MiniPlayer(
                                     currentTrack = currentTrack,
                                     isPlaying = isPlaying,
-                                    currentPosition = currentPosition,
+                                    positionFlow = sharedPlayerViewModel.currentPosition,
                                     onPlayPauseClick = { sharedPlayerViewModel.togglePlayPause() },
                                     onClick = { scope.launch { sheetState.bottomSheetState.expand() } },
                                     onNextClick = { sharedPlayerViewModel.next() },

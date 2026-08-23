@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -135,22 +137,26 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     }
 
     /**
-     * Position polling + scrobble check. Runs every 1s while playing.
-     * Dual purpose: updates currentPosition for UI progress bar AND checks scrobble threshold.
-     * Changing interval affects both UI responsiveness and scrobble accuracy.
+     * Position polling. Writes _currentPosition only while at least one collector
+     * is subscribed (MiniPlayer / PlayerScreen visible). When nobody listens —
+     * hidden player or backgrounded app — the loop parks and burns zero CPU.
+     * seekTo() still writes directly for instant slider feedback.
      */
     private fun startPositionPolling() {
         playerScope.launch {
-            isPlaying.collectLatest { playing ->
-                if (playing) {
-                    while (true) {
-                        mediaController?.let { controller ->
-                            _currentPosition.value = controller.currentPosition
+            _currentPosition.subscriptionCount
+                .map { it > 0 }
+                .distinctUntilChanged()
+                .collectLatest { hasSubscribers ->
+                    if (hasSubscribers) {
+                        while (true) {
+                            mediaController?.let { controller ->
+                                _currentPosition.value = controller.currentPosition
+                            }
+                            kotlinx.coroutines.delay(1000L.milliseconds)
                         }
-                        kotlinx.coroutines.delay(1000L.milliseconds)
                     }
                 }
-            }
         }
     }
 
