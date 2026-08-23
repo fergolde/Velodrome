@@ -1,6 +1,9 @@
 package com.fergolde.velodrome.data.repository
 
+import android.content.Context
+import com.fergolde.velodrome.R
 import com.fergolde.velodrome.data.remote.NavidromeApi
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.fergolde.velodrome.domain.model.AuthResult
 import com.fergolde.velodrome.domain.repository.AuthRepository
 import com.fergolde.velodrome.util.CredentialsManager
@@ -9,6 +12,7 @@ import javax.inject.Singleton
 
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val api: NavidromeApi,
     private val credentialsManager: CredentialsManager
 ) : AuthRepository {
@@ -33,11 +37,11 @@ class AuthRepositoryImpl @Inject constructor(
                 credentialsManager.clearCredentials()
                 val userMessage = when (e) {
                     is java.net.UnknownHostException,
-                    is java.net.ConnectException -> "No se puede conectar al servidor. Comprueba la URL y tu conexión."
-                    is java.net.SocketTimeoutException -> "El servidor tarda mucho en responder. Comprueba tu conexión."
+                    is java.net.ConnectException -> context.getString(R.string.error_no_connection)
+                    is java.net.SocketTimeoutException -> context.getString(R.string.error_server_timeout)
                     is java.io.IOException,
-                    is IllegalArgumentException -> "La URL proporcionada no tiene un formato válido."
-                    else -> "Error de red: Usuario o contraseña incorrectos, o servidor inaccesible."
+                    is IllegalArgumentException -> context.getString(R.string.error_invalid_url)
+                    else -> context.getString(R.string.error_network_generic)
                 }
                 AuthResult(success = false, error = userMessage)
             }

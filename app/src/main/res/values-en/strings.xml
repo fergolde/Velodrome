@@ -105,4 +105,21 @@
     <string name="view_all">View All</string>
     <string name="play">Play</string>
     <string name="error_loading">Error loading</string>
+
+    <!-- Universal options sheet -->
+    <string name="options_play_now_title">Play now</string>
+    <string name="options_play_now_subtitle">Jumps straight to this selection</string>
+    <string name="options_play_next_title">Play next</string>
+    <string name="options_play_next_subtitle">Plays right after the current track</string>
+    <string name="options_add_queue_title">Add to queue</string>
+    <string name="options_add_queue_subtitle">Appends to the end of the queue</string>
+
+    <!-- Settings -->
+    <string name="settings_color_custom_hex">Custom (HEX)</string>
+
+    <!-- Auth errors -->
+    <string name="error_no_connection">Cannot reach the server. Check the URL and your connection.</string>
+    <string name="error_server_timeout">The server took too long to respond. Check your connection.</string>
+    <string name="error_invalid_url">The provided URL has an invalid format.</string>
+    <string name="error_network_generic">Network error: Wrong user or password, or server unreachable.</string>
 </resources>

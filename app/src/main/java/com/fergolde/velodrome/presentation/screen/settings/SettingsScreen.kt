@@ -682,7 +682,7 @@ fun ColorPickerPanel(
             Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "Personalizado (HEX)",
+                text = stringResource(R.string.settings_color_custom_hex),
                 fontFamily = DmSansFontFamily,
                 fontSize = 12.sp,
                 color = VeloPalette.TextSecondary,
