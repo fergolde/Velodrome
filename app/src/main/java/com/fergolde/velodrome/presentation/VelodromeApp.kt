@@ -42,6 +42,7 @@ import com.fergolde.velodrome.presentation.screen.artistdetail.ArtistDetailScree
 import com.fergolde.velodrome.presentation.screen.artists.ArtistsScreen
 import com.fergolde.velodrome.presentation.screen.explore.ExploreScreen
 import com.fergolde.velodrome.presentation.screen.home.HomeScreen
+import com.fergolde.velodrome.presentation.screen.playlistdetail.PlaylistDetailScreen
 import com.fergolde.velodrome.presentation.screen.login.LoginScreen
 import com.fergolde.velodrome.presentation.screen.settings.SettingsScreen
 import dagger.hilt.android.EntryPointAccessors
@@ -232,7 +233,8 @@ fun MainScaffold(
                         }
                         composable<Routes.Home> {
                             HomeScreen(
-                                onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) }
+                                onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) },
+                                onPlaylistClick = { id -> navController.navigate(Routes.PlaylistDetail(id)) }
                             )
                         }
                         composable<Routes.Explore> {
@@ -262,6 +264,11 @@ fun MainScaffold(
                             ArtistDetailScreen(
                                 onBackClick = { navController.popBackStack() },
                                 onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) }
+                            )
+                        }
+                        composable<Routes.PlaylistDetail> {
+                            PlaylistDetailScreen(
+                                onBackClick = { navController.popBackStack() }
                             )
                         }
                         composable<Routes.AlbumDetail> { backStackEntry ->

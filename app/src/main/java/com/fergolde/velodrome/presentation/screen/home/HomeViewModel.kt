@@ -182,34 +182,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun playPlaylist(id: String) {
-        if (_uiState.value.isPlaylistLoading) return
-        _uiState.update { it.copy(isPlaylistLoading = true) }
-        viewModelScope.launch {
-            runCatching {
-                smartRadioEngine.stopRadio()
-                playlistUseCases.getPlaylist(id).getOrThrow()
-            }.onSuccess { playlist ->
-                if (playlist.tracks.isNotEmpty()) {
-                    playerManager.setPlaylist(playlist.tracks.shuffledWithArtistSpacing(), startPlaying = true)
-                    playerManager.setLoadMoreCallback { }
-                    _uiState.update {
-                        it.copy(
-                            isPlaylistLoading = false,
-                            playingPlaylistId = id,
-                            currentTrackId = playerManager.currentTrackId.value,
-                            isPlaying = true
-                        )
-                    }
-                } else {
-                    _uiState.update { it.copy(isPlaylistLoading = false) }
-                }
-            }.onFailure {
-                _uiState.update { it.copy(isPlaylistLoading = false) }
-            }
-        }
-    }
-
     /**
      * Plays a random playlist from all available albums.
      * Uses SmartRadioEngine for shuffle logic.
