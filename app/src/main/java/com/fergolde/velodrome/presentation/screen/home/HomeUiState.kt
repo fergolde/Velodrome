@@ -31,7 +31,5 @@ data class HomeUiState(
     val isPlaying: Boolean = false,
 
     // Server playlists (incl. AudioMuse auto-generated)
-    val playlists: List<Playlist> = emptyList(),
-    val isPlaylistLoading: Boolean = false,
-    val playingPlaylistId: String? = null
+    val playlists: List<Playlist> = emptyList()
 )

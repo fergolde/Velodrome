@@ -35,7 +35,7 @@ class PlaylistRepositoryImpl @Inject constructor(
             id = detail.id,
             name = detail.name,
             songCount = tracks.size,
-            coverArtId = null,
+            coverArtId = detail.coverArt,
             tracks = tracks
         )
     }

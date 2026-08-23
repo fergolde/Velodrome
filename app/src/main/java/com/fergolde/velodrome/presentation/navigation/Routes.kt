@@ -29,4 +29,7 @@ sealed class Routes {
 
     @Serializable
     data class ArtistDetail(val artistId: String) : Routes()
+
+    @Serializable
+    data class PlaylistDetail(val playlistId: String) : Routes()
 }

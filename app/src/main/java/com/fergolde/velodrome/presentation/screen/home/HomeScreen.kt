@@ -67,6 +67,7 @@ import kotlin.time.Duration.Companion.milliseconds
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onAlbumClick: (String) -> Unit = {},
+    onPlaylistClick: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -168,8 +169,7 @@ fun HomeScreen(
                 Spacer(Modifier.height(16.dp))
                 PlaylistCarousel(
                     playlists = state.playlists,
-                    playingId = state.playingPlaylistId,
-                    onPlaylistClick = { viewModel.playPlaylist(it.id) }
+                    onPlaylistClick = { onPlaylistClick(it.id) }
                 )
                 Spacer(Modifier.height(100.dp)) // mini-player clearance
             }
@@ -400,7 +400,6 @@ fun VeloFeatureCard(
 @Composable
 fun PlaylistCarousel(
     playlists: List<Playlist>,
-    playingId: String?,
     onPlaylistClick: (Playlist) -> Unit,
     artSize: Dp = 130.dp,
 ) {
@@ -411,7 +410,6 @@ fun PlaylistCarousel(
         items(playlists, key = { it.id }) { playlist ->
             PlaylistCard(
                 playlist = playlist,
-                isPlaying = playlist.id == playingId,
                 onClick = { onPlaylistClick(playlist) },
                 artSize = artSize,
             )
@@ -422,7 +420,6 @@ fun PlaylistCarousel(
 @Composable
 fun PlaylistCard(
     playlist: Playlist,
-    isPlaying: Boolean,
     onClick: () -> Unit,
     artSize: Dp = 130.dp,
 ) {
@@ -457,10 +454,10 @@ fun PlaylistCard(
         Text(
             text = formatPlaylistName(playlist.name),
             fontFamily = DmSansFontFamily,
-            fontWeight = if (isPlaying) FontWeight.Bold else FontWeight.SemiBold,
+            fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
             maxLines = 1,
-            color = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onBackground,
         )
         Text(
             text = "${playlist.songCount} ${stringResource(R.string.home_playlist_songs)}",
