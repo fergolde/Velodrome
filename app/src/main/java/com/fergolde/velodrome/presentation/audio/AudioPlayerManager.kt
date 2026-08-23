@@ -12,6 +12,10 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.fergolde.velodrome.data.local.queue.QueueSnapshot
+import com.fergolde.velodrome.data.local.queue.QueueSnapshotStore
+import com.fergolde.velodrome.data.local.queue.toDto
+import com.fergolde.velodrome.data.local.queue.toDomain
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.util.CredentialsManager
 import com.google.common.util.concurrent.ListenableFuture
@@ -53,6 +57,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val credentialsManager: CredentialsManager,
+    private val queueSnapshotStore: QueueSnapshotStore,
 ) {
 
     private val _isPlaying = MutableStateFlow(false)
@@ -86,6 +91,13 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     private var loadMoreCallback: (() -> Unit)? = null
     private val retryAttempts = mutableMapOf<String, Int>()
 
+    /**
+     * Snapshot loaded at cold start. While non-null the UI shows the restored
+     * queue (paused) but MediaController has no items yet; the first playback
+     * interaction rebuilds it via [consumePendingRestore].
+     */
+    private var pendingRestore: QueueSnapshot? = null
+
     init {
         val sessionToken = SessionToken(context, ComponentName(context, AudioPlayerService::class.java))
         controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
@@ -93,6 +105,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             try {
                 mediaController = controllerFuture?.get()
                 setupControllerListener()
+                restoreQueueMetadata()
             } catch (error: Exception) {
                 Log.e(TAG, "Unable to connect MediaController", error)
             }
@@ -103,6 +116,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         mediaController?.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 _isPlaying.value = isPlaying
+                // Pausing is the best moment to capture an exact position.
+                if (!isPlaying) persistQueue()
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -116,6 +131,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                 mediaItem?.let {
                     retryAttempts.remove(it.mediaId)
                     updateCurrentTrackFromMediaItem(it)
+                    persistQueue()
                     checkIfNeedMoreSongs()
                 }
             }
@@ -204,7 +220,55 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         }
     }
 
+    // ─── Queue persistence (local, event-driven: never on a timer) ──────────
+
+    private fun persistQueue() {
+        val tracks = _playlist.value
+        if (tracks.isEmpty()) return
+        val snapshot = QueueSnapshot(
+            tracks = tracks.map { it.toDto() },
+            currentIndex = _currentIndex.value.coerceIn(0, tracks.lastIndex),
+            positionMs = _currentPosition.value
+        )
+        playerScope.launch { queueSnapshotStore.save(snapshot) }
+    }
+
+    private fun clearPersistedQueue() {
+        playerScope.launch { queueSnapshotStore.clear() }
+    }
+
+    /** Hydrates the UI states from the stored snapshot; MediaController stays untouched. */
+    private fun restoreQueueMetadata() {
+        playerScope.launch {
+            val snapshot = queueSnapshotStore.load() ?: return@launch
+            if (snapshot.tracks.isEmpty()) return@launch
+            pendingRestore = snapshot
+            val index = snapshot.currentIndex.coerceIn(0, snapshot.tracks.lastIndex)
+            _playlist.value = snapshot.tracks.map { it.toDomain() }
+            _currentIndex.value = index
+            _currentTrack.value = snapshot.tracks.getOrNull(index)?.toDomain()
+            _currentTrackId.value = _currentTrack.value?.id
+        }
+    }
+
+    /**
+     * First playback interaction after a cold start: materialize the restored
+     * queue inside MediaController at the saved index/position, prepared but
+     * paused. Returns true if a restore was consumed.
+     */
+    private fun consumePendingRestore(): Boolean {
+        val snapshot = pendingRestore ?: return false
+        pendingRestore = null
+        val controller = mediaController ?: return false
+        val items = snapshot.tracks.map { buildMediaItem(it.toDomain()) }
+        val startIndex = snapshot.currentIndex.coerceIn(0, items.lastIndex)
+        controller.setMediaItems(items, startIndex, snapshot.positionMs.coerceAtLeast(0L))
+        controller.prepare()
+        return true
+    }
+
     fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
+        pendingRestore = null
         _playlist.value = playlist
         // No actualizamos currentIndex/currentTrack aquí - el listener onMediaItemTransition 
         // del MediaController es la única fuente de verdad
@@ -213,6 +277,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val mediaItems = playlist.map { buildMediaItem(it) }
 
         doPlayWithController(mediaItems, startIndex)
+        persistQueue()
     }
 
     private fun doPlayWithController(mediaItems: List<MediaItem>, startIndex: Int) {
@@ -287,6 +352,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
      */
     fun insertIntoPlaylist(index: Int, tracks: List<Track>) {
         if (tracks.isEmpty()) return
+        consumePendingRestore()
         val currentPlaylist = _playlist.value.toMutableList()
         currentPlaylist.addAll(index, tracks)
         _playlist.value = currentPlaylist
@@ -294,6 +360,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
         val mediaItems = tracks.map { buildMediaItem(it) }
 
+        persistQueue()
         mediaController?.let { controller ->
             controller.addMediaItems(index, mediaItems)
             return
@@ -315,10 +382,12 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
      */
     fun addToPlaylist(tracks: List<Track>) {
         if (tracks.isEmpty()) return
+        consumePendingRestore()
         _playlist.value += tracks
 
         val mediaItems = tracks.map { buildMediaItem(it) }
 
+        persistQueue()
         mediaController?.let { controller ->
             controller.addMediaItems(mediaItems)
             return
@@ -340,6 +409,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             isLoadingMoreCallbackInvoked = false
             return
         }
+        consumePendingRestore()
         _playlist.value += tracks
         val mediaItems = tracks.map { buildMediaItem(it) }
 
@@ -352,6 +422,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             }
 
             controller.addMediaItems(mediaItems)
+            persistQueue()
             isLoadingMoreCallbackInvoked = false
             Log.d(TAG, "appendToPlaylist: appended ${tracks.size} tracks, total=${controller.mediaItemCount}")
             if (controller.playbackState == Player.STATE_ENDED ||
@@ -367,7 +438,18 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         }
     }
 
-    fun togglePlayPause() { mediaController?.let { if (it.isPlaying) it.pause() else it.play() } }
+    fun togglePlayPause() {
+        // First interaction after cold start: materialize the restored queue,
+        // prepared at the saved index/position, then resume playback.
+        if (pendingRestore != null) {
+            consumePendingRestore()
+            mediaController?.play()
+            return
+        }
+        mediaController?.let {
+            if (it.isPlaying) it.pause() else it.play()
+        }
+    }
 
     fun toggleShuffle() {
         if (!_isShuffleEnabled.value) {
@@ -405,9 +487,15 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             _isRepeatEnabled.value = false
         }
     }
-    fun seekTo(positionMs: Long) { mediaController?.seekTo(positionMs); _currentPosition.value = positionMs }
+    fun seekTo(positionMs: Long) {
+        consumePendingRestore()
+        mediaController?.seekTo(positionMs)
+        _currentPosition.value = positionMs
+        persistQueue()
+    }
 
     fun next(): Boolean {
+        consumePendingRestore()
         val controller = mediaController ?: return false
         return controller.hasNextMediaItem().also { hasNext ->
             if (hasNext) controller.seekToNextMediaItem()
@@ -415,6 +503,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     }
 
     fun previous(): Boolean {
+        consumePendingRestore()
         val controller = mediaController ?: return false
         return controller.hasPreviousMediaItem().also { hasPrevious ->
             if (hasPrevious) controller.seekToPreviousMediaItem()
@@ -437,21 +526,25 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     }
 
     fun removeFromPlaylist(index: Int) {
+        consumePendingRestore()
         val currentList = _playlist.value.toMutableList()
         if (index !in currentList.indices) return
-        
+
         currentList.removeAt(index)
         _playlist.value = currentList
-        
-        // If playlist is empty, stop playback
+
+        // If playlist is empty, stop playback and forget the persisted queue
         if (currentList.isEmpty()) {
             mediaController?.stop()
             _currentIndex.value = 0
             _currentTrack.value = null
             _currentTrackId.value = null
             _isPlaying.value = false
+            pendingRestore = null
+            clearPersistedQueue()
             return
         }
+        persistQueue()
         
         // Remove from MediaController
         mediaController?.removeMediaItem(index)
@@ -469,7 +562,10 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         }
     }
 
-    fun setPlaylist(playlist: List<Track>) { _playlist.value = playlist }
+    fun setPlaylist(playlist: List<Track>) {
+        pendingRestore = null
+        _playlist.value = playlist
+    }
 
     /**
      * Reorders the queue moving item at [from] to [to]. Playback continues
@@ -478,6 +574,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
      * own current position internally.
      */
     fun moveInPlaylist(from: Int, to: Int) {
+        consumePendingRestore()
         val currentList = _playlist.value.toMutableList()
         if (from !in currentList.indices || to !in currentList.indices || from == to) return
 
@@ -487,6 +584,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
         _currentIndex.value = adjustedCurrentIndex(_currentIndex.value, from, to)
 
+        persistQueue()
         mediaController?.moveMediaItem(from, to)
     }
 

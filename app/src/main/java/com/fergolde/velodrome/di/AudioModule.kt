@@ -6,6 +6,7 @@ import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import com.fergolde.velodrome.data.local.queue.QueueSnapshotStore
 import com.fergolde.velodrome.presentation.audio.AudioPlayerManager
 import com.fergolde.velodrome.util.ConfigurableLruCacheEvictor
 import com.fergolde.velodrome.util.CredentialsManager
@@ -76,11 +77,13 @@ object AudioModule {
     @Singleton
     fun provideAudioPlayerManager(
         @ApplicationContext context: Context,
-        credentialsManager: CredentialsManager
+        credentialsManager: CredentialsManager,
+        queueSnapshotStore: QueueSnapshotStore
     ): AudioPlayerManager {
         return AudioPlayerManager(
             context = context,
-            credentialsManager = credentialsManager
+            credentialsManager = credentialsManager,
+            queueSnapshotStore = queueSnapshotStore
         )
     }
 }
