@@ -69,6 +69,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -793,6 +794,17 @@ fun QueueTrackItem(
     val density = LocalDensity.current
     val threshold = with(density) { 100.dp.toPx() }
 
+    // pointerInput(Unit) launches its gesture coroutine once per node and keeps
+    // the callbacks captured at first composition. Without this, after a
+    // reorder the handle kept reporting the position it had when first
+    // composed — dragging one row moved whichever item sat at that fossilized
+    // index. rememberUpdatedState lets the never-restarting coroutine always
+    // read the latest lambdas (and therefore the current slot).
+    val currentOnDragStart by rememberUpdatedState(onDragStart)
+    val currentOnDragBy by rememberUpdatedState(onDragBy)
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
+    val currentOnDragCancel by rememberUpdatedState(onDragCancel)
+
     val bgColor by animateColorAsState(
         targetValue = if (isCurrentTrack)
             MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
@@ -916,13 +928,13 @@ fun QueueTrackItem(
                     .size(32.dp)
                     .pointerInput(Unit) {
                         detectVerticalDragGestures(
-                            onDragStart = { _ -> onDragStart() },
+                            onDragStart = { _ -> currentOnDragStart() },
                             onVerticalDrag = { change, dragAmount ->
                                 change.consume()
-                                onDragBy(dragAmount)
+                                currentOnDragBy(dragAmount)
                             },
-                            onDragEnd = onDragEnd,
-                            onDragCancel = onDragCancel
+                            onDragEnd = { currentOnDragEnd() },
+                            onDragCancel = { currentOnDragCancel() }
                         )
                     },
                 contentAlignment = Alignment.Center
