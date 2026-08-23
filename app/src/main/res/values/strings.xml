@@ -122,4 +122,11 @@
     <string name="error_server_timeout">El servidor tarda mucho en responder. Comprueba tu conexión.</string>
     <string name="error_invalid_url">La URL proporcionada no tiene un formato válido.</string>
     <string name="error_network_generic">Error de red: Usuario o contraseña incorrectos, o servidor inaccesible.</string>
+
+    <!-- Snackbar feedback -->
+    <string name="snackbar_shuffle_started">Reproducción aleatoria iniciada</string>
+    <string name="snackbar_play_next">Se reproducirá a continuación</string>
+    <string name="snackbar_added_to_queue">Añadido a la cola</string>
+    <string name="snackbar_album_added_to_queue">Álbum añadido a la cola</string>
+    <string name="snackbar_playlist_added_to_queue">Playlist añadida a la cola</string>
 </resources>

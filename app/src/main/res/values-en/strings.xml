@@ -122,4 +122,11 @@
     <string name="error_server_timeout">The server took too long to respond. Check your connection.</string>
     <string name="error_invalid_url">The provided URL has an invalid format.</string>
     <string name="error_network_generic">Network error: Wrong user or password, or server unreachable.</string>
+
+    <!-- Snackbar feedback -->
+    <string name="snackbar_shuffle_started">Shuffle playback started</string>
+    <string name="snackbar_play_next">Playing next</string>
+    <string name="snackbar_added_to_queue">Added to queue</string>
+    <string name="snackbar_album_added_to_queue">Album added to queue</string>
+    <string name="snackbar_playlist_added_to_queue">Playlist added to queue</string>
 </resources>
