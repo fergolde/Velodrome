@@ -330,7 +330,7 @@ private fun AlbumContent(
                     .padding(end = 16.dp)
             ) {
                 LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(tracks) { track ->
+                    items(tracks, key = { it.id }) { track ->
                         TrackItem(
                             track = track,
                             isPlaying = track.id == currentTrackId,
@@ -354,7 +354,7 @@ private fun AlbumContent(
                     onBackClick = onBackClick
                 )
             }
-            items(tracks) { track ->
+            items(tracks, key = { it.id }) { track ->
                 TrackItem(
                     track = track,
                     isPlaying = track.id == currentTrackId,

@@ -654,8 +654,22 @@ fun QueueContent(
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // Stable per-track keys: pure index keys broke item identity on removal
+        // (every item below shifted under the same key). Pure track.id keys would
+        // crash if the same song appears twice in the queue ("play next" on an
+        // already-queued track), so duplicates get a "#n" suffix.
+        val queueKeys = remember(playlist) {
+            val seen = HashMap<String, Int>()
+            List(playlist.size) { i ->
+                val id = playlist[i].id
+                val occurrence = (seen[id] ?: 0) + 1
+                seen[id] = occurrence
+                if (occurrence == 1) id else "$id#${occurrence - 1}"
+            }
+        }
+
         LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            itemsIndexed(playlist, key = { index, _ -> index }) { index, track ->
+            itemsIndexed(playlist, key = { index, _ -> queueKeys[index] }) { index, track ->
                 QueueTrackItem(
                     track = track,
                     index = index,

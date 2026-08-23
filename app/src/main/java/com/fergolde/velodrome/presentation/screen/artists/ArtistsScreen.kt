@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.Artist
 import androidx.compose.ui.platform.LocalResources
@@ -123,7 +124,10 @@ fun ArtistsScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(count = pagedArtists.itemCount) { index ->
+                            items(
+                                count = pagedArtists.itemCount,
+                                key = pagedArtists.itemKey { it.id }
+                            ) { index ->
                                 val artist = pagedArtists[index]
                                 if (artist != null) {
                                     ArtistGridCard(
