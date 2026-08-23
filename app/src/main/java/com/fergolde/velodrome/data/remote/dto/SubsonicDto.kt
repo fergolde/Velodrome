@@ -189,5 +189,6 @@ data class PlaylistSummaryDto(
 data class PlaylistDetailDto(
     val id: String,
     val name: String,
+    @param:Json(name = "coverArt") val coverArt: String? = null,
     @param:Json(name = "entry") val songs: List<SongDto>? = null
 )
