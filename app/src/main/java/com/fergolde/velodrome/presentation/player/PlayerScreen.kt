@@ -17,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -63,8 +65,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +77,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -196,7 +205,8 @@ fun PlayerScreen(
                             onTrackClick = { index ->
                                 viewModel.onTrackSelected(index)
                             },
-                            onRemoveTrack = viewModel::onRemoveTrack
+                            onRemoveTrack = viewModel::onRemoveTrack,
+                            onQueueReorder = viewModel::onQueueReorder
                         )
                     }
                 }
@@ -294,7 +304,8 @@ fun PlayerScreen(
                     viewModel.onTrackSelected(index)
                     showQueue = false
                 },
-                onRemoveTrack = viewModel::onRemoveTrack
+                onRemoveTrack = viewModel::onRemoveTrack,
+                onQueueReorder = viewModel::onQueueReorder
             )
             Spacer(modifier = Modifier.height(20.dp))
         }
@@ -606,14 +617,64 @@ fun QueueContent(
     currentIndex: Int,
     isPlaying: Boolean,
     onTrackClick: (Int) -> Unit,
-    onRemoveTrack: (Int) -> Unit = {}
+    onRemoveTrack: (Int) -> Unit = {},
+    onQueueReorder: (Int, Int) -> Unit = { _, _ -> }
 ) {
     val listState = rememberLazyListState()
+    var draggingIndex by remember { mutableStateOf<Int?>(null) }
+    var originIndex by remember { mutableIntStateOf(0) }
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    var itemHeightPx by remember { mutableFloatStateOf(0f) }
+    val density = LocalDensity.current
+    val haptics = LocalHapticFeedback.current
 
-    // Auto-scroll to current song when playlist changes or currentIndex changes
-    LaunchedEffect(currentIndex) {
-        if (playlist.isNotEmpty() && currentIndex in playlist.indices) {
+    // Follow playback ONLY when the song itself changes: every reorder commit
+    // shifts currentIndex, and keying on it would yank the viewport to the
+    // playing song right after each drop. Skipped while a drag is active.
+    val currentTrackId = playlist.getOrNull(currentIndex)?.id
+    LaunchedEffect(currentTrackId) {
+        if (currentTrackId != null && draggingIndex == null && currentIndex in playlist.indices) {
             listState.animateScrollToItem(currentIndex)
+        }
+    }
+
+    // Stable per-track identity (duplicates get a "#n" suffix) paired with its
+    // track, so the drag can reorder pairs without ever colliding keys.
+    val keyedItems: List<Pair<String, Track>> = remember(playlist) {
+        val seen = HashMap<String, Int>()
+        playlist.map { track ->
+            val occurrence = (seen[track.id] ?: 0) + 1
+            seen[track.id] = occurrence
+            (if (occurrence == 1) track.id else "${track.id}#${occurrence - 1}") to track
+        }
+    }
+
+    // Visual copy reordered live while dragging. Media3 is NOT touched until
+    // drop: one onQueueReorder(original -> final) lands as a single native
+    // moveMediaItem instead of a burst of swaps.
+    val visualItems = remember(keyedItems) { keyedItems.toMutableStateList() }
+
+    val slotSpacingPx = with(density) { 2.dp.toPx() }
+    fun slotStep(): Float =
+        (itemHeightPx.takeIf { it > 0f } ?: with(density) { 68.dp.toPx() }) + slotSpacingPx
+
+    fun endDrag(commit: Boolean) {
+        val from = originIndex
+        val to = draggingIndex
+        draggingIndex = null
+        dragOffsetY = 0f
+        if (commit && to != null && from != to &&
+            from in playlist.indices && to in playlist.indices
+        ) {
+            // Apply the identical move locally BEFORE notifying the manager:
+            // the UI never shows a stale order while waiting for the playlist
+            // emission, which then reconciles to exactly this arrangement.
+            val moved = visualItems.removeAt(from)
+            visualItems.add(to, moved)
+            onQueueReorder(from, to)
+        } else {
+            visualItems.clear()
+            visualItems.addAll(keyedItems)
         }
     }
 
@@ -654,30 +715,60 @@ fun QueueContent(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Stable per-track keys: pure index keys broke item identity on removal
-        // (every item below shifted under the same key). Pure track.id keys would
-        // crash if the same song appears twice in the queue ("play next" on an
-        // already-queued track), so duplicates get a "#n" suffix.
-        val queueKeys = remember(playlist) {
-            val seen = HashMap<String, Int>()
-            List(playlist.size) { i ->
-                val id = playlist[i].id
-                val occurrence = (seen[id] ?: 0) + 1
-                seen[id] = occurrence
-                if (occurrence == 1) id else "$id#${occurrence - 1}"
-            }
-        }
-
         LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            itemsIndexed(playlist, key = { index, _ -> queueKeys[index] }) { index, track ->
-                QueueTrackItem(
-                    track = track,
-                    index = index,
-                    isCurrentTrack = index == currentIndex,
-                    isPlaying = isPlaying,
-                    onClick = { onTrackClick(index) },
-                    onRemove = { onRemoveTrack(index) }
-                )
+            itemsIndexed(visualItems, key = { _, item -> item.first }) { pos, item ->
+                val isDragging = draggingIndex == pos
+                Box(
+                    modifier = Modifier
+                        .zIndex(if (isDragging) 1f else 0f)
+                        .offset { IntOffset(0, if (isDragging) dragOffsetY.roundToInt() else 0) }
+                ) {
+                    QueueTrackItem(
+                        track = item.second,
+                        index = pos,
+                        isCurrentTrack = pos == currentIndex,
+                        isPlaying = isPlaying,
+                        onClick = { if (draggingIndex == null) onTrackClick(pos) },
+                        onRemove = { if (draggingIndex == null) onRemoveTrack(pos) },
+                        modifier = Modifier.onSizeChanged { size ->
+                            if (itemHeightPx == 0f) itemHeightPx = size.height.toFloat()
+                        },
+                        isDragging = isDragging,
+                        onDragStart = {
+                            draggingIndex = pos
+                            originIndex = pos
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        },
+                        onDragBy = { delta ->
+                            var i = draggingIndex ?: return@QueueTrackItem
+                            val step = slotStep()
+                            if (step <= 0f) return@QueueTrackItem
+                            // Clamp so the dragged card can never fly past the
+                            // first/last slots: at position i it may travel up to
+                            // i steps upward (+half-step overshoot) and
+                            // (lastIndex-i) steps downward.
+                            val minOffset = -(i * step) - step / 2f
+                            val maxOffset = ((visualItems.lastIndex - i) * step) + step / 2f
+                            dragOffsetY = (dragOffsetY + delta).coerceIn(minOffset, maxOffset)
+                            while (abs(dragOffsetY) > step / 2f) {
+                                val target = i + if (dragOffsetY > 0f) 1 else -1
+                                if (target !in visualItems.indices) break
+                                val tmp = visualItems[i]
+                                visualItems[i] = visualItems[target]
+                                visualItems[target] = tmp
+                                draggingIndex = target
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                i = target
+                                dragOffsetY -= if (dragOffsetY > 0f) step else -step
+                                val newMin = -(i * step) - step / 2f
+                                val newMax = ((visualItems.lastIndex - i) * step) + step / 2f
+                                dragOffsetY = dragOffsetY.coerceIn(newMin, newMax)
+                            }
+                        },
+                        onDragEnd = { endDrag(commit = true) },
+                        onDragCancel = { endDrag(commit = false) }
+                    )
+                }
             }
         }
     }
@@ -692,10 +783,27 @@ fun QueueTrackItem(
     isPlaying: Boolean,
     onClick: () -> Unit,
     onRemove: () -> Unit = {},
+    modifier: Modifier = Modifier,
+    isDragging: Boolean = false,
+    onDragStart: () -> Unit = {},
+    onDragBy: (Float) -> Unit = {},
+    onDragEnd: () -> Unit = {},
+    onDragCancel: () -> Unit = {}
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
     val threshold = with(density) { 100.dp.toPx() }
+
+    // pointerInput(Unit) launches its gesture coroutine once per node and keeps
+    // the callbacks captured at first composition. Without this, after a
+    // reorder the handle kept reporting the position it had when first
+    // composed — dragging one row moved whichever item sat at that fossilized
+    // index. rememberUpdatedState lets the never-restarting coroutine always
+    // read the latest lambdas (and therefore the current slot).
+    val currentOnDragStart by rememberUpdatedState(onDragStart)
+    val currentOnDragBy by rememberUpdatedState(onDragBy)
+    val currentOnDragEnd by rememberUpdatedState(onDragEnd)
+    val currentOnDragCancel by rememberUpdatedState(onDragCancel)
 
     val bgColor by animateColorAsState(
         targetValue = if (isCurrentTrack)
@@ -705,7 +813,18 @@ fun QueueTrackItem(
     )
 
     Box(
-        modifier = Modifier
+        modifier = modifier
+            .graphicsLayer {
+                if (isDragging) {
+                    scaleX = 1.03f
+                    scaleY = 1.03f
+                    shadowElevation = 12f
+                } else {
+                    scaleX = 1f
+                    scaleY = 1f
+                    shadowElevation = 0f
+                }
+            }
             .offset { IntOffset(offsetX.roundToInt(), 0) }
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
@@ -796,6 +915,35 @@ fun QueueTrackItem(
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
+                )
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Dedicated drag handle: vertical drags here reorder the queue and
+            // deliberately block list scrolling; taps/swipes on the rest of the
+            // row keep their jump/delete behavior untouched.
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures(
+                            onDragStart = { _ -> currentOnDragStart() },
+                            onVerticalDrag = { change, dragAmount ->
+                                change.consume()
+                                currentOnDragBy(dragAmount)
+                            },
+                            onDragEnd = { currentOnDragEnd() },
+                            onDragCancel = { currentOnDragCancel() }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.DragIndicator,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }
