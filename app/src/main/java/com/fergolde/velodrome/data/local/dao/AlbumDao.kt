@@ -1,8 +1,7 @@
 package com.fergolde.velodrome.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
+import androidx.room.Upsert
 import androidx.room.Query
 import com.fergolde.velodrome.data.local.entity.AlbumEntity
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +17,7 @@ interface AlbumDao {
     @Query("SELECT * FROM albums WHERE title LIKE '%' || :query || '%' OR artistName LIKE '%' || :query || '%' ORDER BY title ASC")
     suspend fun searchAlbums(query: String): List<AlbumEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertAlbums(albums: List<AlbumEntity>)
 
     @Query("SELECT MIN(year) FROM albums WHERE year IS NOT NULL AND year > 1950")

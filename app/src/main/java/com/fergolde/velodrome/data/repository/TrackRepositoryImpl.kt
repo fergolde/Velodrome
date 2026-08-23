@@ -52,7 +52,8 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
                     durationSec = song.duration ?: 0,
                     sizeBytes = song.size ?: 0L,
                     trackNumber = song.track ?: 0,
-                    coverArtId = song.coverArt
+                    coverArtId = song.coverArt,
+                    playCount = song.playCount ?: 0
                 ).toEntity()
             }
 

@@ -111,6 +111,8 @@ class EntityMappersTest {
         assertEquals(1, domain.trackNumber)
         assertEquals("cov-1", domain.coverArtId)
         assertEquals(5000000L, domain.sizeBytes)
+        assertEquals(5, domain.playCount)
+        assertEquals("/music/track1.mp3", domain.localFilePath)
     }
 
     @Test
@@ -122,14 +124,16 @@ class EntityMappersTest {
         )
         val domain = entity.toDomain()
         assertNull(domain.coverArtId)
+        assertNull(domain.localFilePath)
     }
 
     @Test
-    fun track_roundTrip() {
+    fun track_roundTrip_preservesLocalFields() {
         val original = Track(
             id = "t1", albumId = "a1", albumName = "Album",
             artistName = "Artist", title = "Track 1", durationSec = 180,
             sizeBytes = 5000000L, trackNumber = 1,
+            playCount = 7, localFilePath = "/music/offline.mp3",
             coverArtId = "cov-1"
         )
         val entity = original.toEntity()
@@ -140,6 +144,9 @@ class EntityMappersTest {
         assertEquals(180, entity.durationSec)
         assertEquals(1, entity.trackNumber)
         assertEquals("cov-1", entity.coverArtId)
-        assertNull(entity.localFilePath)
+        assertEquals(7, entity.playCount)
+        assertEquals("/music/offline.mp3", entity.localFilePath)
+        // Full round-trip: resync must not erase persisted fields
+        assertEquals(original, entity.toDomain())
     }
 }

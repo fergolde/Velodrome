@@ -1,8 +1,7 @@
 package com.fergolde.velodrome.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
+import androidx.room.Upsert
 import androidx.room.Query
 import com.fergolde.velodrome.data.local.entity.TrackEntity
 import kotlinx.coroutines.flow.Flow
@@ -18,9 +17,9 @@ interface TrackDao {
     @Query("SELECT * FROM tracks WHERE albumId = :albumId ORDER BY trackNumber ASC")
     fun observeTracksByAlbum(albumId: String): Flow<List<TrackEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertTracks(tracks: List<TrackEntity>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertTrack(track: TrackEntity)
 }

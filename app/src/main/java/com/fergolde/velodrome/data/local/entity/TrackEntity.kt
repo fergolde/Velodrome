@@ -1,9 +1,13 @@
 package com.fergolde.velodrome.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "tracks")
+@Entity(
+    tableName = "tracks",
+    indices = [Index(value = ["albumId", "trackNumber"])]
+)
 data class TrackEntity(
     @PrimaryKey
     val id: String,
@@ -16,6 +20,5 @@ data class TrackEntity(
     val coverArtId: String?,
     val sizeBytes: Long = 0L,
     val localFilePath: String? = null,
-    val playCount: Int = 0,
-    val updatedAt: Long = System.currentTimeMillis()
+    val playCount: Int = 0
 )
