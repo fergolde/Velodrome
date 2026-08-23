@@ -111,6 +111,18 @@ fun MainScaffold(
         )
     )
 
+    // The player screen is heavy and runs an infinite equalizer animation while
+    // music plays. BottomSheetScaffold composes sheetContent eagerly even fully
+    // collapsed (peekHeight = 0), so render it only while expanded or heading
+    // there. With skipHiddenState the settled-collapsed state is exactly
+    // (current == PartiallyExpanded && target == PartiallyExpanded); any expand
+    // flips targetValue first, and during collapse currentValue stays Expanded
+    // until it settles — so content remains visible through the whole drag and
+    // uncomposes once already invisible.
+    val isPlayerSheetActive =
+        sheetState.bottomSheetState.currentValue == SheetValue.Expanded ||
+            sheetState.bottomSheetState.targetValue == SheetValue.Expanded
+
     // Interceptar botón atrás
     BackHandler(enabled = !isLogin) {
         when {
@@ -136,23 +148,25 @@ fun MainScaffold(
         sheetDragHandle = null,
         sheetContainerColor = MaterialTheme.colorScheme.background,
         sheetContent = {
-            PlayerScreen(
-                onMinimizeClick = {
-                    scope.launch { sheetState.bottomSheetState.partialExpand() }
-                },
-                onHomeClick = {
-                    navController.navigate(Routes.Home) { launchSingleTop = true }
-                    scope.launch { sheetState.bottomSheetState.partialExpand() }
-                },
-                onExploreClick = {
-                    navController.navigate(Routes.Explore) { launchSingleTop = true }
-                    scope.launch { sheetState.bottomSheetState.partialExpand() }
-                },
-                onSettingsClick = {
-                    navController.navigate(Routes.Settings) { launchSingleTop = true }
-                    scope.launch { sheetState.bottomSheetState.partialExpand() }
-                }
-            )
+            if (isPlayerSheetActive) {
+                PlayerScreen(
+                    onMinimizeClick = {
+                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                    },
+                    onHomeClick = {
+                        navController.navigate(Routes.Home) { launchSingleTop = true }
+                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                    },
+                    onExploreClick = {
+                        navController.navigate(Routes.Explore) { launchSingleTop = true }
+                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                    },
+                    onSettingsClick = {
+                        navController.navigate(Routes.Settings) { launchSingleTop = true }
+                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                    }
+                )
+            }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
