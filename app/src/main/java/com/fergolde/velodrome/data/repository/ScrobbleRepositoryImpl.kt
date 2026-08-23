@@ -15,7 +15,18 @@ class ScrobbleRepositoryImpl @Inject constructor(
 
     override suspend fun scrobble(trackId: String, time: Long?, submission: Boolean): Result<Unit> {
         return runCatching {
-            api.scrobble(trackId, time, submission)
+            api.scrobble(
+                trackIds = listOf(trackId),
+                times = time?.let { listOf(it) },
+                submission = submission
+            )
+        }
+    }
+
+    override suspend fun scrobbleBatch(ids: List<String>, times: List<Long>, submission: Boolean): Result<Unit> {
+        require(ids.size == times.size) { "ids and times must be parallel lists" }
+        return runCatching {
+            api.scrobble(trackIds = ids, times = times, submission = submission)
         }
     }
 

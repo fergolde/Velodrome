@@ -60,10 +60,14 @@ interface NavidromeApi {
         @Query("id") artistId: String
     ): SubsonicResponse
 
+    /**
+     * Subsonic scrobble with repeated id/time params for batching.
+     * If [times] is provided its size must match [trackIds] (Subsonic API >= 1.13).
+     */
     @GET("rest/scrobble.view")
     suspend fun scrobble(
-        @Query("id") trackId: String,
-        @Query("time") time: Long? = null,
+        @Query("id") trackIds: List<String>,
+        @Query("time") times: List<Long>? = null,
         @Query("submission") submission: Boolean = true
     ): SubsonicResponse
 
