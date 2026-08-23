@@ -620,10 +620,19 @@ fun QueueContent(
     onQueueReorder: (Int, Int) -> Unit = { _, _ -> }
 ) {
     val listState = rememberLazyListState()
+    var draggingIndex by remember { mutableStateOf<Int?>(null) }
+    var originIndex by remember { mutableIntStateOf(0) }
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    var itemHeightPx by remember { mutableFloatStateOf(0f) }
+    val density = LocalDensity.current
+    val haptics = LocalHapticFeedback.current
 
-    // Auto-scroll to current song when playlist changes or currentIndex changes
-    LaunchedEffect(currentIndex) {
-        if (playlist.isNotEmpty() && currentIndex in playlist.indices) {
+    // Follow playback ONLY when the song itself changes: every reorder commit
+    // shifts currentIndex, and keying on it would yank the viewport to the
+    // playing song right after each drop. Skipped while a drag is active.
+    val currentTrackId = playlist.getOrNull(currentIndex)?.id
+    LaunchedEffect(currentTrackId) {
+        if (currentTrackId != null && draggingIndex == null && currentIndex in playlist.indices) {
             listState.animateScrollToItem(currentIndex)
         }
     }
@@ -643,25 +652,29 @@ fun QueueContent(
     // drop: one onQueueReorder(original -> final) lands as a single native
     // moveMediaItem instead of a burst of swaps.
     val visualItems = remember(keyedItems) { keyedItems.toMutableStateList() }
-    var draggingIndex by remember { mutableStateOf<Int?>(null) }
-    var originIndex by remember { mutableIntStateOf(0) }
-    var dragOffsetY by remember { mutableFloatStateOf(0f) }
-    var itemHeightPx by remember { mutableFloatStateOf(0f) }
-    val density = LocalDensity.current
-    val haptics = LocalHapticFeedback.current
+
+    val slotSpacingPx = with(density) { 2.dp.toPx() }
+    fun slotStep(): Float =
+        (itemHeightPx.takeIf { it > 0f } ?: with(density) { 68.dp.toPx() }) + slotSpacingPx
 
     fun endDrag(commit: Boolean) {
         val from = originIndex
         val to = draggingIndex
         draggingIndex = null
         dragOffsetY = 0f
-        if (commit && to != null && to != from && from in playlist.indices) {
+        if (commit && to != null && from != to &&
+            from in playlist.indices && to in playlist.indices
+        ) {
+            // Apply the identical move locally BEFORE notifying the manager:
+            // the UI never shows a stale order while waiting for the playlist
+            // emission, which then reconciles to exactly this arrangement.
+            val moved = visualItems.removeAt(from)
+            visualItems.add(to, moved)
             onQueueReorder(from, to)
         } else {
             visualItems.clear()
             visualItems.addAll(keyedItems)
         }
-        // On commit, the new playlist emission rebuilds visualItems itself.
     }
 
     Column(
@@ -727,9 +740,15 @@ fun QueueContent(
                         },
                         onDragBy = { delta ->
                             var i = draggingIndex ?: return@QueueTrackItem
-                            dragOffsetY += delta
-                            val step = itemHeightPx.takeIf { it > 0f }
-                                ?: with(density) { 68.dp.toPx() }
+                            val step = slotStep()
+                            if (step <= 0f) return@QueueTrackItem
+                            // Clamp so the dragged card can never fly past the
+                            // first/last slots: at position i it may travel up to
+                            // i steps upward (+half-step overshoot) and
+                            // (lastIndex-i) steps downward.
+                            val minOffset = -(i * step) - step / 2f
+                            val maxOffset = ((visualItems.lastIndex - i) * step) + step / 2f
+                            dragOffsetY = (dragOffsetY + delta).coerceIn(minOffset, maxOffset)
                             while (abs(dragOffsetY) > step / 2f) {
                                 val target = i + if (dragOffsetY > 0f) 1 else -1
                                 if (target !in visualItems.indices) break
@@ -737,8 +756,12 @@ fun QueueContent(
                                 visualItems[i] = visualItems[target]
                                 visualItems[target] = tmp
                                 draggingIndex = target
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 i = target
                                 dragOffsetY -= if (dragOffsetY > 0f) step else -step
+                                val newMin = -(i * step) - step / 2f
+                                val newMax = ((visualItems.lastIndex - i) * step) + step / 2f
+                                dragOffsetY = dragOffsetY.coerceIn(newMin, newMax)
                             }
                         },
                         onDragEnd = { endDrag(commit = true) },
