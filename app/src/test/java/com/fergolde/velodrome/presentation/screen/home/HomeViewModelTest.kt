@@ -47,10 +47,12 @@ class HomeViewModelTest {
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } returns 0
         every { Log.e(any(), any()) } returns 0
-        every { playerManager.isPlaying } returns isPlayingFlow
-        every { playerManager.currentTrack } returns currentTrackFlow
-        coEvery { albumUseCases.observeAlbums() } returns flowOf(emptyList())
-        coEvery { artistUseCases.observeArtists() } returns flowOf(emptyList())
+        coEvery { playerManager.isPlaying } returns isPlayingFlow
+        coEvery { playerManager.currentTrack } returns currentTrackFlow
+        coEvery { albumUseCases.albumCount() } returns 10
+        coEvery { artistUseCases.artistCount() } returns 10
+        coEvery { albumUseCases.syncAlbums() } returns Result.success(0)
+        coEvery { artistUseCases.syncArtists() } returns Result.success(0)
         coEvery { albumUseCases.getLatestAlbums(any()) } returns Result.success(emptyList())
         coEvery { albumUseCases.getTopAlbums(any()) } returns Result.success(emptyList())
         coEvery { albumUseCases.getRecentlyPlayedAlbums(any()) } returns Result.success(emptyList())

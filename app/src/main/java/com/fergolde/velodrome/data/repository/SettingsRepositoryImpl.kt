@@ -24,6 +24,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val SCROBBLE_ENABLED = booleanPreferencesKey("scrobble_enabled")
         val LAST_SYNC_TIMESTAMP = longPreferencesKey("last_sync_timestamp")
         val LAST_SYNC_OFFSET = intPreferencesKey("last_sync_offset")
+        val LAST_SERVER_CHECK_AT = longPreferencesKey("last_server_check_at")
     }
 
     companion object {
@@ -54,6 +55,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override val lastSyncOffset: Flow<Int> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.LAST_SYNC_OFFSET] ?: DEFAULT_LAST_SYNC_OFFSET }
+
+    override val lastServerCheckAt: Flow<Long> = dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.LAST_SERVER_CHECK_AT] ?: DEFAULT_LAST_SYNC_TIMESTAMP }
 
     // --- Actions ---
 
@@ -88,5 +92,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLastSyncOffset(offset: Int) {
         dataStore.edit { it[PreferencesKeys.LAST_SYNC_OFFSET] = offset }
+    }
+
+    override suspend fun setLastServerCheckAt(timestamp: Long) {
+        dataStore.edit { it[PreferencesKeys.LAST_SERVER_CHECK_AT] = timestamp }
     }
 }

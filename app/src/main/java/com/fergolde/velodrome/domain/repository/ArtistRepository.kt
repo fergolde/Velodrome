@@ -41,4 +41,9 @@ interface ArtistRepository {
      * Uso: búsqueda reactiva con flatMapLatest en el ViewModel.
      */
     suspend fun searchLocal(query: String): List<Artist>
+
+    /**
+     * Cheap emptiness probe: COUNT(*) instead of materializing the table.
+     */
+    suspend fun artistCount(): Int
 }

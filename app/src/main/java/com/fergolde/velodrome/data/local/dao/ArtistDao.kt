@@ -19,4 +19,7 @@ interface ArtistDao {
 
     @Upsert
     suspend fun insertArtists(artists: List<ArtistEntity>)
+
+    @Query("SELECT COUNT(*) FROM artists")
+    suspend fun getArtistCount(): Int
 }

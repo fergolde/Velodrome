@@ -20,6 +20,9 @@ interface AlbumDao {
     @Upsert
     suspend fun insertAlbums(albums: List<AlbumEntity>)
 
+    @Query("SELECT COUNT(*) FROM albums")
+    suspend fun getAlbumCount(): Int
+
     @Query("SELECT MIN(year) FROM albums WHERE year IS NOT NULL AND year > 1950")
     suspend fun getMinYear(): Int?
 }

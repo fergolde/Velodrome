@@ -15,7 +15,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -52,12 +51,11 @@ class HomeViewModel @Inject constructor(
 
     private fun syncIfEmpty() {
         viewModelScope.launch {
-            val localAlbums = albumUseCases.observeAlbums().first()
-            if (localAlbums.isEmpty()) {
+            // COUNT(*) probes instead of materializing whole tables just to call isEmpty()
+            if (albumUseCases.albumCount() == 0) {
                 albumUseCases.syncAlbums()
             }
-            val localArtists = artistUseCases.observeArtists().first()
-            if (localArtists.isEmpty()) {
+            if (artistUseCases.artistCount() == 0) {
                 artistUseCases.syncArtists()
             }
         }

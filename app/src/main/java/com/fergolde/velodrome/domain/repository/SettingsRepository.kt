@@ -52,6 +52,13 @@ interface SettingsRepository {
      */
     val lastSyncOffset: Flow<Int>
 
+    /**
+     * Timestamp of the last lightweight "has server changed?" probe (millis).
+     * Used to throttle that check to once per window instead of every app open.
+     * Default: 0L (never checked)
+     */
+    val lastServerCheckAt: Flow<Long>
+
     // --- Actions ---
 
     suspend fun setImageCacheSizeMb(sizeMb: Int)
@@ -65,4 +72,6 @@ interface SettingsRepository {
     suspend fun setLastSyncTimestamp(timestamp: Long)
 
     suspend fun setLastSyncOffset(offset: Int)
+
+    suspend fun setLastServerCheckAt(timestamp: Long)
 }
