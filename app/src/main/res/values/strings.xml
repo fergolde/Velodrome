@@ -105,4 +105,28 @@
     <string name="view_all">Ver Todo</string>
     <string name="play">Reproducir</string>
     <string name="error_loading">Error al cargar</string>
+
+    <!-- Universal options sheet -->
+    <string name="options_play_now_title">Reproducir ahora</string>
+    <string name="options_play_now_subtitle">Salta a esta selección inmediatamente</string>
+    <string name="options_play_next_title">Reproducir siguiente</string>
+    <string name="options_play_next_subtitle">Se pone justo después de la actual</string>
+    <string name="options_add_queue_title">Añadir al final</string>
+    <string name="options_add_queue_subtitle">Se añade al final de la cola</string>
+
+    <!-- Settings -->
+    <string name="settings_color_custom_hex">Personalizado (HEX)</string>
+
+    <!-- Auth errors -->
+    <string name="error_no_connection">No se puede conectar al servidor. Comprueba la URL y tu conexión.</string>
+    <string name="error_server_timeout">El servidor tarda mucho en responder. Comprueba tu conexión.</string>
+    <string name="error_invalid_url">La URL proporcionada no tiene un formato válido.</string>
+    <string name="error_network_generic">Error de red: Usuario o contraseña incorrectos, o servidor inaccesible.</string>
+
+    <!-- Snackbar feedback -->
+    <string name="snackbar_shuffle_started">Reproducción aleatoria iniciada</string>
+    <string name="snackbar_play_next">Se reproducirá a continuación</string>
+    <string name="snackbar_added_to_queue">Añadido a la cola</string>
+    <string name="snackbar_album_added_to_queue">Álbum añadido a la cola</string>
+    <string name="snackbar_playlist_added_to_queue">Playlist añadida a la cola</string>
 </resources>

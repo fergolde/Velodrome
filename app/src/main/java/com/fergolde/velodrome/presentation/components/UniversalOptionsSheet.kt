@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.stringResource
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fergolde.velodrome.R
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 
 @Composable
@@ -73,24 +75,24 @@ fun UniversalOptionsSheet(
             icon = Icons.Default.PlayArrow,
             iconTint = MaterialTheme.colorScheme.primary,
             iconBackground = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-            title = "Reproducir ahora",
-            subtitle = "Salta a esta selección inmediatamente",
+            title = stringResource(R.string.options_play_now_title),
+            subtitle = stringResource(R.string.options_play_now_subtitle),
             onClick = onPlayNow
         )
         SheetOptionItem(
             icon = Icons.Default.SkipNext,
             iconTint = Color(0xFF0F6E56),
             iconBackground = Color(0xFF0F6E56).copy(alpha = 0.12f),
-            title = "Reproducir siguiente",
-            subtitle = "Se pone justo después de la actual",
+            title = stringResource(R.string.options_play_next_title),
+            subtitle = stringResource(R.string.options_play_next_subtitle),
             onClick = onPlayNext
         )
         SheetOptionItem(
             icon = Icons.AutoMirrored.Filled.PlaylistAdd,
             iconTint = Color(0xFF854F0B),
             iconBackground = Color(0xFF854F0B).copy(alpha = 0.12f),
-            title = "Añadir al final",
-            subtitle = "Se añade al final de la cola",
+            title = stringResource(R.string.options_add_queue_title),
+            subtitle = stringResource(R.string.options_add_queue_subtitle),
             onClick = onAddToQueue
         )
     }

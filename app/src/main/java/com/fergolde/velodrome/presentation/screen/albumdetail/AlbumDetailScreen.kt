@@ -58,10 +58,12 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.fergolde.velodrome.domain.model.Album
+import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
@@ -80,6 +82,10 @@ fun AlbumDetailScreen(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val msg_shuffle_started = stringResource(R.string.snackbar_shuffle_started)
+    val msg_play_next = stringResource(R.string.snackbar_play_next)
+    val msg_added_to_queue = stringResource(R.string.snackbar_added_to_queue)
+    val msg_album_added_to_queue = stringResource(R.string.snackbar_album_added_to_queue)
 
     Scaffold(
         snackbarHost = {
@@ -132,13 +138,13 @@ fun AlbumDetailScreen(
                         onShuffleClick = {
                             viewModel.shuffleAll()
                             scope.launch {
-                                snackbarHostState.showSnackbar("Reproducción aleatoria iniciada")
+                                snackbarHostState.showSnackbar(msg_shuffle_started)
                             }
                         },
                         onAddToQueueClick = {
                             viewModel.addAllToQueue()
                             scope.launch {
-                                snackbarHostState.showSnackbar("Álbum añadido a la cola")
+                                snackbarHostState.showSnackbar(msg_album_added_to_queue)
                             }
                         },
                         onBackClick = onBackClick,
@@ -171,7 +177,7 @@ fun AlbumDetailScreen(
                             sheetState.hide()
                             showTrackOptions = false
                             viewModel.playNext(track)
-                            snackbarHostState.showSnackbar("Se reproducirá a continuación")
+                            snackbarHostState.showSnackbar(msg_play_next)
                         }
                     },
                     onAddToQueue = {
@@ -180,7 +186,7 @@ fun AlbumDetailScreen(
                             sheetState.hide()
                             showTrackOptions = false
                             viewModel.addToQueue(track)
-                            snackbarHostState.showSnackbar("Añadido a la cola")
+                            snackbarHostState.showSnackbar(msg_added_to_queue)
                         }
                     }
                 )
