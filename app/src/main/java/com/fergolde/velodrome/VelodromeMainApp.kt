@@ -11,6 +11,7 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.presentation.audio.ScrobbleManager
 import com.fergolde.velodrome.util.CredentialsManager
+import com.fergolde.velodrome.util.NavidromeCoverArtKeyer
 import com.fergolde.velodrome.util.NavidromeImageInterceptor
 import dagger.hilt.android.HiltAndroidApp
 import okhttp3.OkHttpClient
@@ -55,6 +56,9 @@ class VelodromeApp : Application(), SingletonImageLoader.Factory, Configuration.
             .components {
                 // Añadir el interceptor de autenticación para coverart
                 add(navidromeImageInterceptor)
+                // Clave de caché estable: strippea el token/salt rotativo de las URLs
+                // de coverart para que la caché no se invalide cada hora / cold start
+                add(NavidromeCoverArtKeyer())
                 // Añadir el fetcher de red con OkHttp
                 add(
                     OkHttpNetworkFetcherFactory(

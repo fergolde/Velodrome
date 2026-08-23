@@ -168,6 +168,10 @@ class AlbumRepositoryImpl @Inject constructor(
         val min = localMusicDataSource.getMinYear()
         return if (min != null && min > 0) min else 1950
     }
+
+    override suspend fun albumCount(): Int {
+        return localMusicDataSource.getAlbumCount()
+    }
 }
 
 /**

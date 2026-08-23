@@ -15,7 +15,6 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -90,9 +90,10 @@ fun MainScaffold(
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    val currentTrack by sharedPlayerViewModel.currentTrack.collectAsState()
-    val isPlaying by sharedPlayerViewModel.isPlaying.collectAsState()
-    val currentPosition by sharedPlayerViewModel.currentPosition.collectAsState()
+    // currentPosition intentionally NOT collected here: it ticks at 1Hz and would
+    // recompose the whole app tree. MiniPlayer collects it internally (leaf-scoped).
+    val currentTrack by sharedPlayerViewModel.currentTrack.collectAsStateWithLifecycle()
+    val isPlaying by sharedPlayerViewModel.isPlaying.collectAsStateWithLifecycle()
     val hasSong = currentTrack != null
     val scope = rememberCoroutineScope()
     val localContext = LocalContext.current
@@ -109,6 +110,18 @@ fun MainScaffold(
             initialValue = SheetValue.PartiallyExpanded
         )
     )
+
+    // The player screen is heavy and runs an infinite equalizer animation while
+    // music plays. BottomSheetScaffold composes sheetContent eagerly even fully
+    // collapsed (peekHeight = 0), so render it only while expanded or heading
+    // there. With skipHiddenState the settled-collapsed state is exactly
+    // (current == PartiallyExpanded && target == PartiallyExpanded); any expand
+    // flips targetValue first, and during collapse currentValue stays Expanded
+    // until it settles — so content remains visible through the whole drag and
+    // uncomposes once already invisible.
+    val isPlayerSheetActive =
+        sheetState.bottomSheetState.currentValue == SheetValue.Expanded ||
+            sheetState.bottomSheetState.targetValue == SheetValue.Expanded
 
     // Interceptar botón atrás
     BackHandler(enabled = !isLogin) {
@@ -135,23 +148,25 @@ fun MainScaffold(
         sheetDragHandle = null,
         sheetContainerColor = MaterialTheme.colorScheme.background,
         sheetContent = {
-            PlayerScreen(
-                onMinimizeClick = {
-                    scope.launch { sheetState.bottomSheetState.partialExpand() }
-                },
-                onHomeClick = {
-                    navController.navigate(Routes.Home) { launchSingleTop = true }
-                    scope.launch { sheetState.bottomSheetState.partialExpand() }
-                },
-                onExploreClick = {
-                    navController.navigate(Routes.Explore) { launchSingleTop = true }
-                    scope.launch { sheetState.bottomSheetState.partialExpand() }
-                },
-                onSettingsClick = {
-                    navController.navigate(Routes.Settings) { launchSingleTop = true }
-                    scope.launch { sheetState.bottomSheetState.partialExpand() }
-                }
-            )
+            if (isPlayerSheetActive) {
+                PlayerScreen(
+                    onMinimizeClick = {
+                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                    },
+                    onHomeClick = {
+                        navController.navigate(Routes.Home) { launchSingleTop = true }
+                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                    },
+                    onExploreClick = {
+                        navController.navigate(Routes.Explore) { launchSingleTop = true }
+                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                    },
+                    onSettingsClick = {
+                        navController.navigate(Routes.Settings) { launchSingleTop = true }
+                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                    }
+                )
+            }
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding())) {
@@ -164,7 +179,7 @@ fun MainScaffold(
                                 MiniPlayer(
                                     currentTrack = currentTrack,
                                     isPlaying = isPlaying,
-                                    currentPosition = currentPosition,
+                                    positionFlow = sharedPlayerViewModel.currentPosition,
                                     onPlayPauseClick = { sharedPlayerViewModel.togglePlayPause() },
                                     onClick = { scope.launch { sheetState.bottomSheetState.expand() } },
                                     onNextClick = { sharedPlayerViewModel.next() },

@@ -34,8 +34,21 @@ class SyncLibraryWorker @AssistedInject constructor(
             val lastSyncOffset = settingsRepository.lastSyncOffset.first()
 
             if (lastSyncTimestamp > 0) {
+                // Throttle: the lightweight "has server changed?" probe runs at most
+                // once per SYNC_CHECK_INTERVAL_MS. Within the window, an app open
+                // costs zero network. A failed probe leaves the stamp untouched so
+                // it retries on the next open.
+                val now = System.currentTimeMillis()
+                val lastCheckAt = settingsRepository.lastServerCheckAt.first()
+                if (now - lastCheckAt < SYNC_CHECK_INTERVAL_MS) {
+                    return@withContext Result.success()
+                }
+
                 val hasChanges = albumRepository.hasServerChangedSince(lastSyncTimestamp)
-                if (!hasChanges) return@withContext Result.success()
+                if (!hasChanges) {
+                    settingsRepository.setLastServerCheckAt(now)
+                    return@withContext Result.success()
+                }
 
                 val latestResult = albumRepository.getLatestAlbums(50)
                 if (latestResult.isFailure) {
@@ -48,6 +61,7 @@ class SyncLibraryWorker @AssistedInject constructor(
                 }
 
                 settingsRepository.setLastSyncTimestamp(System.currentTimeMillis())
+                settingsRepository.setLastServerCheckAt(now)
                 return@withContext Result.success()
             }
 
@@ -67,11 +81,17 @@ class SyncLibraryWorker @AssistedInject constructor(
 
             settingsRepository.setLastSyncOffset(0)
             settingsRepository.setLastSyncTimestamp(System.currentTimeMillis())
+            settingsRepository.setLastServerCheckAt(System.currentTimeMillis())
             Result.success()
 
         } catch (e: Exception) {
             classifyError(e)
         }
+    }
+
+    private companion object {
+        /** Minimum gap between lightweight server-change probes (3 hours). */
+        const val SYNC_CHECK_INTERVAL_MS = 3L * 60 * 60 * 1000
     }
 
     private fun classifyError(e: Throwable?): Result {

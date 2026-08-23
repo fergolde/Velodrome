@@ -15,7 +15,7 @@ import com.fergolde.velodrome.data.local.entity.TrackEntity
 
 @Database(
     entities = [ArtistEntity::class, AlbumEntity::class, TrackEntity::class, ScrobbleEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class VelodromeDatabase : RoomDatabase() {
@@ -32,6 +32,20 @@ abstract class VelodromeDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE albums DROP COLUMN songCount")
                 db.execSQL("ALTER TABLE albums DROP COLUMN duration")
+            }
+        }
+
+        /**
+         * v2 -> v3: add read-path indices and drop write-only updatedAt columns.
+         * Index names must match Room's generated naming for schema validation.
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_tracks_albumId_trackNumber` ON `tracks` (`albumId`, `trackNumber`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_pending_scrobbles_isSubmitted_timestamp` ON `pending_scrobbles` (`isSubmitted`, `timestamp`)")
+                db.execSQL("ALTER TABLE artists DROP COLUMN updatedAt")
+                db.execSQL("ALTER TABLE albums DROP COLUMN updatedAt")
+                db.execSQL("ALTER TABLE tracks DROP COLUMN updatedAt")
             }
         }
     }

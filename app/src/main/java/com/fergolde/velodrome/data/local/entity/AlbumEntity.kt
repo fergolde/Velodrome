@@ -12,6 +12,5 @@ data class AlbumEntity(
     val title: String,
     val year: Int?,
     val genre: String?,
-    val coverUrl: String?,
-    val updatedAt: Long = System.currentTimeMillis()
+    val coverUrl: String?
 )

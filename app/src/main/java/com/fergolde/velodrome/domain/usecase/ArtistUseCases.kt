@@ -34,10 +34,17 @@ class ObserveArtistsUseCase @Inject constructor(
     operator fun invoke(): Flow<List<Artist>> = repository.observeAllArtists()
 }
 
+class GetArtistCountUseCase @Inject constructor(
+    private val repository: ArtistRepository
+) {
+    suspend operator fun invoke(): Int = repository.artistCount()
+}
+
 // ========== WRAPPER ==========
 class ArtistUseCases @Inject constructor(
     val getArtist: GetArtistUseCase,
     val searchLocal: SearchLocalArtistsUseCase,
     val syncArtists: SyncArtistsUseCase,
-    val observeArtists: ObserveArtistsUseCase
+    val observeArtists: ObserveArtistsUseCase,
+    val artistCount: GetArtistCountUseCase
 )

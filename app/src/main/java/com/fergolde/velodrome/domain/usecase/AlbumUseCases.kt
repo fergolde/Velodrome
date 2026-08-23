@@ -77,6 +77,12 @@ class GetMinYearUseCase @Inject constructor(
     suspend operator fun invoke(): Int = repository.getMinYear()
 }
 
+class GetAlbumCountUseCase @Inject constructor(
+    private val repository: AlbumRepository
+) {
+    suspend operator fun invoke(): Int = repository.albumCount()
+}
+
 // ========== WRAPPER ==========
 class AlbumUseCases @Inject constructor(
     val getLatestAlbums: GetLatestAlbumsUseCase,
@@ -88,5 +94,6 @@ class AlbumUseCases @Inject constructor(
     val searchLocal: SearchLocalAlbumsUseCase,
     val syncAlbums: SyncAlbumsUseCase,
     val observeAlbums: ObserveAlbumsUseCase,
-    val getMinYear: GetMinYearUseCase
+    val getMinYear: GetMinYearUseCase,
+    val albumCount: GetAlbumCountUseCase
 )

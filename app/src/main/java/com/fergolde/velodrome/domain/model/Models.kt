@@ -27,7 +27,8 @@ data class Track(
     val sizeBytes: Long,
     val trackNumber: Int,
     val playCount: Int = 0,
-    val coverArtId: String? = null
+    val coverArtId: String? = null,
+    val localFilePath: String? = null
 )
 
 data class AuthResult(

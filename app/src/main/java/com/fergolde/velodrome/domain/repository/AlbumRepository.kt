@@ -53,6 +53,11 @@ interface AlbumRepository {
     suspend fun hasServerChangedSince(timestamp: Long): Boolean
 
     /**
+     * Cheap emptiness probe: COUNT(*) instead of materializing the table.
+     */
+    suspend fun albumCount(): Int
+
+    /**
      * Get the minimum year from albums in the database.
      */
     suspend fun getMinYear(): Int

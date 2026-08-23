@@ -1,8 +1,7 @@
 package com.fergolde.velodrome.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
+import androidx.room.Upsert
 import androidx.room.Query
 import com.fergolde.velodrome.data.local.entity.ArtistEntity
 import kotlinx.coroutines.flow.Flow
@@ -18,6 +17,9 @@ interface ArtistDao {
     @Query("SELECT * FROM artists WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
     suspend fun searchArtists(query: String): List<ArtistEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun insertArtists(artists: List<ArtistEntity>)
+
+    @Query("SELECT COUNT(*) FROM artists")
+    suspend fun getArtistCount(): Int
 }

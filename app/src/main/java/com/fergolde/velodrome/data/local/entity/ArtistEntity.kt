@@ -9,6 +9,5 @@ data class ArtistEntity(
     val id: String,
     val name: String,
     val albumCount: Int,
-    val coverUrl: String?,
-    val updatedAt: Long = System.currentTimeMillis()
+    val coverUrl: String?
 )
