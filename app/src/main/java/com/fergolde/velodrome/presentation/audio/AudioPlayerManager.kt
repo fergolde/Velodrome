@@ -35,6 +35,19 @@ import kotlin.time.Duration.Companion.milliseconds
  * Manager for audio playback with MediaController.
  * Injected by Hilt - singleton ensures single instance.
  */
+/**
+ * Pure index math for queue reordering: where does the current item's index
+ * land after moving [from] -> [to]? Top-level so it stays unit-testable
+ * without instantiating AudioPlayerManager (its constructor connects a real
+ * MediaController session).
+ */
+internal fun adjustedCurrentIndex(current: Int, from: Int, to: Int): Int = when {
+    current == from -> to
+    from < current && to >= current -> current - 1
+    from > current && to <= current -> current + 1
+    else -> current
+}
+
 @Singleton
 class AudioPlayerManager @OptIn(UnstableApi::class)
 @Inject constructor(
@@ -457,6 +470,25 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     }
 
     fun setPlaylist(playlist: List<Track>) { _playlist.value = playlist }
+
+    /**
+     * Reorders the queue moving item at [from] to [to]. Playback continues
+     * through the move (Media3 keeps the current item playing). The mirrored
+     * index is adjusted via [adjustedCurrentIndex]; MediaController tracks its
+     * own current position internally.
+     */
+    fun moveInPlaylist(from: Int, to: Int) {
+        val currentList = _playlist.value.toMutableList()
+        if (from !in currentList.indices || to !in currentList.indices || from == to) return
+
+        val moved = currentList.removeAt(from)
+        currentList.add(to, moved)
+        _playlist.value = currentList
+
+        _currentIndex.value = adjustedCurrentIndex(_currentIndex.value, from, to)
+
+        mediaController?.moveMediaItem(from, to)
+    }
 
     fun setLoadMoreCallback(callback: () -> Unit) { loadMoreCallback = callback }
 

@@ -83,6 +83,14 @@ class PlayerViewModel @Inject constructor(
     }
 
     /**
+     * Reorders the queue moving item at [from] to [to].
+     * Playback keeps running through the move.
+     */
+    fun onQueueReorder(from: Int, to: Int) {
+        playerManager.moveInPlaylist(from, to)
+    }
+
+    /**
      * Seek to position (in seconds)
      */
     fun onSeek(position: Int) {
