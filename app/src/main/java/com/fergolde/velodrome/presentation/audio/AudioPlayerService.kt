@@ -20,7 +20,6 @@ import androidx.media3.session.MediaSessionService
 import com.fergolde.velodrome.MainActivity
 import com.fergolde.velodrome.data.local.dao.AlbumDao
 import com.fergolde.velodrome.data.local.dao.TrackDao
-import com.fergolde.velodrome.data.local.entity.TrackEntity
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.first
 import androidx.lifecycle.lifecycleScope
@@ -270,7 +269,12 @@ class AudioPlayerService : MediaSessionService() {
     }
 
     /**
-     * AnalyticsListener para notificar "now playing" y persistir tracks en Room.
+     * AnalyticsListener para notificar "now playing" al scrobbler.
+     * Room is intentionally NOT written here: synced library tracks already
+     * live in the tracks table with real album/genre data, and server-only
+     * tracks (radio top-ups, search) stream fine without a row — a metadata
+     * placeholder here used to pollute the table with albumId="" rows and
+     * full-URL coverArtIds that broke the EQ genre lookup and artwork.
      */
     private val analyticsListener = object : AnalyticsListener {
         override fun onMediaItemTransition(
@@ -282,27 +286,6 @@ class AudioPlayerService : MediaSessionService() {
                 val trackId = it.mediaId
                 scrobbleManager.onTrackChanged()
                 scrobbleManager.sendNowPlaying(trackId)
-
-                // Guardar en Room para disponibilidad offline
-                val meta = it.mediaMetadata
-                serviceScope.launch {
-                    val existing = trackDao.getTrackById(trackId)
-                    if (existing == null) {
-                        trackDao.insertTrack(
-                            TrackEntity(
-                                id = trackId,
-                                albumId = "",
-                                title = meta.title?.toString() ?: "Unknown",
-                                artistName = meta.artist?.toString() ?: "",
-                                albumName = meta.albumTitle?.toString() ?: "",
-                                durationSec = 0,
-                                trackNumber = 0,
-                                coverArtId = meta.artworkUri?.toString(),
-                                sizeBytes = 0L
-                            )
-                        )
-                    }
-                }
             }
         }
     }
