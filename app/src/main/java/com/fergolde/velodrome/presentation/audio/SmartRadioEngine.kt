@@ -94,6 +94,19 @@ class SmartRadioEngine @Inject constructor(
     private fun <T> MutableList<T>.removeRandomOrNull(): T? =
         if (isEmpty()) null else removeAt(Random.nextInt(size))
 
+    /**
+     * Records a played track id. The set is insertion-ordered and capped so a
+     * marathon session cannot grow it without bound; past the cap the oldest
+     * ids are forgotten (re-picks become possible again, which beats unbounded
+     * memory).
+     */
+    private fun rememberPlayedTrack(id: String) {
+        sessionPlayedIds.add(id)
+        while (sessionPlayedIds.size > MAX_SESSION_PLAYED_IDS) {
+            sessionPlayedIds.remove(sessionPlayedIds.first())
+        }
+    }
+
     @Volatile
     private var tasteProfile: TasteProfile? = null
     private var tasteProfileAt = 0L
@@ -137,14 +150,14 @@ class SmartRadioEngine @Inject constructor(
                 is RadioContext.Song -> smartSeedTrack?.let { seed ->
                     smartSeedTrack = null
                     initialTracks.add(seed)
-                    sessionPlayedIds.add(seed.id)
+                    rememberPlayedTrack(seed.id)
                     recentArtists.addLast(seed.artistName)
                     if (recentArtists.size > 2) recentArtists.removeFirst()
                 }
                 is RadioContext.Artist -> (corePool.removeRandomOrNull()
                     ?: explorePool.removeRandomOrNull())?.let { item ->
                     initialTracks.add(item.track)
-                    sessionPlayedIds.add(item.track.id)
+                    rememberPlayedTrack(item.track.id)
                     recentArtists.addLast(item.track.artistName)
                     if (recentArtists.size > 2) recentArtists.removeFirst()
                 }
@@ -239,7 +252,8 @@ class SmartRadioEngine @Inject constructor(
 
     private fun appendLegacy(newSongs: List<Track>) {
         val existingPoolIds = pool.map { it.id }.toSet()
-        val newFiltered = newSongs.filter { it.id !in existingPoolIds }
+        val newFiltered = newSongs
+            .filter { it.id !in existingPoolIds && it.id !in sessionPlayedIds }
         Log.d(TAG, "appendLegacy: newSongs=${newSongs.size} new=${newFiltered.size} poolBefore=${existingPoolIds.size}")
 
         if (newFiltered.isNotEmpty()) {
@@ -356,7 +370,7 @@ class SmartRadioEngine @Inject constructor(
             val chosen = if (candidates.isNotEmpty()) candidates.random() else pool.random()
 
             pool.remove(chosen)
-            sessionPlayedIds.add(chosen.id)
+            rememberPlayedTrack(chosen.id)
             selected.add(chosen)
 
             recentArtists.addLast(chosen.artistName)
@@ -403,7 +417,7 @@ class SmartRadioEngine @Inject constructor(
             }
 
             source.remove(chosen)
-            sessionPlayedIds.add(chosen.track.id)
+            rememberPlayedTrack(chosen.track.id)
             selected.add(chosen.track)
 
             recentArtists.addLast(chosen.track.artistName)
@@ -451,6 +465,7 @@ class SmartRadioEngine @Inject constructor(
         const val ARTIST_EXPLORE_MAX = 0.5
         const val ARTIST_EXPLORE_RAMP = 0.05   // per picked track
         const val EXPLORE_TOPUP_THRESHOLD = 10
+        const val MAX_SESSION_PLAYED_IDS = 500
         const val PROFILE_SIZE = 50
         const val PROFILE_TTL_MS = 24L * 60 * 60 * 1000
     }
