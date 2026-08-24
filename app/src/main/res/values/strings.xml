@@ -130,6 +130,12 @@
     <string name="settings_bass_title">Refuerzo de graves</string>
     <string name="settings_bass_desc">Realza las frecuencias bajas (ideal con auriculares)</string>
 
+    <!-- Instant mix / artist radio -->
+    <string name="options_instant_mix_title">Mezcla instantánea</string>
+    <string name="options_instant_mix_subtitle">Radio generada desde esta canción</string>
+    <string name="snackbar_instant_mix_started">Mezcla instantánea iniciada</string>
+    <string name="snackbar_artist_radio_started">Radio del artista iniciada</string>
+
     <!-- Snackbar feedback -->
     <string name="snackbar_shuffle_started">Reproducción aleatoria iniciada</string>
     <string name="snackbar_play_next">Se reproducirá a continuación</string>

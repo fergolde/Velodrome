@@ -11,6 +11,9 @@ interface TrackRepository {
     suspend fun syncTracksForAlbum(albumId: String): Result<Unit>
     suspend fun getRandomSongs(size: Int = 50, genre: String? = null, fromYear: Int? = null, toYear: Int? = null): Result<List<Track>>
     suspend fun searchRemoteTracks(query: String): Result<List<Track>>
+    /** Full local library snapshot for smart-radio pool building. */
+    suspend fun getAllLocalTracks(): List<Track>
+
     suspend fun getOfflineTracks(): List<Track>
     suspend fun getTopGlobalTracks(size: Int = 100): Result<List<Track>>
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.fergolde.velodrome.domain.model.Playlist
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.PlaylistUseCases
+import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import com.fergolde.velodrome.util.shuffledWithArtistSpacing
@@ -124,6 +125,12 @@ class PlaylistDetailViewModel @Inject constructor(
         if (tracks.isEmpty()) return
         playerManager.setLoadMoreCallback { }
         playerManager.setPlaylist(tracks.shuffledWithArtistSpacing(), startPlaying = true)
+    }
+
+    /** Instant mix seeded by this track's features (genre/artist). */
+    fun startInstantMix(trackId: String) {
+        smartRadioEngine.stopRadio()
+        smartRadioEngine.startRadio(RadioContext.Song(trackId))
     }
 
     fun addAllToQueue() {

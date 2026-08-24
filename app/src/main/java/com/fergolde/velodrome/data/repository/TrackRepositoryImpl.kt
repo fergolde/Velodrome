@@ -100,6 +100,10 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
         }
     }
 
+    override suspend fun getAllLocalTracks(): List<Track> {
+        return trackDao.getAllTracksOnce().map { it.toDomain() }
+    }
+
     @OptIn(UnstableApi::class)
     override suspend fun getOfflineTracks(): List<Track> {
         val allLocalTracks = trackDao.getAllTracksOnce()

@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,7 +33,8 @@ fun UniversalOptionsSheet(
     coverArtId: String?,
     onPlayNow: () -> Unit,
     onPlayNext: () -> Unit,
-    onAddToQueue: () -> Unit
+    onAddToQueue: () -> Unit,
+    onInstantMix: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier
@@ -87,6 +89,16 @@ fun UniversalOptionsSheet(
             subtitle = stringResource(R.string.options_play_next_subtitle),
             onClick = onPlayNext
         )
+        if (onInstantMix != null) {
+            SheetOptionItem(
+                icon = Icons.Default.Radio,
+                iconTint = Color(0xFF7C3AED),
+                iconBackground = Color(0xFF7C3AED).copy(alpha = 0.12f),
+                title = stringResource(R.string.options_instant_mix_title),
+                subtitle = stringResource(R.string.options_instant_mix_subtitle),
+                onClick = onInstantMix
+            )
+        }
         SheetOptionItem(
             icon = Icons.AutoMirrored.Filled.PlaylistAdd,
             iconTint = Color(0xFF854F0B),

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -49,6 +50,7 @@ fun ArtistDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val msg_artist_radio = stringResource(R.string.snackbar_artist_radio_started)
 
     Scaffold(
         snackbarHost = {
@@ -109,6 +111,12 @@ fun ArtistDetailScreen(
                                 snackbarHostState.showSnackbar("Reproducción aleatoria iniciada")
                             }
                         },
+                        onRadioClick = {
+                            viewModel.startArtistRadio()
+                            scope.launch {
+                                snackbarHostState.showSnackbar(msg_artist_radio)
+                            }
+                        },
                         onAddToQueueClick = {
                             viewModel.addToQueue()
                             scope.launch {
@@ -151,6 +159,7 @@ fun ArtistAlbumsList(
     onAlbumClick: (String) -> Unit,
     onPlayAllClick: () -> Unit,
     onShuffleAllClick: () -> Unit,
+    onRadioClick: () -> Unit = {},
     onAddToQueueClick: () -> Unit
 ) {
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -241,6 +250,13 @@ fun ArtistAlbumsList(
                     }
 
                     Button(
+                            onClick = onRadioClick,
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.height(40.dp)
+                        ) {
+                            Icon(Icons.Default.Radio, contentDescription = null, modifier = Modifier.size(18.dp))
+                        }
+                        Button(
                         onClick = onAddToQueueClick,
                         shape = RoundedCornerShape(24.dp),
                         enabled = !isPreparingPlayback,

@@ -84,6 +84,7 @@ fun PlaylistDetailScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val msg_shuffle_started = stringResource(R.string.snackbar_shuffle_started)
+    val msg_instant_mix = stringResource(R.string.snackbar_instant_mix_started)
     val msg_play_next = stringResource(R.string.snackbar_play_next)
     val msg_added_to_queue = stringResource(R.string.snackbar_added_to_queue)
     val msg_playlist_added_to_queue = stringResource(R.string.snackbar_playlist_added_to_queue)
@@ -188,6 +189,15 @@ fun PlaylistDetailScreen(
                             showTrackOptions = false
                             viewModel.addToQueue(track)
                             snackbarHostState.showSnackbar(msg_added_to_queue)
+                        }
+                    },
+                    onInstantMix = {
+                        val track = selectedTrack!!
+                        scope.launch {
+                            sheetState.hide()
+                            showTrackOptions = false
+                            viewModel.startInstantMix(track.id)
+                            snackbarHostState.showSnackbar(msg_instant_mix)
                         }
                     }
                 )

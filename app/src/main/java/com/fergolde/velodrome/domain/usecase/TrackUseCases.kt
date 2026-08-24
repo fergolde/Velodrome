@@ -54,6 +54,12 @@ class GetTopGlobalTracksUseCase @Inject constructor(
     }
 }
 
+class GetAllLocalTracksUseCase @Inject constructor(
+    private val repository: TrackRepository
+) {
+    suspend operator fun invoke(): List<Track> = repository.getAllLocalTracks()
+}
+
 // ========== WRAPPER ==========
 class TrackUseCases @Inject constructor(
     val observeTracksByAlbum: ObserveTracksByAlbumUseCase,
@@ -61,5 +67,6 @@ class TrackUseCases @Inject constructor(
     val getRandomSongs: GetRandomSongsUseCase,
     val searchRemoteTracks: SearchRemoteTracksUseCase,
     val getOfflineTracks: GetOfflineTracksUseCase,
-    val getTopGlobalTracks: GetTopGlobalTracksUseCase
+    val getTopGlobalTracks: GetTopGlobalTracksUseCase,
+    val getAllLocalTracks: GetAllLocalTracksUseCase
 )

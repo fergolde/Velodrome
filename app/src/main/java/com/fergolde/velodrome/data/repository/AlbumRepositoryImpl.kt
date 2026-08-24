@@ -11,6 +11,7 @@ import com.fergolde.velodrome.data.remote.dto.AlbumDto
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.repository.AlbumRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -167,6 +168,10 @@ class AlbumRepositoryImpl @Inject constructor(
     override suspend fun getMinYear(): Int {
         val min = localMusicDataSource.getMinYear()
         return if (min != null && min > 0) min else 1950
+    }
+
+    override suspend fun getLocalAlbums(): List<Album> {
+        return localMusicDataSource.observeAllAlbums().first().map { it.toDomain() }
     }
 
     override suspend fun albumCount(): Int {
