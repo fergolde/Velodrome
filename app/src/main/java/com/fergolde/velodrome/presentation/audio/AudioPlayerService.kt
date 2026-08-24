@@ -23,6 +23,7 @@ import com.fergolde.velodrome.data.local.dao.TrackDao
 import com.fergolde.velodrome.data.local.entity.TrackEntity
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.first
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
@@ -116,7 +117,10 @@ class AudioPlayerService : MediaSessionService() {
         val engine = EqualizerEngine(player.audioSessionId)
         equalizerEngine = engine
 
-        serviceScope.launch {
+        // lifecycleScope runs on Main: ExoPlayer must only be touched on its
+        // creation thread. DataStore does its own I/O off-thread, so collecting
+        // here costs nothing.
+        lifecycleScope.launch {
             settingsRepository.eqEnabled.collect { enabled ->
                 eqEnabled = enabled
                 engine.setEnabled(enabled)
@@ -125,7 +129,7 @@ class AudioPlayerService : MediaSessionService() {
                 }
             }
         }
-        serviceScope.launch {
+        lifecycleScope.launch {
             settingsRepository.bassBoostEnabled.collect { enabled ->
                 engine.setBassBoostEnabled(enabled)
             }
@@ -133,8 +137,10 @@ class AudioPlayerService : MediaSessionService() {
     }
 
     private fun applyPresetForCurrentTrack() {
+        // Main thread: capture the current item id before hopping to the IO
+        // scope for the Room genre lookup.
+        val trackId = exoPlayer?.currentMediaItem?.mediaId ?: return
         serviceScope.launch {
-            val trackId = exoPlayer?.currentMediaItem?.mediaId ?: return@launch
             equalizerEngine?.applyGenrePreset(genreForTrack(trackId))
         }
     }
