@@ -70,9 +70,10 @@ Mezclas automáticas que se extienden solas mientras escuchas:
 ### 🔎 Búsqueda rápida
 Búsqueda local e instantánea de canciones, artistas y álbumes con *debounce* inteligente, además de búsqueda remota en el servidor desde Explorar.
 
-### 📈 Integración con Last.fm
-- Scrobbling automático con detección precisa de transiciones.
-- Los scrobbles pendientes se agrupan y envían por lotes cuando hay conexión.
+### 📝 Scrobbling
+- Envía a tu servidor Navidrome lo que escuchas, con detección precisa de transiciones.
+- Funciona sin conexión: los scrobbles pendientes se agrupan y envían por lotes al volver.
+- Si tu servidor Navidrome está conectado a Last.fm, tu historial llega allí automáticamente.
 
 ### 🎨 Personalización
 - Color de acento configurable, incluido HEX personalizado.
@@ -86,22 +87,12 @@ Búsqueda local e instantánea de canciones, artistas y álbumes con *debounce* 
 
 ---
 
-## 📱 Capturas de pantalla
-
-> Añade aquí las capturas de la aplicación.
-
-| Inicio | Reproductor | Cola | Ecualizador |
-|--------|-------------|------|-------------|
-| Screenshot | Screenshot | Screenshot | Screenshot |
-
----
-
 ## ⚙️ Requisitos
 
 - Android 14 o superior
 - Servidor Navidrome accesible
 - Cuenta de usuario válida
-- (Opcional) Cuenta de Last.fm para scrobbling
+- (Opcional) Servidor Navidrome conectado a Last.fm si quieres llevar tu historial allí
 
 ---
 
