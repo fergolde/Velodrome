@@ -30,7 +30,7 @@ class AuthRepositoryImplTest {
 
     @Test
     fun `login success saves credentials and returns success`() = runTest {
-        val response = SubsonicResponse(SubsonicResponseDto(status = "ok", version = "1.16.1"))
+        val response = SubsonicResponse(SubsonicResponseDto(status = "ok"))
         coEvery { api.ping() } returns response
         every { credentialsManager.saveCredentials(any(), any(), any()) } just runs
 
@@ -44,7 +44,7 @@ class AuthRepositoryImplTest {
     @Test
     fun `login api error returns failure with error message`() = runTest {
         val response = SubsonicResponse(
-            SubsonicResponseDto(status = "fail", version = "1.16.1", error = ErrorDto(code = 401, message = "Invalid credentials"))
+            SubsonicResponseDto(status = "fail", error = ErrorDto(code = 401, message = "Invalid credentials"))
         )
         coEvery { api.ping() } returns response
         every { credentialsManager.saveCredentials(any(), any(), any()) } just runs

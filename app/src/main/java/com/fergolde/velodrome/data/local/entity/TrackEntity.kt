@@ -19,6 +19,5 @@ data class TrackEntity(
     val trackNumber: Int,
     val coverArtId: String?,
     val sizeBytes: Long = 0L,
-    val localFilePath: String? = null,
     val playCount: Int = 0
 )

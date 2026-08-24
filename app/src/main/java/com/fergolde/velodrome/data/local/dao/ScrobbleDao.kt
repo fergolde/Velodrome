@@ -13,9 +13,6 @@ interface ScrobbleDao {
     @Upsert
     suspend fun insertScrobble(scrobble: ScrobbleEntity): Long
 
-    @Query("DELETE FROM pending_scrobbles WHERE id = :id")
-    suspend fun deleteScrobble(id: Long)
-
     @Query("DELETE FROM pending_scrobbles WHERE id IN (:ids)")
     suspend fun deleteScrobbles(ids: List<Long>)
 }

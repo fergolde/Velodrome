@@ -99,7 +99,7 @@ class EntityMappersTest {
             id = "t1", albumId = "a1", artistName = "Artist",
             albumName = "Album", title = "Track 1",
             durationSec = 180, trackNumber = 1, coverArtId = "cov-1",
-            sizeBytes = 5000000L, localFilePath = "/music/track1.mp3", playCount = 5
+            sizeBytes = 5000000L, playCount = 5
         )
         val domain = entity.toDomain()
         assertEquals("t1", domain.id)
@@ -112,19 +112,17 @@ class EntityMappersTest {
         assertEquals("cov-1", domain.coverArtId)
         assertEquals(5000000L, domain.sizeBytes)
         assertEquals(5, domain.playCount)
-        assertEquals("/music/track1.mp3", domain.localFilePath)
     }
 
     @Test
-    fun trackEntity_toDomain_notCached() {
+    fun trackEntity_toDomain_nullCoverArt() {
         val entity = TrackEntity(
             id = "t2", albumId = "a1", artistName = "A",
             albumName = "B", title = "T", durationSec = 120,
-            trackNumber = 2, coverArtId = null, localFilePath = null
+            trackNumber = 2, coverArtId = null
         )
         val domain = entity.toDomain()
         assertNull(domain.coverArtId)
-        assertNull(domain.localFilePath)
     }
 
     @Test
@@ -133,7 +131,7 @@ class EntityMappersTest {
             id = "t1", albumId = "a1", albumName = "Album",
             artistName = "Artist", title = "Track 1", durationSec = 180,
             sizeBytes = 5000000L, trackNumber = 1,
-            playCount = 7, localFilePath = "/music/offline.mp3",
+            playCount = 7,
             coverArtId = "cov-1"
         )
         val entity = original.toEntity()
@@ -145,7 +143,6 @@ class EntityMappersTest {
         assertEquals(1, entity.trackNumber)
         assertEquals("cov-1", entity.coverArtId)
         assertEquals(7, entity.playCount)
-        assertEquals("/music/offline.mp3", entity.localFilePath)
         // Full round-trip: resync must not erase persisted fields
         assertEquals(original, entity.toDomain())
     }

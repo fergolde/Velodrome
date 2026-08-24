@@ -85,7 +85,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     private var mediaController: MediaController? = null
     private var controllerFuture: ListenableFuture<MediaController>? = null
-    private var isLoadingMoreCallbackInvoked = false
 
     private val playerScope = CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
     private var loadMoreCallback: (() -> Unit)? = null
@@ -204,7 +203,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         if (remaining <= 3 && !shuffle && !repeat) {
             loadMoreCallback?.let { callback ->
                 Log.d(TAG, "checkIfNeedMoreSongs: triggering loadMoreCallback")
-                isLoadingMoreCallbackInvoked = true
                 callback()
             }
         }
@@ -272,7 +270,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         _playlist.value = playlist
         // No actualizamos currentIndex/currentTrack aquí - el listener onMediaItemTransition 
         // del MediaController es la única fuente de verdad
-        isLoadingMoreCallbackInvoked = false
 
         val mediaItems = playlist.map { buildMediaItem(it) }
 
@@ -356,7 +353,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val currentPlaylist = _playlist.value.toMutableList()
         currentPlaylist.addAll(index, tracks)
         _playlist.value = currentPlaylist
-        isLoadingMoreCallbackInvoked = false
 
         val mediaItems = tracks.map { buildMediaItem(it) }
 
@@ -405,10 +401,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     fun appendToPlaylist(tracks: List<Track>) {
         Log.d(TAG, "appendToPlaylist: received ${tracks.size} tracks")
-        if (tracks.isEmpty()) {
-            isLoadingMoreCallbackInvoked = false
-            return
-        }
+        if (tracks.isEmpty()) return
         consumePendingRestore()
         _playlist.value += tracks
         val mediaItems = tracks.map { buildMediaItem(it) }
@@ -423,7 +416,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
             controller.addMediaItems(mediaItems)
             persistQueue()
-            isLoadingMoreCallbackInvoked = false
             Log.d(TAG, "appendToPlaylist: appended ${tracks.size} tracks, total=${controller.mediaItemCount}")
             if (controller.playbackState == Player.STATE_ENDED ||
                 controller.playbackState == Player.STATE_IDLE
@@ -433,8 +425,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             }
         } catch (error: Exception) {
             Log.e(TAG, "Unable to append ${tracks.size} tracks", error)
-        } finally {
-            isLoadingMoreCallbackInvoked = false
         }
     }
 
@@ -519,7 +509,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
         if (canLoadMore) {
             loadMoreCallback?.let { callback ->
-                isLoadingMoreCallbackInvoked = true
                 callback()
             }
         }

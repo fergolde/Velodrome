@@ -5,8 +5,6 @@ import com.fergolde.velodrome.domain.repository.AlbumRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
@@ -22,7 +20,6 @@ class AlbumUseCasesTest {
     private val getAlbum = GetAlbumUseCase(repository)
     private val searchLocal = SearchLocalAlbumsUseCase(repository)
     private val syncAlbums = SyncAlbumsUseCase(repository)
-    private val observeAlbums = ObserveAlbumsUseCase(repository)
     private val getMinYear = GetMinYearUseCase(repository)
 
     private val sampleAlbum = Album(id = "1", artistId = "a1", artistName = "Artist", title = "Album", year = 2020, genre = "Rock", coverUrl = "cov-1")
@@ -125,14 +122,6 @@ class AlbumUseCasesTest {
         val result = syncAlbums()
         assertTrue(result.isSuccess)
         assertEquals(42, result.getOrNull())
-    }
-
-    @Test
-    fun observeAlbums_emitsFromRepository() = runTest {
-        val albums = listOf(sampleAlbum)
-        coEvery { repository.observeAllAlbums() } returns flowOf(albums)
-        val result = observeAlbums().first()
-        assertEquals(albums, result)
     }
 
     @Test

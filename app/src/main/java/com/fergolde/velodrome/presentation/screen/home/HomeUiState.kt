@@ -8,9 +8,6 @@ import com.fergolde.velodrome.domain.model.Playlist
  * Represents the complete state of the HomeScreen UI.
  */
 data class HomeUiState(
-    val isLoading: Boolean = true,
-    val error: String? = null,
-
     // Recently added albums (RecentlyAdded section)
     val latestAlbums: List<Album> = emptyList(),
 
@@ -22,13 +19,6 @@ data class HomeUiState(
 
     // Random albums
     val randomAlbums: List<Album> = emptyList(),
-
-    // Available genres for filtering
-    val genres: List<String> = emptyList(),
-
-    // Playback state
-    val currentTrackId: String? = null,
-    val isPlaying: Boolean = false,
 
     // Server playlists (incl. AudioMuse auto-generated)
     val playlists: List<Playlist> = emptyList()

@@ -19,7 +19,7 @@ class ScrobbleRepositoryImplTest {
     private val repository = ScrobbleRepositoryImpl(api, dao)
 
     private fun ok() = SubsonicResponse(
-        SubsonicResponseDto(status = "ok", version = "1.16.1")
+        SubsonicResponseDto(status = "ok")
     )
 
     @Test

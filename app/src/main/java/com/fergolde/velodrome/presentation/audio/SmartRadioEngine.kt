@@ -18,7 +18,7 @@ sealed class RadioContext {
     data class Song(val seedTrackId: String) : RadioContext()
 
     /** Artist radio: dense start on the artist, opens toward taste affinities. */
-    data class Artist(val artistId: String, val artistName: String) : RadioContext()
+    data class Artist(val artistName: String) : RadioContext()
 }
 
 /** Local candidate with its resolved album genre (null when untagged). */

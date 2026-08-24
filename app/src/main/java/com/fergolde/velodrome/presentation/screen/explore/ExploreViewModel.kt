@@ -131,10 +131,7 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch {
             albumUseCases.getGenres()
                 .onSuccess { genres ->
-                    _uiState.update { it.copy(genres = genres, isLoading = false) }
-                }
-                .onFailure { e ->
-                    _uiState.update { it.copy(error = e.message, isLoading = false) }
+                    _uiState.update { it.copy(genres = genres) }
                 }
         }
     }
@@ -163,8 +160,6 @@ class ExploreViewModel @Inject constructor(
         val selectedGenres = _uiState.value.selectedGenres.toList()
         val yearRange = _uiState.value.selectedYearRange
 
-        _uiState.update { it.copy(isLoading = true) }
-
         val context = if (selectedGenres.isEmpty() && yearRange == null) {
             RadioContext.Random
         } else {
@@ -177,7 +172,6 @@ class ExploreViewModel @Inject constructor(
 
         viewModelScope.launch {
             smartRadioEngine.startRadio(context)
-            _uiState.update { it.copy(isLoading = false) }
         }
     }
 

@@ -96,7 +96,7 @@ class ArtistDetailViewModel @Inject constructor(
     fun startArtistRadio() {
         val name = uiState.value.artist?.name ?: return
         smartRadioEngine.stopRadio()
-        smartRadioEngine.startRadio(RadioContext.Artist(artistId = artistId, artistName = name))
+        smartRadioEngine.startRadio(RadioContext.Artist(artistName = name))
         _uiState.update { it.copy(isPreparingPlayback = true) }
     }
 

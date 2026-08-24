@@ -2,7 +2,6 @@ package com.fergolde.velodrome.domain.usecase
 
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.repository.AlbumRepository
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class GetLatestAlbumsUseCase @Inject constructor(
@@ -65,12 +64,6 @@ class SyncAlbumsUseCase @Inject constructor(
     suspend operator fun invoke(): Result<Int> = repository.syncAlbumsFromServer()
 }
 
-class ObserveAlbumsUseCase @Inject constructor(
-    private val repository: AlbumRepository
-) {
-    operator fun invoke(): Flow<List<Album>> = repository.observeAllAlbums()
-}
-
 class GetMinYearUseCase @Inject constructor(
     private val repository: AlbumRepository
 ) {
@@ -99,7 +92,6 @@ class AlbumUseCases @Inject constructor(
     val getAlbum: GetAlbumUseCase,
     val searchLocal: SearchLocalAlbumsUseCase,
     val syncAlbums: SyncAlbumsUseCase,
-    val observeAlbums: ObserveAlbumsUseCase,
     val getMinYear: GetMinYearUseCase,
     val albumCount: GetAlbumCountUseCase,
     val getLocalAlbums: GetLocalAlbumsUseCase

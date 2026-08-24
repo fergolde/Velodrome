@@ -14,7 +14,6 @@ data class SubsonicResponse(
 @JsonClass(generateAdapter = true)
 data class SubsonicResponseDto(
     val status: String,
-    val version: String,
 
     // Artists
     @param:Json(name = "artists") val artists: ArtistsDto? = null,

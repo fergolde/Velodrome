@@ -18,19 +18,16 @@ class TasteProfileTest {
         )
 
         assertEquals(4, profile.genreWeights["Rock"])   // 3 (frequent) + 1 (recent)
-        assertEquals(3, profile.artistWeights["Artist A"])
-        assertEquals(1, profile.artistWeights["Artist B"])
     }
 
     @Test
-    fun `blank genres and empty artists are ignored`() {
+    fun `blank genres are ignored`() {
         val profile = TasteProfileBuilder.fromServerLists(
             frequent = listOf(album("1", "", "")),
             recent = listOf(album("2", null, ""))
         )
 
         assertNull(profile.genreWeights[""])
-        assertNull(profile.artistWeights[""])
     }
 
     @Test

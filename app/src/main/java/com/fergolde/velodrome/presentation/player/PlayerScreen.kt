@@ -107,8 +107,7 @@ fun PlayerScreen(
     onMinimizeClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {},
-    onQueueClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)

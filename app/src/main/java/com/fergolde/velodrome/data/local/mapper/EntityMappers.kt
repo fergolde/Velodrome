@@ -51,8 +51,7 @@ fun TrackEntity.toDomain(): Track = Track(
     sizeBytes = sizeBytes,
     trackNumber = trackNumber,
     playCount = playCount,
-    coverArtId = coverArtId,
-    localFilePath = localFilePath
+    coverArtId = coverArtId
 )
 
 fun Track.toEntity(): TrackEntity = TrackEntity(
@@ -65,6 +64,5 @@ fun Track.toEntity(): TrackEntity = TrackEntity(
     trackNumber = trackNumber,
     coverArtId = coverArtId,
     sizeBytes = sizeBytes,
-    playCount = playCount,
-    localFilePath = localFilePath
+    playCount = playCount
 )

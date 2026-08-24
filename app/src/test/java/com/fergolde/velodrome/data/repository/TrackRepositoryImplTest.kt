@@ -40,7 +40,7 @@ class TrackRepositoryImplTest {
     @Test
     fun syncTracksForAlbum_success() = runTest {
         val directoryDto = DirectoryDto(child = listOf(sampleSongDto))
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", directory = directoryDto)
+        val dto = SubsonicResponseDto(status = "ok", directory = directoryDto)
         coEvery { api.getMusicDirectory("a1") } returns SubsonicResponse(dto)
         coEvery { trackDao.insertTracks(any()) } just runs
 
@@ -53,7 +53,7 @@ class TrackRepositoryImplTest {
     fun syncTracksForAlbum_filtersNonMusic() = runTest {
         val dirSong = SongDto(id = "t1", title = "Song", isDir = true, albumId = "a1")
         val directoryDto = DirectoryDto(child = listOf(dirSong))
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", directory = directoryDto)
+        val dto = SubsonicResponseDto(status = "ok", directory = directoryDto)
         coEvery { api.getMusicDirectory("a1") } returns SubsonicResponse(dto)
 
         val result = repository.syncTracksForAlbum("a1")
@@ -70,7 +70,7 @@ class TrackRepositoryImplTest {
     @Test
     fun getRandomSongs_success() = runTest {
         val randomDto = RandomSongsDto(song = listOf(sampleSongDto))
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", randomSongs = randomDto)
+        val dto = SubsonicResponseDto(status = "ok", randomSongs = randomDto)
         coEvery { api.getRandomSongs(50, null, null, null) } returns SubsonicResponse(dto)
         coEvery { trackDao.insertTracks(any()) } just runs
 
@@ -82,7 +82,7 @@ class TrackRepositoryImplTest {
     @Test
     fun searchRemoteTracks_success() = runTest {
         val searchDto = SearchResultDto(songs = listOf(sampleSongDto))
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", searchResult3 = searchDto)
+        val dto = SubsonicResponseDto(status = "ok", searchResult3 = searchDto)
         coEvery { api.search3(query = "query", songCount = 100) } returns SubsonicResponse(dto)
 
         val result = repository.searchRemoteTracks("query")

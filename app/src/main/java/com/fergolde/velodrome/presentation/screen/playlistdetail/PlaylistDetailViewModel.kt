@@ -48,11 +48,6 @@ class PlaylistDetailViewModel @Inject constructor(
                 _uiState.update { it.copy(currentTrackId = trackId) }
             }
         }
-        viewModelScope.launch {
-            playerManager.isPlaying.collect { playing ->
-                _uiState.update { it.copy(isPlaying = playing) }
-            }
-        }
     }
 
     private fun loadPlaylist() {
