@@ -430,14 +430,28 @@ fun SeekBar(
     duration: Int,
     onSeek: (Int) -> Unit
 ) {
+    // While dragging, the slider follows local state and only commits a single
+    // seek when the gesture ends — otherwise every frame fires an IPC seek plus
+    // a full queue serialization.
+    var isDragging by remember { mutableStateOf(false) }
+    var dragProgress by remember { mutableFloatStateOf(0f) }
+
     val progress = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
+    val shownPosition = if (isDragging) (dragProgress * duration).toInt() else currentPosition
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Slider interactivo
         Slider(
-            value = progress,
+            value = if (isDragging) dragProgress else progress,
             onValueChange = { newProgress ->
-                onSeek((newProgress * duration).toInt())
+                isDragging = true
+                dragProgress = newProgress
+            },
+            onValueChangeFinished = {
+                if (duration > 0) {
+                    onSeek((dragProgress * duration).toInt())
+                }
+                isDragging = false
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -453,7 +467,7 @@ fun SeekBar(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = formatTime(currentPosition),
+                text = formatTime(shownPosition),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium
