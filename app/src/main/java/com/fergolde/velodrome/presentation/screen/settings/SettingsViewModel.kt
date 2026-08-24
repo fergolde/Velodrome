@@ -26,6 +26,8 @@ data class SettingsUiState(
     val musicCacheSizeGb: Int = 2,
     val accentColor: String = "#B6A0FF",
     val scrobbleEnabled: Boolean = false,
+    val eqEnabled: Boolean = false,
+    val bassBoostEnabled: Boolean = false,
     val currentImageCacheSize: String = "0 MB",
     val currentMusicCacheSize: String = "0 GB",
     val isClearingCache: Boolean = false,
@@ -63,6 +65,8 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.musicCacheSizeGb,
         settingsRepository.accentColor,
         settingsRepository.scrobbleEnabled,
+        settingsRepository.eqEnabled,
+        settingsRepository.bassBoostEnabled,
         _currentCacheSizes,
         _isClearingCache,
         _pendingImageCacheMb,
@@ -75,12 +79,14 @@ class SettingsViewModel @Inject constructor(
             musicCacheSizeGb = (values[1] as? Int) ?: 2,
             accentColor = values[2] as String,
             scrobbleEnabled = values[3] as Boolean,
-            currentImageCacheSize = (values[4] as Pair<*, *>).first as String,
-            currentMusicCacheSize = (values[4] as Pair<*, *>).second as String,
-            isClearingCache = values[5] as Boolean,
-            pendingImageCacheMb = values[6] as Int,
-            pendingMusicCacheGb = values[7] as Int,
-            hasPendingChanges = values[8] as Boolean,
+            eqEnabled = values[4] as Boolean,
+            bassBoostEnabled = values[5] as Boolean,
+            currentImageCacheSize = (values[6] as Pair<*, *>).first as String,
+            currentMusicCacheSize = (values[6] as Pair<*, *>).second as String,
+            isClearingCache = values[7] as Boolean,
+            pendingImageCacheMb = values[8] as Int,
+            pendingMusicCacheGb = values[9] as Int,
+            hasPendingChanges = values[10] as Boolean,
             appVersion = BuildConfig.VERSION_NAME
         )
     }.stateIn(
@@ -176,6 +182,14 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.setScrobbleEnabled(enabled)
         }
+    }
+
+    fun setEqEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setEqEnabled(enabled) }
+    }
+
+    fun setBassBoostEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setBassBoostEnabled(enabled) }
     }
 
     /**

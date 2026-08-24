@@ -207,6 +207,26 @@ fun SettingsScreen(
                 }
             }
 
+            // Sound
+            VeloSettingsSection(eyebrow = stringResource(R.string.settings_sound_section)) {
+                VeloSettingsSwitchRow(
+                    icon     = Icons.Default.Equalizer,
+                    iconTint = VeloPalette.AccentDefault,
+                    title    = stringResource(R.string.settings_eq_title),
+                    subtitle = stringResource(R.string.settings_eq_desc),
+                    checked  = uiState.eqEnabled,
+                    onCheckedChange = viewModel::setEqEnabled,
+                )
+                VeloSettingsSwitchRow(
+                    icon     = Icons.Default.MusicNote,
+                    iconTint = Color(0xFF60A5FA),
+                    title    = stringResource(R.string.settings_bass_title),
+                    subtitle = stringResource(R.string.settings_bass_desc),
+                    checked  = uiState.bassBoostEnabled,
+                    onCheckedChange = viewModel::setBassBoostEnabled,
+                )
+            }
+
             // Scrobble
             VeloSettingsSection(eyebrow = "Last.fm") {
                 VeloSettingsSwitchRow(

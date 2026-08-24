@@ -123,6 +123,13 @@
     <string name="error_invalid_url">The provided URL has an invalid format.</string>
     <string name="error_network_generic">Network error: Wrong user or password, or server unreachable.</string>
 
+    <!-- Sound settings -->
+    <string name="settings_sound_section">Sound</string>
+    <string name="settings_eq_title">Automatic equalizer</string>
+    <string name="settings_eq_desc">Adjusts sound to each song\'s genre</string>
+    <string name="settings_bass_title">Bass boost</string>
+    <string name="settings_bass_desc">Boosts low frequencies (best with headphones)</string>
+
     <!-- Snackbar feedback -->
     <string name="snackbar_shuffle_started">Shuffle playback started</string>
     <string name="snackbar_play_next">Playing next</string>
