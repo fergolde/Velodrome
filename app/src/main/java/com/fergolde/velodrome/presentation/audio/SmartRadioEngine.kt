@@ -81,6 +81,10 @@ class SmartRadioEngine @Inject constructor(
     private var corePool = mutableListOf<SmartItem>()
     private var explorePool = mutableListOf<SmartItem>()
     private var genreByAlbum: Map<String, String?> = emptyMap()
+
+    /** Whole-library snapshot cached across radio sessions (see [loadLocalLibrary]). */
+    private var libraryCache: List<SmartItem>? = null
+    private var libraryCacheAlbumCount = -1
     private var explorationBias = ARTIST_EXPLORE_START
 
     /** Set for Song seeds: the seed itself always opens the mix. */
@@ -248,8 +252,7 @@ class SmartRadioEngine @Inject constructor(
     // ── Smart contexts ────────────────────────────────────────────────────────
 
     private suspend fun buildSongPools(seedTrackId: String) {
-        ensureLocalLibrary()
-        val all = corePool + explorePool
+        val all = loadLocalLibrary()
         val seed = all.firstOrNull { it.track.id == seedTrackId }
         if (seed == null) {
             // Seed not resolvable locally: fall back to server random discovery.
@@ -270,20 +273,29 @@ class SmartRadioEngine @Inject constructor(
     }
 
     private suspend fun buildArtistPools(artistName: String) {
-        ensureLocalLibrary()
-        val all = corePool + explorePool
+        val all = loadLocalLibrary()
         val core = all.filter { it.track.artistName == artistName }
         val explore = all.filter { it.track.artistName != artistName }
         replaceSmartPools(core.shuffled(), explore.shuffled())
     }
 
-    private suspend fun ensureLocalLibrary() {
+    /**
+     * Whole-library snapshot for pool building, cached across radio sessions.
+     * A COUNT(*) album probe detects library changes cheaply; the full
+     * re-materialization of both Room tables only happens when the count
+     * differs from the cached one.
+     */
+    private suspend fun loadLocalLibrary(): List<SmartItem> {
+        libraryCache?.let { cached ->
+            if (albumUseCases.albumCount() == libraryCacheAlbumCount) return cached
+        }
         val albums = albumUseCases.getLocalAlbums().associateBy { it.id }
         genreByAlbum = albums.mapValues { it.value.genre }
-        val tracks = trackUseCases.getAllLocalTracks()
-        val items = tracks.map { SmartItem(it, genreByAlbum[it.albumId]) }
-        replaceSmartPools(items.filter { it.genre != null }, items.filter { it.genre == null })
-        // Temporary split: buildSongPools/buildArtistPools re-partition properly.
+        val items = trackUseCases.getAllLocalTracks()
+            .map { SmartItem(it, genreByAlbum[it.albumId]) }
+        libraryCache = items
+        libraryCacheAlbumCount = albums.size
+        return items
     }
 
     private fun replaceSmartPools(core: List<SmartItem>, explore: List<SmartItem>) {
