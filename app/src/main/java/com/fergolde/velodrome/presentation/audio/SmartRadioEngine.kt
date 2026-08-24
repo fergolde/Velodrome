@@ -335,9 +335,16 @@ class SmartRadioEngine @Inject constructor(
             if (System.currentTimeMillis() - tasteProfileAt < PROFILE_TTL_MS) return it
         }
         val fresh = runCatching {
-            val frequent = albumUseCases.getTopAlbums(PROFILE_SIZE).getOrDefault(emptyList())
-            val recent = albumUseCases.getRecentlyPlayedAlbums(PROFILE_SIZE).getOrDefault(emptyList())
-            TasteProfileBuilder.fromServerLists(frequent, recent)
+            // The two server lists are independent: fetch them concurrently so
+            // the profile costs max(latency) instead of their sum.
+            coroutineScope {
+                val frequentDeferred = async { albumUseCases.getTopAlbums(PROFILE_SIZE) }
+                val recentDeferred = async { albumUseCases.getRecentlyPlayedAlbums(PROFILE_SIZE) }
+                TasteProfileBuilder.fromServerLists(
+                    frequent = frequentDeferred.await().getOrDefault(emptyList()),
+                    recent = recentDeferred.await().getOrDefault(emptyList())
+                )
+            }
         }.getOrNull()
         if (fresh != null) {
             tasteProfile = fresh
