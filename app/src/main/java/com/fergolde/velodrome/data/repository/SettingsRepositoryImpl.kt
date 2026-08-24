@@ -22,6 +22,8 @@ class SettingsRepositoryImpl @Inject constructor(
         val MUSIC_CACHE_SIZE_GB = intPreferencesKey("music_cache_size_gb")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
         val SCROBBLE_ENABLED = booleanPreferencesKey("scrobble_enabled")
+        val EQ_ENABLED = booleanPreferencesKey("eq_enabled")
+        val BASS_BOOST_ENABLED = booleanPreferencesKey("bass_boost_enabled")
         val LAST_SYNC_TIMESTAMP = longPreferencesKey("last_sync_timestamp")
         val LAST_SYNC_OFFSET = intPreferencesKey("last_sync_offset")
         val LAST_SERVER_CHECK_AT = longPreferencesKey("last_server_check_at")
@@ -32,6 +34,8 @@ class SettingsRepositoryImpl @Inject constructor(
         const val DEFAULT_MUSIC_CACHE_SIZE_GB = 2
         const val DEFAULT_ACCENT_COLOR = "#B6A0FF"
         const val DEFAULT_SCROBBLE_ENABLED = false
+        const val DEFAULT_EQ_ENABLED = false
+        const val DEFAULT_BASS_BOOST_ENABLED = false
         const val DEFAULT_LAST_SYNC_TIMESTAMP = 0L
         const val DEFAULT_LAST_SYNC_OFFSET = 0
     }
@@ -49,6 +53,12 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override val scrobbleEnabled: Flow<Boolean> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.SCROBBLE_ENABLED] ?: DEFAULT_SCROBBLE_ENABLED }
+
+    override val eqEnabled: Flow<Boolean> = dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.EQ_ENABLED] ?: DEFAULT_EQ_ENABLED }
+
+    override val bassBoostEnabled: Flow<Boolean> = dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.BASS_BOOST_ENABLED] ?: DEFAULT_BASS_BOOST_ENABLED }
 
     override val lastSyncTimestamp: Flow<Long> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.LAST_SYNC_TIMESTAMP] ?: DEFAULT_LAST_SYNC_TIMESTAMP }
@@ -84,6 +94,14 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setScrobbleEnabled(enabled: Boolean) {
         dataStore.edit { it[PreferencesKeys.SCROBBLE_ENABLED] = enabled }
+    }
+
+    override suspend fun setEqEnabled(enabled: Boolean) {
+        dataStore.edit { it[PreferencesKeys.EQ_ENABLED] = enabled }
+    }
+
+    override suspend fun setBassBoostEnabled(enabled: Boolean) {
+        dataStore.edit { it[PreferencesKeys.BASS_BOOST_ENABLED] = enabled }
     }
 
     override suspend fun setLastSyncTimestamp(timestamp: Long) {

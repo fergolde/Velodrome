@@ -123,6 +123,13 @@
     <string name="error_invalid_url">La URL proporcionada no tiene un formato válido.</string>
     <string name="error_network_generic">Error de red: Usuario o contraseña incorrectos, o servidor inaccesible.</string>
 
+    <!-- Sound settings -->
+    <string name="settings_sound_section">Sonido</string>
+    <string name="settings_eq_title">Ecualizador automático</string>
+    <string name="settings_eq_desc">Adapta el sonido al género de cada canción</string>
+    <string name="settings_bass_title">Refuerzo de graves</string>
+    <string name="settings_bass_desc">Realza las frecuencias bajas (ideal con auriculares)</string>
+
     <!-- Snackbar feedback -->
     <string name="snackbar_shuffle_started">Reproducción aleatoria iniciada</string>
     <string name="snackbar_play_next">Se reproducirá a continuación</string>

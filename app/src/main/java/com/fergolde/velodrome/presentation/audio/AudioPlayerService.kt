@@ -18,8 +18,11 @@ import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.fergolde.velodrome.MainActivity
+import com.fergolde.velodrome.data.local.dao.AlbumDao
 import com.fergolde.velodrome.data.local.dao.TrackDao
 import com.fergolde.velodrome.data.local.entity.TrackEntity
+import com.fergolde.velodrome.domain.repository.SettingsRepository
+import kotlinx.coroutines.flow.first
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
@@ -47,6 +50,17 @@ class AudioPlayerService : MediaSessionService() {
 
     @Inject
     lateinit var trackDao: TrackDao
+
+    @Inject
+    lateinit var albumDao: AlbumDao
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
+    private var equalizerEngine: EqualizerEngine? = null
+
+    @Volatile
+    private var eqEnabled = false
 
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(serviceJob + Dispatchers.IO)
@@ -79,6 +93,8 @@ class AudioPlayerService : MediaSessionService() {
         exoPlayer?.addAnalyticsListener(analyticsListener)
         exoPlayer?.addListener(playerListener)
 
+        setupEqualizer()
+
         val intent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
@@ -88,6 +104,44 @@ class AudioPlayerService : MediaSessionService() {
         mediaSession = MediaSession.Builder(this, exoPlayer!!)
             .setSessionActivity(pendingIntent)
             .build()
+    }
+
+    /**
+     * Attaches the session audio effects (genre auto-preset EQ + optional bass
+     * boost) to ExoPlayer's audio session and keeps them in sync with settings.
+     * Best-effort: devices without effect support just stay silent.
+     */
+    private fun setupEqualizer() {
+        val player = exoPlayer ?: return
+        val engine = EqualizerEngine(player.audioSessionId)
+        equalizerEngine = engine
+
+        serviceScope.launch {
+            settingsRepository.eqEnabled.collect { enabled ->
+                eqEnabled = enabled
+                engine.setEnabled(enabled)
+                if (enabled) {
+                    applyPresetForCurrentTrack()
+                }
+            }
+        }
+        serviceScope.launch {
+            settingsRepository.bassBoostEnabled.collect { enabled ->
+                engine.setBassBoostEnabled(enabled)
+            }
+        }
+    }
+
+    private fun applyPresetForCurrentTrack() {
+        serviceScope.launch {
+            val trackId = exoPlayer?.currentMediaItem?.mediaId ?: return@launch
+            equalizerEngine?.applyGenrePreset(genreForTrack(trackId))
+        }
+    }
+
+    private suspend fun genreForTrack(trackId: String): String? {
+        val albumId = trackDao.getTrackById(trackId)?.albumId ?: return null
+        return albumDao.getAlbumById(albumId)?.genre
     }
 
     // El sistema llama a este método cuando un MediaController (como el de AudioPlayerManager) intenta conectarse
@@ -105,6 +159,8 @@ class AudioPlayerService : MediaSessionService() {
         exoPlayer = null
         precacheJobs.clear()
         serviceJob.cancel()
+        equalizerEngine?.release()
+        equalizerEngine = null
         super.onDestroy()
     }
 
@@ -121,6 +177,7 @@ class AudioPlayerService : MediaSessionService() {
             mediaItem?.let {
                 currentTrackId = it.mediaId
                 currentDuration = exoPlayer?.duration?.takeIf { d -> d > 0 } ?: 0L
+                if (eqEnabled) applyPresetForCurrentTrack()
             }
 
             // Fin natural de pista (auto-avance o repeat-one): marcar la anterior

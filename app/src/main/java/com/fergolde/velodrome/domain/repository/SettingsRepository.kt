@@ -38,6 +38,18 @@ interface SettingsRepository {
      */
     val scrobbleEnabled: Flow<Boolean>
 
+    /**
+     * Automatic genre-based equalizer on the audio session.
+     * Default: false
+     */
+    val eqEnabled: Flow<Boolean>
+
+    /**
+     * Bass boost effect on the audio session.
+     * Default: false
+     */
+    val bassBoostEnabled: Flow<Boolean>
+
     // --- Sync State ---
 
     /**
@@ -68,6 +80,10 @@ interface SettingsRepository {
     suspend fun setAccentColor(hexColor: String)
 
     suspend fun setScrobbleEnabled(enabled: Boolean)
+
+    suspend fun setEqEnabled(enabled: Boolean)
+
+    suspend fun setBassBoostEnabled(enabled: Boolean)
 
     suspend fun setLastSyncTimestamp(timestamp: Long)
 
