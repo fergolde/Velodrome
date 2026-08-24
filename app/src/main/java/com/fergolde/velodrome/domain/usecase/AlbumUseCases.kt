@@ -83,6 +83,12 @@ class GetAlbumCountUseCase @Inject constructor(
     suspend operator fun invoke(): Int = repository.albumCount()
 }
 
+class GetLocalAlbumsUseCase @Inject constructor(
+    private val repository: AlbumRepository
+) {
+    suspend operator fun invoke(): List<Album> = repository.getLocalAlbums()
+}
+
 // ========== WRAPPER ==========
 class AlbumUseCases @Inject constructor(
     val getLatestAlbums: GetLatestAlbumsUseCase,
@@ -95,5 +101,6 @@ class AlbumUseCases @Inject constructor(
     val syncAlbums: SyncAlbumsUseCase,
     val observeAlbums: ObserveAlbumsUseCase,
     val getMinYear: GetMinYearUseCase,
-    val albumCount: GetAlbumCountUseCase
+    val albumCount: GetAlbumCountUseCase,
+    val getLocalAlbums: GetLocalAlbumsUseCase
 )

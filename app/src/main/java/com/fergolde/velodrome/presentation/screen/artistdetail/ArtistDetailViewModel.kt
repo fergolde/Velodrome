@@ -8,6 +8,7 @@ import com.fergolde.velodrome.domain.model.Artist
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.ArtistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
+import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -89,6 +90,14 @@ class ArtistDetailViewModel @Inject constructor(
         }
 
         allTracks
+    }
+
+    /** Smart artist radio: dense on this artist, opening toward taste affinities. */
+    fun startArtistRadio() {
+        val name = uiState.value.artist?.name ?: return
+        smartRadioEngine.stopRadio()
+        smartRadioEngine.startRadio(RadioContext.Artist(artistId = artistId, artistName = name))
+        _uiState.update { it.copy(isPreparingPlayback = true) }
     }
 
     fun playAll() {

@@ -7,6 +7,7 @@ import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
+import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -130,6 +131,12 @@ class AlbumDetailViewModel @Inject constructor(
 
         val shuffled = tracks.shuffled()
         playerManager.setPlaylist(shuffled, startIndex = 0, startPlaying = true)
+    }
+
+    /** Instant mix seeded by this track's features (genre/artist). */
+    fun startInstantMix(trackId: String) {
+        smartRadioEngine.stopRadio()
+        smartRadioEngine.startRadio(RadioContext.Song(trackId))
     }
 
     fun addAllToQueue() {

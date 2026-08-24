@@ -58,6 +58,11 @@ interface AlbumRepository {
     suspend fun albumCount(): Int
 
     /**
+     * Local library albums snapshot (offline) for pool building.
+     */
+    suspend fun getLocalAlbums(): List<Album>
+
+    /**
      * Get the minimum year from albums in the database.
      */
     suspend fun getMinYear(): Int

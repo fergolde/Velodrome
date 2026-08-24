@@ -130,6 +130,12 @@
     <string name="settings_bass_title">Bass boost</string>
     <string name="settings_bass_desc">Boosts low frequencies (best with headphones)</string>
 
+    <!-- Instant mix / artist radio -->
+    <string name="options_instant_mix_title">Instant mix</string>
+    <string name="options_instant_mix_subtitle">Radio seeded from this song</string>
+    <string name="snackbar_instant_mix_started">Instant mix started</string>
+    <string name="snackbar_artist_radio_started">Artist radio started</string>
+
     <!-- Snackbar feedback -->
     <string name="snackbar_shuffle_started">Shuffle playback started</string>
     <string name="snackbar_play_next">Playing next</string>
