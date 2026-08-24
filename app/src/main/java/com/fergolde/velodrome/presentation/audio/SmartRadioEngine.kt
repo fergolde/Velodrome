@@ -191,7 +191,6 @@ class SmartRadioEngine @Inject constructor(
             // A callback from a superseded or stopped session must not append
             // tracks over a newer playlist.
             if (gen != sessionGen || currentContext == null) return@launch
-            Log.d(TAG, "onLoadMoreRequested: pool.size=${pool.size} core=${corePool.size} explore=${explorePool.size}")
             refillPool()
             val nextTracks = pickNext(10)
             if (nextTracks.isNotEmpty()) {
@@ -208,7 +207,6 @@ class SmartRadioEngine @Inject constructor(
 
         try {
             val ctx = currentContext ?: return
-            Log.d(TAG, "refillPool: context=$ctx")
 
             when (ctx) {
                 is RadioContext.Random -> refillLegacy { trackUseCases.getRandomSongs(size = 50) }
@@ -254,7 +252,6 @@ class SmartRadioEngine @Inject constructor(
         val existingPoolIds = pool.map { it.id }.toSet()
         val newFiltered = newSongs
             .filter { it.id !in existingPoolIds && it.id !in sessionPlayedIds }
-        Log.d(TAG, "appendLegacy: newSongs=${newSongs.size} new=${newFiltered.size} poolBefore=${existingPoolIds.size}")
 
         if (newFiltered.isNotEmpty()) {
             pool.addAll(newFiltered)

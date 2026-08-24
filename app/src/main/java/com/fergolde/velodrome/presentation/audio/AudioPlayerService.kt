@@ -237,16 +237,10 @@ class AudioPlayerService : MediaSessionService() {
                 // Skip tracks that are already fully cached: CacheWriter would
                 // resolve spans and download nothing, pure churn per event.
                 val expectedSize = trackDao.getTrackById(trackId)?.sizeBytes ?: 0L
-                if (cacheManager.isTrackFullyCached(trackId, expectedSize)) {
-                    Log.d(TAG, "Precache skipped (already cached) track=$trackId")
-                    return@launch
-                }
+                if (cacheManager.isTrackFullyCached(trackId, expectedSize)) return@launch
                 // Near the quota a new download would only evict other tracks'
                 // LRU spans for marginal benefit.
-                if (cacheManager.isAtOrAboveQuota(PRECACHE_QUOTA_FRACTION)) {
-                    Log.d(TAG, "Precache skipped (cache near quota) track=$trackId")
-                    return@launch
-                }
+                if (cacheManager.isAtOrAboveQuota(PRECACHE_QUOTA_FRACTION)) return@launch
                 repeat(PRECACHE_ATTEMPTS) { attempt ->
                     try {
                         val dataSource = cacheDataSourceFactory.createDataSourceForDownloading()
@@ -257,7 +251,6 @@ class AudioPlayerService : MediaSessionService() {
                             null
                         )
                         writer.cache()
-                        Log.d(TAG, "Precached track=$trackId")
                         return@launch
                     } catch (error: CancellationException) {
                         throw error

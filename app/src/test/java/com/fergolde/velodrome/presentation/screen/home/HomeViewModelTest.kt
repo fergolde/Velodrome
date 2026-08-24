@@ -1,6 +1,5 @@
 package com.fergolde.velodrome.presentation.screen.home
 
-import android.util.Log
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
@@ -39,9 +38,6 @@ class HomeViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        mockkStatic(Log::class)
-        every { Log.d(any(), any()) } returns 0
-        every { Log.e(any(), any()) } returns 0
         coEvery { albumUseCases.albumCount() } returns 10
         coEvery { artistUseCases.artistCount() } returns 10
         coEvery { albumUseCases.syncAlbums() } returns Result.success(0)
@@ -54,7 +50,6 @@ class HomeViewModelTest {
 
     @After
     fun tearDown() {
-        unmockkStatic(Log::class)
         Dispatchers.resetMain()
     }
 
