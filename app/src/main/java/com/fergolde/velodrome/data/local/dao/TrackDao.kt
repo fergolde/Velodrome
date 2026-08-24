@@ -19,7 +19,4 @@ interface TrackDao {
 
     @Upsert
     suspend fun insertTracks(tracks: List<TrackEntity>)
-
-    @Upsert
-    suspend fun insertTrack(track: TrackEntity)
 }

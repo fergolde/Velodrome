@@ -15,7 +15,7 @@ import com.fergolde.velodrome.data.local.entity.TrackEntity
 
 @Database(
     entities = [ArtistEntity::class, AlbumEntity::class, TrackEntity::class, ScrobbleEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class VelodromeDatabase : RoomDatabase() {
@@ -53,6 +53,18 @@ abstract class VelodromeDatabase : RoomDatabase() {
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE tracks DROP COLUMN localFilePath")
+            }
+        }
+
+        /**
+         * v4 -> v5: delete metadata-placeholder rows (albumId="") that the
+         * player service used to insert on every transition for unsynced
+         * tracks. They polluted the library snapshot and broke EQ genre
+         * lookup / artwork resolution.
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DELETE FROM tracks WHERE albumId = ''")
             }
         }
     }
