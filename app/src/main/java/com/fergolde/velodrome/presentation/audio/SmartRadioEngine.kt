@@ -68,6 +68,13 @@ class SmartRadioEngine @Inject constructor(
     private var genreByAlbum: Map<String, String?> = emptyMap()
     private var explorationBias = ARTIST_EXPLORE_START
 
+    /** Set for Song seeds: the seed itself always opens the mix. */
+    private var smartSeedTrack: Track? = null
+
+    /** Removes and returns a random element, or null when empty. */
+    private fun <T> MutableList<T>.removeRandomOrNull(): T? =
+        if (isEmpty()) null else removeAt(Random.nextInt(size))
+
     @Volatile
     private var tasteProfile: TasteProfile? = null
     private var tasteProfileAt = 0L
@@ -83,6 +90,7 @@ class SmartRadioEngine @Inject constructor(
         corePool.clear()
         explorePool.clear()
         explorationBias = ARTIST_EXPLORE_START
+        smartSeedTrack = null
         sessionPlayedIds.clear()
         recentArtists.clear()
         isRefilling = false
@@ -96,6 +104,7 @@ class SmartRadioEngine @Inject constructor(
             corePool.clear()
             explorePool.clear()
             explorationBias = ARTIST_EXPLORE_START
+            smartSeedTrack = null
             sessionPlayedIds.clear()
             recentArtists.clear()
             isRefilling = false
@@ -108,7 +117,28 @@ class SmartRadioEngine @Inject constructor(
                 lastTwo.forEach { recentArtists.addLast(it.artistName) }
             }
 
-            val initialTracks = pickNext(10)
+            // Product rule: the seed always opens the mix.
+            // - Song seed: that exact track plays first.
+            // - Artist seed: a random track by the artist plays first.
+            val initialTracks = mutableListOf<Track>()
+            when (val ctx = currentContext) {
+                is RadioContext.Song -> smartSeedTrack?.let { seed ->
+                    smartSeedTrack = null
+                    initialTracks.add(seed)
+                    sessionPlayedIds.add(seed.id)
+                    recentArtists.addLast(seed.artistName)
+                    if (recentArtists.size > 2) recentArtists.removeFirst()
+                }
+                is RadioContext.Artist -> (corePool.removeRandomOrNull()
+                    ?: explorePool.removeRandomOrNull())?.let { item ->
+                    initialTracks.add(item.track)
+                    sessionPlayedIds.add(item.track.id)
+                    recentArtists.addLast(item.track.artistName)
+                    if (recentArtists.size > 2) recentArtists.removeFirst()
+                }
+                else -> {}
+            }
+            initialTracks.addAll(pickNext(count = 10 - initialTracks.size))
             if (initialTracks.isNotEmpty()) {
                 withContext(Dispatchers.Main) {
                     playerManager.setPlaylist(initialTracks, startPlaying = true)
@@ -202,6 +232,7 @@ class SmartRadioEngine @Inject constructor(
             topUpExploreFromServer(force = true)
             return
         }
+        smartSeedTrack = seed.track
         val core = all.filter {
             it !== seed && (
                 (seed.genre != null && it.genre == seed.genre) ||
