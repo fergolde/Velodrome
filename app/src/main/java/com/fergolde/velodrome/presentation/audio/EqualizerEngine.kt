@@ -47,6 +47,24 @@ class EqualizerEngine(audioSessionId: Int) {
 
     private val bassBoost: BassBoost? = runCatching { BassBoost(0, audioSessionId) }.getOrNull()
 
+    /**
+     * Preset names are fixed for the lifetime of the effect, so they are
+     * enumerated once instead of on every track transition (each getPresetName
+     * call is a binder round-trip). Keys are lowercased so lookups keep the
+     * previous case-insensitive matching.
+     */
+    private val presetIndexByName: Map<String, Short> by lazy {
+        val eq = equalizer ?: return@lazy emptyMap()
+        runCatching {
+            (0 until eq.numberOfPresets).associate { index ->
+                eq.getPresetName(index.toShort()).lowercase() to index.toShort()
+            }
+        }.getOrDefault(emptyMap())
+    }
+
+    /** Last preset applied; re-applying the same curve can cause audible blips. */
+    private var lastAppliedPreset: Short? = null
+
     val isAvailable: Boolean = equalizer != null
 
     fun setEnabled(enabled: Boolean) {
@@ -58,15 +76,14 @@ class EqualizerEngine(audioSessionId: Int) {
     fun applyGenrePreset(genre: String?) {
         val eq = equalizer ?: return
         runCatching {
-            val names = (0 until eq.numberOfPresets).map { eq.getPresetName(it.toShort()) }
             val wanted = presetNameForGenre(genre)
-            val idx = names.indexOfFirst { it.equals(wanted, ignoreCase = true) }
-                // Fallback: any vendor "Normal" preset when the bucket is missing
-                .takeIf { it >= 0 }
-                ?: names.indexOfFirst { it.equals("Normal", ignoreCase = true) }
-                    .takeIf { it >= 0 }
+            // Fallback: any vendor "Normal" preset when the bucket is missing
+            val idx = presetIndexByName[wanted.lowercase()]
+                ?: presetIndexByName["normal"]
                 ?: return
-            eq.usePreset(idx.toShort())
+            if (idx == lastAppliedPreset) return
+            eq.usePreset(idx)
+            lastAppliedPreset = idx
         }.onFailure { Log.w(TAG, "applyGenrePreset failed", it) }
     }
 

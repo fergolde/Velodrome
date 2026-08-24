@@ -18,7 +18,6 @@ import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.fergolde.velodrome.MainActivity
-import com.fergolde.velodrome.data.local.dao.AlbumDao
 import com.fergolde.velodrome.data.local.dao.TrackDao
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.util.CacheManager
@@ -51,9 +50,6 @@ class AudioPlayerService : MediaSessionService() {
 
     @Inject
     lateinit var trackDao: TrackDao
-
-    @Inject
-    lateinit var albumDao: AlbumDao
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
@@ -148,10 +144,8 @@ class AudioPlayerService : MediaSessionService() {
         }
     }
 
-    private suspend fun genreForTrack(trackId: String): String? {
-        val albumId = trackDao.getTrackById(trackId)?.albumId ?: return null
-        return albumDao.getAlbumById(albumId)?.genre
-    }
+    private suspend fun genreForTrack(trackId: String): String? =
+        trackDao.findGenreByTrackId(trackId)
 
     // El sistema llama a este método cuando un MediaController (como el de AudioPlayerManager) intenta conectarse
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
