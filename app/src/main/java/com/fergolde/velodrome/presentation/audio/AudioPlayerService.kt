@@ -21,6 +21,7 @@ import com.fergolde.velodrome.MainActivity
 import com.fergolde.velodrome.data.local.dao.AlbumDao
 import com.fergolde.velodrome.data.local.dao.TrackDao
 import com.fergolde.velodrome.domain.repository.SettingsRepository
+import com.fergolde.velodrome.util.CacheManager
 import kotlinx.coroutines.flow.first
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
@@ -56,6 +57,9 @@ class AudioPlayerService : MediaSessionService() {
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
+
+    @Inject
+    lateinit var cacheManager: CacheManager
 
     private var equalizerEngine: EqualizerEngine? = null
 
@@ -236,6 +240,19 @@ class AudioPlayerService : MediaSessionService() {
 
         val job = serviceScope.launch {
             try {
+                // Skip tracks that are already fully cached: CacheWriter would
+                // resolve spans and download nothing, pure churn per event.
+                val expectedSize = trackDao.getTrackById(trackId)?.sizeBytes ?: 0L
+                if (cacheManager.isTrackFullyCached(trackId, expectedSize)) {
+                    Log.d(TAG, "Precache skipped (already cached) track=$trackId")
+                    return@launch
+                }
+                // Near the quota a new download would only evict other tracks'
+                // LRU spans for marginal benefit.
+                if (cacheManager.isAtOrAboveQuota(PRECACHE_QUOTA_FRACTION)) {
+                    Log.d(TAG, "Precache skipped (cache near quota) track=$trackId")
+                    return@launch
+                }
                 repeat(PRECACHE_ATTEMPTS) { attempt ->
                     try {
                         val dataSource = cacheDataSourceFactory.createDataSourceForDownloading()
@@ -294,5 +311,6 @@ class AudioPlayerService : MediaSessionService() {
         private const val TAG = "AudioPlayerService"
         private const val PRECACHE_ATTEMPTS = 3
         private const val PRECACHE_RETRY_DELAY_MS = 500L
+        private const val PRECACHE_QUOTA_FRACTION = 0.9
     }
 }

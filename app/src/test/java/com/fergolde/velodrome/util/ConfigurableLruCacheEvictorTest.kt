@@ -22,4 +22,15 @@ class ConfigurableLruCacheEvictorTest {
 
         verify(exactly = 1) { cache.removeSpan(span) }
     }
+
+    @Test
+    fun peekMaxBytesReflectsCurrentLimit() {
+        val cache = mockk<Cache>()
+        val evictor = ConfigurableLruCacheEvictor(initialMaxBytes = Long.MAX_VALUE)
+
+        assert(evictor.peekMaxBytes() == Long.MAX_VALUE)
+
+        evictor.setMaxBytes(cache, 42L)
+        assert(evictor.peekMaxBytes() == 42L)
+    }
 }

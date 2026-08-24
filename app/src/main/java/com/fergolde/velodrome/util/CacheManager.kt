@@ -128,6 +128,18 @@ class CacheManager @Inject constructor(
     }
 
     /**
+     * True when music cache usage has reached [fraction] of its configured
+     * limit. Callers can use this to avoid writing into a nearly-full cache,
+     * which would only evict other tracks' spans via the LRU evictor.
+     */
+    fun isAtOrAboveQuota(fraction: Double): Boolean {
+        val limit = musicCacheEvictor.peekMaxBytes()
+        // Effectively unlimited until CacheManager reconciles the DataStore value.
+        if (limit >= Long.MAX_VALUE / 2) return false
+        return getMusicCacheSizeBytes() >= limit * fraction
+    }
+
+    /**
      * Validates if a track is fully cached by comparing downloaded bytes vs expected size.
      * SimpleCache.keys returns anything that touched the disk, even partial downloads.
      * This method ensures only fully (90%+) downloaded tracks are marked as offline.
