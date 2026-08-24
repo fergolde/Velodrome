@@ -1,6 +1,5 @@
 package com.fergolde.velodrome.presentation.screen.home
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
@@ -18,8 +17,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-private const val TAG_OFFLINE = "LOCAL_OFFLINE"
 
 /**
  * ViewModel for the Navidrome Home Screen.
@@ -164,18 +161,11 @@ class HomeViewModel @Inject constructor(
      * Plays only locally cached/offline tracks.
      */
     fun playOfflineOnly() {
-        Log.d(TAG_OFFLINE, "=== playOfflineOnly() called ===")
         viewModelScope.launch {
-            Log.d(TAG_OFFLINE, "Calling getOfflineTracks use case...")
             val offlineTracks = trackUseCases.getOfflineTracks()
-            Log.d(TAG_OFFLINE, "getOfflineTracks returned: ${offlineTracks.size} tracks")
             if (offlineTracks.isNotEmpty()) {
-                Log.d(TAG_OFFLINE, "Calling playerManager.playNow with ${offlineTracks.size} tracks")
                 playerManager.playNow(offlineTracks.shuffledWithArtistSpacing())
                 playerManager.setLoadMoreCallback { /* no auto-load for offline list */ }
-                Log.d(TAG_OFFLINE, "playerManager.playNow called successfully")
-            } else {
-                Log.d(TAG_OFFLINE, "No offline tracks found - playlist stays empty")
             }
         }
     }

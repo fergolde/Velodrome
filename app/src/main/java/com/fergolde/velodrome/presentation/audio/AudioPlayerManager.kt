@@ -204,12 +204,9 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val shuffle = _isShuffleEnabled.value
         val repeat = _isRepeatEnabled.value
 
-        Log.d(TAG, "checkIfNeedMoreSongs: idx=$currentIndex total=$totalItems remaining=$remaining shuffle=$shuffle repeat=$repeat callback=${loadMoreCallback != null}")
-
         // Si quedan menos de 3, no hay shuffle/repeat activo, disparar callback
         if (remaining <= 3 && !shuffle && !repeat) {
             loadMoreCallback?.let { callback ->
-                Log.d(TAG, "checkIfNeedMoreSongs: triggering loadMoreCallback")
                 callback()
             }
         }
@@ -429,7 +426,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     }
 
     fun appendToPlaylist(tracks: List<Track>) {
-        Log.d(TAG, "appendToPlaylist: received ${tracks.size} tracks")
         if (tracks.isEmpty()) return
         consumePendingRestore()
         _playlist.value += tracks
@@ -445,7 +441,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
             controller.addMediaItems(mediaItems)
             persistQueue()
-            Log.d(TAG, "appendToPlaylist: appended ${tracks.size} tracks, total=${controller.mediaItemCount}")
             if (controller.playbackState == Player.STATE_ENDED ||
                 controller.playbackState == Player.STATE_IDLE
             ) {
@@ -534,7 +529,6 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         val shuffle = _isShuffleEnabled.value
         val repeat = _isRepeatEnabled.value
         val canLoadMore = !hasNext && !shuffle && !repeat
-        Log.d(TAG, "handlePlaybackEnded: hasNext=$hasNext canLoadMore=$canLoadMore")
 
         if (canLoadMore) {
             loadMoreCallback?.let { callback ->

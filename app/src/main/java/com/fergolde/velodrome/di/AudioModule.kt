@@ -60,12 +60,7 @@ object AudioModule {
             .setCacheKeyFactory(NavidromeCacheKeyFactory())
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
             .setEventListener(object : CacheDataSource.EventListener {
-                override fun onCachedBytesRead(cacheSizeBytes: Long, cachedBytesRead: Long) {
-                    android.util.Log.d(
-                        "AudioCache",
-                        "read=$cachedBytesRead cacheSize=$cacheSizeBytes"
-                    )
-                }
+                override fun onCachedBytesRead(cacheSizeBytes: Long, cachedBytesRead: Long) = Unit
 
                 override fun onCacheIgnored(reason: Int) {
                     android.util.Log.w("AudioCache", "cache ignored reason=$reason")
