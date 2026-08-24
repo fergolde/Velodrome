@@ -56,6 +56,21 @@ class SmartRadioEngine @Inject constructor(
 ) {
     private val engineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    /**
+     * All engine state is confined to this serial dispatcher: mutations can no
+     * longer race with stopRadio() (which used to run inline on Main) and the
+     * check-then-act in refillPool is safe because a limitedParallelism(1)
+     * dispatcher never runs two statements in parallel.
+     */
+    private val radioDispatcher = Dispatchers.IO.limitedParallelism(1)
+
+    /** Active session job; cancelled whenever a new radio supersedes or stops it. */
+    private var engineJob: Job? = null
+
+    /** Bumped on every start/stop so stale load-more callbacks become no-ops. */
+    @Volatile
+    private var sessionGen = 0L
+
     private var currentContext: RadioContext? = null
     private val pool = mutableListOf<Track>()
     private val sessionPlayedIds = mutableSetOf<String>()
@@ -83,31 +98,24 @@ class SmartRadioEngine @Inject constructor(
      * Detiene cualquier radio activa: limpia estado y desactiva el auto-extendido
      * para que una reproducción normal (álbum, etc.) no se "contamine".
      * El perfil de gusto se conserva entre radios (cache de 24 h).
+     *
+     * The load-more callback is detached immediately (Main-safe); the state
+     * clear runs on the confined dispatcher, cancelling any in-flight session.
      */
     fun stopRadio() {
-        currentContext = null
-        pool.clear()
-        corePool.clear()
-        explorePool.clear()
-        explorationBias = ARTIST_EXPLORE_START
-        smartSeedTrack = null
-        sessionPlayedIds.clear()
-        recentArtists.clear()
-        isRefilling = false
+        sessionGen++
+        engineJob?.cancel()
         playerManager.setLoadMoreCallback { }
+        engineScope.launch(radioDispatcher) {
+            clearRadioState(context = null)
+        }
     }
 
     fun startRadio(context: RadioContext) {
-        engineScope.launch {
-            currentContext = context
-            pool.clear()
-            corePool.clear()
-            explorePool.clear()
-            explorationBias = ARTIST_EXPLORE_START
-            smartSeedTrack = null
-            sessionPlayedIds.clear()
-            recentArtists.clear()
-            isRefilling = false
+        sessionGen++
+        engineJob?.cancel()
+        engineJob = engineScope.launch(radioDispatcher) {
+            clearRadioState(context)
 
             refillPool()
 
@@ -148,8 +156,24 @@ class SmartRadioEngine @Inject constructor(
         }
     }
 
+    private fun clearRadioState(context: RadioContext?) {
+        currentContext = context
+        pool.clear()
+        corePool.clear()
+        explorePool.clear()
+        explorationBias = ARTIST_EXPLORE_START
+        smartSeedTrack = null
+        sessionPlayedIds.clear()
+        recentArtists.clear()
+        isRefilling = false
+    }
+
     private fun onLoadMoreRequested() {
-        engineScope.launch {
+        val gen = sessionGen
+        engineScope.launch(radioDispatcher) {
+            // A callback from a superseded or stopped session must not append
+            // tracks over a newer playlist.
+            if (gen != sessionGen || currentContext == null) return@launch
             Log.d(TAG, "onLoadMoreRequested: pool.size=${pool.size} core=${corePool.size} explore=${explorePool.size}")
             refillPool()
             val nextTracks = pickNext(10)
