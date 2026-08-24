@@ -5,11 +5,15 @@ import android.media.audiofx.Equalizer
 import android.util.Log
 
 /** Genre keyword buckets -> preferred system preset name. */
-private val ROCK = setOf("rock", "metal", "punk", "grunge", "alternative", "hard rock", "indie")
+private val ROCK = setOf("rock", "metal", "heavy", "punk", "grunge", "alternative", "alternativo", "alternativa", "hard rock", "indie")
 private val POP = setOf("pop", "top 40", "charts")
 private val JAZZ = setOf("jazz", "blues", "bossa", "swing", "soul", "funk")
 private val CLASSICAL = setOf("classical", "clásica", "opera", "ópera", "symphony", "sinfónica", "chamber", "piano")
-private val DANCE = setOf("dance", "electronic", "electrónica", "techno", "house", "edm", "hip hop", "hip-hop", "rap", "reggaeton", "reggaetón", "trap")
+private val DANCE = setOf(
+    "dance", "electronic", "electrónica", "electro", "techno", "house", "edm",
+    "hip hop", "hip-hop", "rap", "reggaeton", "reggaetón", "trap",
+    "latin", "latina", "latino", "salsa", "cumbia", "bachata", "merengue"
+)
 private val FOLK = setOf("folk", "country", "acoustic", "acústico", "singer-songwriter", "world")
 
 /**

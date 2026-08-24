@@ -40,4 +40,26 @@ class EqualizerPresetMappingTest {
         assertEquals("Rock", presetNameForGenre("ROCK"))
         assertEquals("Jazz", presetNameForGenre("jAzZ"))
     }
+
+    @Test
+    fun `user library genres map as designed`() {
+        // The exact genre list of the owner's library — regression guard.
+        val expected = mapOf(
+            "Hip-Hop" to "Dance",
+            "pop" to "Pop",
+            "heavy" to "Rock",
+            "rock" to "Rock",
+            "folk rock" to "Rock",
+            "latin" to "Dance",
+            "alternativo" to "Rock",
+            "punk" to "Rock",
+            "country" to "Folk",
+            "electro" to "Dance",
+            "folk metal" to "Rock",
+            "dance" to "Dance"
+        )
+        expected.forEach { (genre, preset) ->
+            assertEquals("genre: $genre", preset, presetNameForGenre(genre))
+        }
+    }
 }
