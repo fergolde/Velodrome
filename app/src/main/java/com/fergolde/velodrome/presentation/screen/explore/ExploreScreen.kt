@@ -575,7 +575,7 @@ fun SearchResultsView(
                         SearchResultLabel("Artistas")
                         Spacer(Modifier.height(12.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            items(searchResults.artists.take(10)) { artist ->
+                            items(searchResults.artists.take(10), key = { it.id }) { artist ->
                                 VeloArtistCircle(artist = artist, onClick = { onArtistClick(artist.id) })
                             }
                         }
@@ -587,7 +587,7 @@ fun SearchResultsView(
                         SearchResultLabel("Álbumes")
                         Spacer(Modifier.height(12.dp))
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            items(searchResults.albums.take(10)) { album ->
+                            items(searchResults.albums.take(10), key = { it.id }) { album ->
                                 VeloAlbumCard(album = album, artSize = 110.dp, onClick = { onAlbumClick(album.id) })
                             }
                         }
