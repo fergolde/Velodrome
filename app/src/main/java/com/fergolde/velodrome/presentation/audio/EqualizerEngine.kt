@@ -65,8 +65,6 @@ class EqualizerEngine(audioSessionId: Int) {
     /** Last preset applied; re-applying the same curve can cause audible blips. */
     private var lastAppliedPreset: Short? = null
 
-    val isAvailable: Boolean = equalizer != null
-
     fun setEnabled(enabled: Boolean) {
         val eq = equalizer ?: return
         runCatching { eq.enabled = enabled }

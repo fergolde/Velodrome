@@ -130,7 +130,6 @@ data class SongDto(
     @param:Json(name = "album") val album: String? = null,
     @param:Json(name = "albumId") val albumId: String? = null,
     @param:Json(name = "artist") val artist: String? = null,
-    @param:Json(name = "artistId") val artistId: String? = null,
 
     @param:Json(name = "track") val track: Int? = null,
     @param:Json(name = "coverArt") val coverArt: String? = null,

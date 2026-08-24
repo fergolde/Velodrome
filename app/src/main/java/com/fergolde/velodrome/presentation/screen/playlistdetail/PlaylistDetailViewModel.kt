@@ -23,8 +23,7 @@ data class PlaylistDetailUiState(
     val tracks: List<Track> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
-    val currentTrackId: String? = null,
-    val isPlaying: Boolean = false
+    val currentTrackId: String? = null
 )
 
 @HiltViewModel
