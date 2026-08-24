@@ -23,7 +23,9 @@ import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +33,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
@@ -89,6 +92,10 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     private val playerScope = CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
     private var loadMoreCallback: (() -> Unit)? = null
     private val retryAttempts = mutableMapOf<String, Int>()
+
+    @Volatile
+    private var persistDirty = false
+    private var persistJob: Job? = null
 
     /**
      * Snapshot loaded at cold start. While non-null the UI shows the restored
@@ -218,20 +225,42 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         }
     }
 
-    // ─── Queue persistence (local, event-driven: never on a timer) ──────────
+    // ─── Queue persistence (local, event-driven, debounced) ─────────────────
 
+    /**
+     * Schedules a queue snapshot write. Rapid bursts (transition -> pause ->
+     * seek callbacks) coalesce into a single write ~300ms after the last event,
+     * and JSON serialization + disk I/O run on IO so the main thread only
+     * flips a flag. The snapshot is built AFTER the quiet window from the
+     * current state, so it is never stale.
+     */
     private fun persistQueue() {
-        val tracks = _playlist.value
-        if (tracks.isEmpty()) return
-        val snapshot = QueueSnapshot(
-            tracks = tracks.map { it.toDto() },
-            currentIndex = _currentIndex.value.coerceIn(0, tracks.lastIndex),
-            positionMs = _currentPosition.value
-        )
-        playerScope.launch { queueSnapshotStore.save(snapshot) }
+        persistDirty = true
+        if (persistJob?.isActive == true) return
+        persistJob = playerScope.launch {
+            while (persistDirty) {
+                persistDirty = false
+                delay(PERSIST_DEBOUNCE_MS.milliseconds)
+            }
+            withContext(Dispatchers.IO) {
+                val tracks = _playlist.value
+                if (tracks.isNotEmpty()) {
+                    queueSnapshotStore.save(
+                        QueueSnapshot(
+                            tracks = tracks.map { it.toDto() },
+                            currentIndex = _currentIndex.value.coerceIn(0, tracks.lastIndex),
+                            positionMs = _currentPosition.value
+                        )
+                    )
+                }
+            }
+        }
     }
 
+    /** Cancels any pending debounced write so it cannot resurrect a cleared queue. */
     private fun clearPersistedQueue() {
+        persistDirty = false
+        persistJob?.cancel()
         playerScope.launch { queueSnapshotStore.clear() }
     }
 
@@ -581,6 +610,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     private companion object {
         const val TAG = "AudioPlayerManager"
+        const val PERSIST_DEBOUNCE_MS = 300L
     }
 
 }
