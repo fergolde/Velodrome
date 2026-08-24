@@ -14,6 +14,13 @@ interface TrackDao {
     @Query("SELECT * FROM tracks WHERE id = :id")
     suspend fun getTrackById(id: String): TrackEntity?
 
+    @Query(
+        "SELECT albums.genre FROM tracks " +
+            "INNER JOIN albums ON tracks.albumId = albums.id " +
+            "WHERE tracks.id = :trackId LIMIT 1"
+    )
+    suspend fun findGenreByTrackId(trackId: String): String?
+
     @Query("SELECT * FROM tracks WHERE albumId = :albumId ORDER BY trackNumber ASC")
     fun observeTracksByAlbum(albumId: String): Flow<List<TrackEntity>>
 
