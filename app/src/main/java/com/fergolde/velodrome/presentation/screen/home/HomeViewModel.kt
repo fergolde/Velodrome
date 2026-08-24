@@ -26,8 +26,6 @@ private const val TAG_OFFLINE = "LOCAL_OFFLINE"
  * Manages the state of all home screen features including:
  * - Recently added albums
  * - Most played albums
- * - Genre and year filtering
- * - Playback state (synced with PlayerManager)
  * - Initial sync to local DB for search
  */
 @HiltViewModel
@@ -46,7 +44,6 @@ class HomeViewModel @Inject constructor(
     init {
         syncIfEmpty()
         loadInitialData()
-        syncWithPlayerManager()
     }
 
     private fun syncIfEmpty() {
@@ -62,22 +59,6 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * Sync UI state with PlayerManager injected instance
-     */
-    private fun syncWithPlayerManager() {
-        viewModelScope.launch {
-            playerManager.isPlaying.collect { isPlaying ->
-                _uiState.update { it.copy(isPlaying = isPlaying) }
-            }
-        }
-        viewModelScope.launch {
-            playerManager.currentTrack.collect { track ->
-                _uiState.update { it.copy(currentTrackId = track?.id) }
-            }
-        }
-    }
-
-    /**
      * Loads all initial data for the home screen.
      * Called on ViewModel initialization.
      */
@@ -86,7 +67,6 @@ class HomeViewModel @Inject constructor(
         loadTopAlbums()
         loadRecentlyPlayedAlbums()
         loadRandomAlbums()
-        loadGenres()
         loadPlaylists()
     }
 
@@ -96,23 +76,9 @@ class HomeViewModel @Inject constructor(
      */
     fun loadLatestAlbums(size: Int = 20) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
             albumUseCases.getLatestAlbums(size)
                 .onSuccess { albums ->
-                    _uiState.update {
-                        it.copy(
-                            latestAlbums = albums,
-                            isLoading = false
-                        )
-                    }
-                }
-                .onFailure { error ->
-                    _uiState.update {
-                        it.copy(
-                            error = error.message ?: "Failed to load latest albums",
-                            isLoading = false
-                        )
-                    }
+                    _uiState.update { it.copy(latestAlbums = albums) }
                 }
         }
     }
@@ -160,18 +126,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Loads available genres for filtering.
-     */
-    private fun loadGenres() {
-        viewModelScope.launch {
-            albumUseCases.getGenres()
-                .onSuccess { genres ->
-                    _uiState.update { it.copy(genres = genres) }
-                }
-        }
-    }
-
     private fun loadPlaylists() {
         viewModelScope.launch {
             runCatching {
@@ -187,10 +141,8 @@ class HomeViewModel @Inject constructor(
      * Uses SmartRadioEngine for shuffle logic.
      */
     fun playShuffle() {
-        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             smartRadioEngine.startRadio(RadioContext.Random)
-            _uiState.update { it.copy(isLoading = false, isPlaying = true) }
         }
     }
 
@@ -198,7 +150,6 @@ class HomeViewModel @Inject constructor(
      * Plays the Top 100 most played songs.
      */
     fun playTop100() {
-        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             trackUseCases.getTopGlobalTracks(size = 100).onSuccess { tracks ->
                 if (tracks.isNotEmpty()) {
@@ -206,7 +157,6 @@ class HomeViewModel @Inject constructor(
                     playerManager.setLoadMoreCallback { /* no auto-load for static list */ }
                 }
             }
-            _uiState.update { it.copy(isLoading = false) }
         }
     }
 
@@ -215,7 +165,6 @@ class HomeViewModel @Inject constructor(
      */
     fun playOfflineOnly() {
         Log.d(TAG_OFFLINE, "=== playOfflineOnly() called ===")
-        _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             Log.d(TAG_OFFLINE, "Calling getOfflineTracks use case...")
             val offlineTracks = trackUseCases.getOfflineTracks()
@@ -228,7 +177,6 @@ class HomeViewModel @Inject constructor(
             } else {
                 Log.d(TAG_OFFLINE, "No offline tracks found - playlist stays empty")
             }
-            _uiState.update { it.copy(isLoading = false) }
         }
     }
 
@@ -236,9 +184,7 @@ class HomeViewModel @Inject constructor(
      * Starts the discovery radio mode with random songs.
      */
     fun playDiscovery() {
-        _uiState.update { it.copy(isLoading = true) }
         smartRadioEngine.startRadio(RadioContext.Random)
-        _uiState.update { it.copy(isLoading = false) }
     }
 
 }

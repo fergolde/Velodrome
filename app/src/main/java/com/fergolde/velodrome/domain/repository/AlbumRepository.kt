@@ -2,18 +2,11 @@ package com.fergolde.velodrome.domain.repository
 
 import androidx.paging.PagingSource
 import com.fergolde.velodrome.domain.model.Album
-import kotlinx.coroutines.flow.Flow
 
 /**
  * Repository interface for album operations.
  */
 interface AlbumRepository {
-    /**
-     * Observa todos los albums desde la base de datos local (offline-first).
-     * Returns un Flow reactivo que emite actualizaciones.
-     */
-    fun observeAllAlbums(): Flow<List<Album>>
-
     /**
      * Paging source for efficient loading of albums.
      */

@@ -9,8 +9,6 @@ import java.util.Calendar
  * UI State for Explore Screen
  */
 data class ExploreUiState(
-    val isLoading: Boolean = false,
-    val error: String? = null,
     val randomArtists: List<Artist> = emptyList(),
     val randomAlbums: List<Album> = emptyList(),
     val genres: List<String> = emptyList(),

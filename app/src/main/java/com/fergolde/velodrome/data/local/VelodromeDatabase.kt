@@ -15,7 +15,7 @@ import com.fergolde.velodrome.data.local.entity.TrackEntity
 
 @Database(
     entities = [ArtistEntity::class, AlbumEntity::class, TrackEntity::class, ScrobbleEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class VelodromeDatabase : RoomDatabase() {
@@ -46,6 +46,13 @@ abstract class VelodromeDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE artists DROP COLUMN updatedAt")
                 db.execSQL("ALTER TABLE albums DROP COLUMN updatedAt")
                 db.execSQL("ALTER TABLE tracks DROP COLUMN updatedAt")
+            }
+        }
+
+        /** v3 -> v4: drop write-only localFilePath column from tracks. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tracks DROP COLUMN localFilePath")
             }
         }
     }

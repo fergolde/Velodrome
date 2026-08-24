@@ -37,8 +37,7 @@ internal fun presetNameForGenre(genre: String?): String {
 
 /**
  * Wraps Android's session audio effects around ExoPlayer's audio session.
- * Everything is best-effort: devices without EQ support degrade silently
- * (isAvailable == false, all calls become no-ops).
+ * Everything is best-effort: devices without EQ support degrade silently to no-ops.
  */
 class EqualizerEngine(audioSessionId: Int) {
 

@@ -34,7 +34,7 @@ class ArtistRepositoryImplTest {
         val artistDto = ArtistDto(id = "1", name = "Artist 1", albumCount = 3, coverArt = "art-1")
         val index = ArtistIndexDto(name = "A", artists = listOf(artistDto))
         val artistsDto = ArtistsDto(indexes = listOf(index), artistList = null)
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", artists = artistsDto)
+        val dto = SubsonicResponseDto(status = "ok", artists = artistsDto)
         coEvery { api.getArtists(500, 0) } returns SubsonicResponse(dto)
         coEvery { localDataSource.insertArtists(any()) } just runs
 
@@ -54,7 +54,7 @@ class ArtistRepositoryImplTest {
         val artistDto = ArtistDto(id = "1", name = "Rock &amp; Roll Band", albumCount = 3, coverArt = "art-1")
         val index = ArtistIndexDto(name = "A", artists = listOf(artistDto))
         val artistsDto = ArtistsDto(indexes = listOf(index), artistList = null)
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", artists = artistsDto)
+        val dto = SubsonicResponseDto(status = "ok", artists = artistsDto)
         coEvery { api.getArtists(500, 0) } returns SubsonicResponse(dto)
         coEvery { localDataSource.insertArtists(any()) } just runs
 
@@ -70,7 +70,7 @@ class ArtistRepositoryImplTest {
     fun syncArtists_usesArtistListWhenNoIndexes() = runTest {
         val artistDto = ArtistDto(id = "1", name = "Artist", albumCount = 3, coverArt = "art-1")
         val artistsDto = ArtistsDto(indexes = null, artistList = listOf(artistDto))
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", artists = artistsDto)
+        val dto = SubsonicResponseDto(status = "ok", artists = artistsDto)
         coEvery { api.getArtists(500, 0) } returns SubsonicResponse(dto)
         coEvery { localDataSource.insertArtists(any()) } just runs
 
@@ -83,7 +83,7 @@ class ArtistRepositoryImplTest {
     fun getArtist_success() = runTest {
         val albumDto = AlbumDto(id = "a1", name = "Album", artist = "Artist", artistId = "1", year = 2020)
         val detailDto = ArtistDetailDto(id = "1", name = "Artist", albumCount = 5, coverArt = "art-1", albums = listOf(albumDto))
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", artist = detailDto)
+        val dto = SubsonicResponseDto(status = "ok", artist = detailDto)
         coEvery { api.getArtist("1") } returns SubsonicResponse(dto)
 
         val result = repository.getArtist("1")

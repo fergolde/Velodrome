@@ -61,7 +61,6 @@ class ExploreViewModelTest {
         advanceUntilIdle()
 
         val state = vm.uiState.value
-        assertFalse(state.isLoading)
         assertFalse(state.isSearching)
         assertEquals("", state.searchQuery)
         assertTrue(state.genres.isEmpty())
@@ -202,15 +201,5 @@ class ExploreViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf("Rock", "Pop"), vm.uiState.value.genres)
-    }
-
-    @Test
-    fun loadContent_failure_setsError() = runTest {
-        coEvery { albumUseCases.getGenres() } returns Result.failure(Exception("API error"))
-
-        val vm = createViewModel()
-        advanceUntilIdle()
-
-        assertEquals("API error", vm.uiState.value.error)
     }
 }

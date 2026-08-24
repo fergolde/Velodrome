@@ -7,8 +7,6 @@ import com.fergolde.velodrome.data.remote.NavidromeApi
 import com.fergolde.velodrome.data.remote.dto.*
 import com.fergolde.velodrome.domain.model.Album
 import io.mockk.*
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
@@ -30,18 +28,9 @@ class AlbumRepositoryImplTest {
     )
 
     @Test
-    fun observeAllAlbums_mapsEntities() = runTest {
-        val entity = AlbumEntity(id = "1", artistId = "a1", artistName = "A", title = "T", year = 2020, genre = "Rock", coverUrl = "cov-1")
-        coEvery { localDataSource.observeAllAlbums() } returns flowOf(listOf(entity))
-        val result = repository.observeAllAlbums().first()
-        assertEquals(1, result.size)
-        assertEquals("1", result[0].id)
-    }
-
-    @Test
     fun getLatestAlbums_success() = runTest {
         val listDto = AlbumListDto(albums = listOf(sampleAlbumDto))
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", albumList2 = listDto)
+        val dto = SubsonicResponseDto(status = "ok", albumList2 = listDto)
         coEvery { api.getAlbumList2(type = "newest", size = 20) } returns SubsonicResponse(dto)
         val result = repository.getLatestAlbums(20)
         assertTrue(result.isSuccess)
@@ -51,7 +40,7 @@ class AlbumRepositoryImplTest {
     @Test
     fun getLatestAlbums_emptyList() = runTest {
         val listDto = AlbumListDto(albums = null)
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", albumList2 = listDto)
+        val dto = SubsonicResponseDto(status = "ok", albumList2 = listDto)
         coEvery { api.getAlbumList2(type = "newest", size = 20) } returns SubsonicResponse(dto)
         val result = repository.getLatestAlbums(20)
         assertTrue(result.isSuccess)
@@ -68,7 +57,7 @@ class AlbumRepositoryImplTest {
     @Test
     fun getTopAlbums_success() = runTest {
         val listDto = AlbumListDto(albums = listOf(sampleAlbumDto))
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", albumList2 = listDto)
+        val dto = SubsonicResponseDto(status = "ok", albumList2 = listDto)
         coEvery { api.getAlbumList2(type = "frequent", size = 20) } returns SubsonicResponse(dto)
         val result = repository.getTopAlbums(20)
         assertTrue(result.isSuccess)
@@ -78,7 +67,7 @@ class AlbumRepositoryImplTest {
     @Test
     fun getAlbum_success() = runTest {
         val detailDto = AlbumDetailDto(id = "1", title = "Album", artist = "Artist", artistId = "a1", coverArt = "cov-1", year = 2020, genre = "Rock")
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", album = detailDto)
+        val dto = SubsonicResponseDto(status = "ok", album = detailDto)
         coEvery { api.getAlbum("1") } returns SubsonicResponse(dto)
         val result = repository.getAlbum("1")
         assertTrue(result.isSuccess)
@@ -89,7 +78,7 @@ class AlbumRepositoryImplTest {
     fun getGenres_success() = runTest {
         val genreDtos = listOf(GenreDto(name = "Rock", value = "rock"), GenreDto(name = "Pop", value = "pop"))
         val genresDto = GenresDto(genres = genreDtos)
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", genres = genresDto)
+        val dto = SubsonicResponseDto(status = "ok", genres = genresDto)
         coEvery { api.getGenres() } returns SubsonicResponse(dto)
         val result = repository.getGenres()
         assertTrue(result.isSuccess)
@@ -100,7 +89,7 @@ class AlbumRepositoryImplTest {
     fun getGenres_fallbackToName() = runTest {
         val genreDtos = listOf(GenreDto(name = "Rock", value = null))
         val genresDto = GenresDto(genres = genreDtos)
-        val dto = SubsonicResponseDto(status = "ok", version = "1.16.1", genres = genresDto)
+        val dto = SubsonicResponseDto(status = "ok", genres = genresDto)
         coEvery { api.getGenres() } returns SubsonicResponse(dto)
         val result = repository.getGenres()
         assertEquals(listOf("Rock"), result.getOrNull())

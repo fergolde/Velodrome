@@ -29,7 +29,8 @@ object DatabaseModule {
             VelodromeDatabase.DATABASE_NAME
         ).addMigrations(
             VelodromeDatabase.MIGRATION_1_2,
-            VelodromeDatabase.MIGRATION_2_3
+            VelodromeDatabase.MIGRATION_2_3,
+            VelodromeDatabase.MIGRATION_3_4
         ).build()
     }
 

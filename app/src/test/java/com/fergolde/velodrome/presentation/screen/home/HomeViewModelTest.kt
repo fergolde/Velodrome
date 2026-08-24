@@ -12,8 +12,6 @@ import com.fergolde.velodrome.presentation.player.PlayerManager
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -38,17 +36,12 @@ class HomeViewModelTest {
     private val sampleAlbum = Album(id = "a1", artistId = "art1", artistName = "Artist", title = "Album", year = 2020, genre = "Rock", coverUrl = "cov-1")
     private val sampleTrack = Track(id = "t1", albumId = "a1", title = "Song", durationSec = 180, sizeBytes = 5000000, trackNumber = 1)
 
-    private val isPlayingFlow = MutableStateFlow(false)
-    private val currentTrackFlow = MutableStateFlow<Track?>(null)
-
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         mockkStatic(Log::class)
         every { Log.d(any(), any()) } returns 0
         every { Log.e(any(), any()) } returns 0
-        coEvery { playerManager.isPlaying } returns isPlayingFlow
-        coEvery { playerManager.currentTrack } returns currentTrackFlow
         coEvery { albumUseCases.albumCount() } returns 10
         coEvery { artistUseCases.artistCount() } returns 10
         coEvery { albumUseCases.syncAlbums() } returns Result.success(0)
@@ -57,7 +50,6 @@ class HomeViewModelTest {
         coEvery { albumUseCases.getTopAlbums(any()) } returns Result.success(emptyList())
         coEvery { albumUseCases.getRecentlyPlayedAlbums(any()) } returns Result.success(emptyList())
         coEvery { albumUseCases.getRandomAlbums(any()) } returns Result.success(emptyList())
-        coEvery { albumUseCases.getGenres() } returns Result.success(emptyList())
     }
 
     @After
@@ -71,12 +63,6 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun initialState_isLoading() = runTest {
-        val vm = createViewModel()
-        assertTrue(vm.uiState.value.isLoading)
-    }
-
-    @Test
     fun loadLatestAlbums_success() = runTest {
         coEvery { albumUseCases.getLatestAlbums(20) } returns Result.success(listOf(sampleAlbum))
 
@@ -84,18 +70,6 @@ class HomeViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf(sampleAlbum), vm.uiState.value.latestAlbums)
-        assertFalse(vm.uiState.value.isLoading)
-    }
-
-    @Test
-    fun loadLatestAlbums_failure() = runTest {
-        coEvery { albumUseCases.getLatestAlbums(20) } returns Result.failure(Exception("API error"))
-
-        val vm = createViewModel()
-        advanceUntilIdle()
-
-        assertEquals("API error", vm.uiState.value.error)
-        assertFalse(vm.uiState.value.isLoading)
     }
 
     @Test
@@ -186,27 +160,5 @@ class HomeViewModelTest {
         vm.playDiscovery()
 
         verify { smartRadioEngine.startRadio(any()) }
-    }
-
-    @Test
-    fun syncWithPlayerManager_isPlayingUpdates() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-
-        isPlayingFlow.value = true
-        advanceUntilIdle()
-
-        assertTrue(vm.uiState.value.isPlaying)
-    }
-
-    @Test
-    fun syncWithPlayerManager_currentTrackUpdates() = runTest {
-        val vm = createViewModel()
-        advanceUntilIdle()
-
-        currentTrackFlow.value = sampleTrack
-        advanceUntilIdle()
-
-        assertEquals(sampleTrack.id, vm.uiState.value.currentTrackId)
     }
 }
