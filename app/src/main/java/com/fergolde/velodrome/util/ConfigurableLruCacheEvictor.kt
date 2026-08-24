@@ -21,6 +21,10 @@ class ConfigurableLruCacheEvictor(initialMaxBytes: Long) : CacheEvictor {
         evictCache(cache, 0L)
     }
 
+    /** Current configured limit; Long.MAX_VALUE until reconciled with settings. */
+    @Synchronized
+    fun peekMaxBytes(): Long = maxBytes
+
     @Synchronized
     override fun requiresCacheSpanTouches(): Boolean = true
 
