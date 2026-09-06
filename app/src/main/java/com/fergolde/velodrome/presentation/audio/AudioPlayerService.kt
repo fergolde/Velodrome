@@ -3,9 +3,11 @@ package com.fergolde.velodrome.presentation.audio
 import android.app.PendingIntent
 import android.content.Intent
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Timeline
@@ -17,10 +19,18 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import androidx.media3.session.SessionResult
 import com.fergolde.velodrome.MainActivity
 import com.fergolde.velodrome.data.local.dao.TrackDao
+import com.fergolde.velodrome.data.local.queue.QueueSnapshot
+import com.fergolde.velodrome.data.local.queue.QueueSnapshotStore
+import com.fergolde.velodrome.data.local.queue.toDomain
+import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.util.CacheManager
+import com.fergolde.velodrome.util.CredentialsManager
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
 import kotlinx.coroutines.flow.first
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
@@ -31,6 +41,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
@@ -56,6 +67,12 @@ class AudioPlayerService : MediaSessionService() {
 
     @Inject
     lateinit var cacheManager: CacheManager
+
+    @Inject
+    lateinit var queueSnapshotStore: QueueSnapshotStore
+
+    @Inject
+    lateinit var credentialsManager: CredentialsManager
 
     private var equalizerEngine: EqualizerEngine? = null
 
@@ -103,7 +120,11 @@ class AudioPlayerService : MediaSessionService() {
 
         mediaSession = MediaSession.Builder(this, exoPlayer!!)
             .setSessionActivity(pendingIntent)
+            .setId(SESSION_ID)
+            .setCallback(sessionCallback)
             .build()
+
+        restoreQueueForExternalControl()
     }
 
     /**
@@ -150,6 +171,138 @@ class AudioPlayerService : MediaSessionService() {
     // El sistema llama a este método cuando un MediaController (como el de AudioPlayerManager) intenta conectarse
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
         return mediaSession
+    }
+
+    /**
+     * Callback explícito: acepta TODO controlador —incluidos los no confiables
+     * como apps compañeras de reloj (Garmin Connect)— con el set completo de
+     * comandos. Sin esto, un controlador externo puede recibir una máscara sin
+     * pause/next/prev según el estado transitorio del player, mientras los
+     * botones del sistema (auriculares BT) siguen funcionando.
+     */
+    private val sessionCallback = object : MediaSession.Callback {
+        override fun onConnect(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): MediaSession.ConnectionResult {
+            Log.i(
+                TAG,
+                "Controller connect package=${controller.packageName} " +
+                    "trusted=${controller.isTrusted} playerCommands=${exoPlayer?.availableCommands?.size()}"
+            )
+            // AcceptedResultBuilder(session) parte de los comandos de sesión por
+            // defecto; luego se abre el set de player al completo. El set final
+            // se intersecta con lo que ExoPlayer expone, así que solo amplía.
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                .setAvailablePlayerCommands(Player.Commands.Builder().addAllCommands().build())
+                .build()
+        }
+
+        override fun onPlayerCommandRequest(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            command: Int
+        ): Int {
+            Log.i(TAG, "External command=$command from=${controller.packageName}")
+            // El stub interpreta este retorno como SessionResult.Code: solo
+            // RESULT_SUCCESS ejecuta el comando. Retornar el código player
+            // (pattern antiguo) rechaza TODO y deja la app muda.
+            return SessionResult.RESULT_SUCCESS
+        }
+
+        /**
+         * Resumption en frío: el sistema (o un reloj) pide reproducir cuando el
+         * proceso nació sin cola. Restaura el snapshot antes de responder para
+         * que play/next/prev tengan sobre qué actuar.
+         */
+        override fun onPlaybackResumption(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo
+        ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+            Log.i(TAG, "Playback resumption from=${controller.packageName}")
+            val future = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
+            serviceScope.launch {
+                try {
+                    val items = withContext(Dispatchers.Main) {
+                        val player = exoPlayer
+                        if (player != null && player.mediaItemCount > 0) {
+                            (0 until player.mediaItemCount).map { player.getMediaItemAt(it) } to
+                                (player.currentMediaItemIndex to player.currentPosition)
+                        } else {
+                            null
+                        }
+                    }
+                    if (items != null) {
+                        val (mediaItems, indexToPos) = items
+                        future.set(
+                            MediaSession.MediaItemsWithStartPosition(
+                                mediaItems, indexToPos.first, indexToPos.second
+                            )
+                        )
+                        return@launch
+                    }
+                    val restored = loadResumptionMediaItems()
+                    if (restored != null) {
+                        withContext(Dispatchers.Main) {
+                            val player = exoPlayer
+                            if (player != null && player.mediaItemCount == 0) {
+                                player.setMediaItems(
+                                    restored.items, restored.startIndex, restored.startPositionMs
+                                )
+                                player.prepare()
+                            }
+                        }
+                        future.set(
+                            MediaSession.MediaItemsWithStartPosition(
+                                restored.items, restored.startIndex, restored.startPositionMs
+                            )
+                        )
+                    } else {
+                        future.set(MediaSession.MediaItemsWithStartPosition(emptyList(), 0, 0))
+                    }
+                } catch (error: Exception) {
+                    Log.w(TAG, "Resumption failed", error)
+                    future.setException(error)
+                }
+            }
+            return future
+        }
+    }
+
+    /**
+     * Materializa la cola persistida al nacer el servicio (preparada, en pausa)
+     * para que controles externos funcionen sin abrir antes la UI. El manager
+     * reusa el mismo snapshot al primer toque, sin cambios visibles.
+     */
+    private fun restoreQueueForExternalControl() {
+        lifecycleScope.launch {
+            val player = exoPlayer ?: return@launch
+            if (player.mediaItemCount > 0) return@launch
+            val restored = withContext(Dispatchers.IO) { loadResumptionMediaItems() } ?: return@launch
+            if (player.mediaItemCount == 0) {
+                player.setMediaItems(restored.items, restored.startIndex, restored.startPositionMs)
+                player.prepare()
+            }
+        }
+    }
+
+    private suspend fun loadResumptionMediaItems(): ResumptionMediaItems? {
+        val snapshot = queueSnapshotStore.load() ?: return null
+        val plan = computeResumptionPlan(snapshot, playerHasItems = false) ?: return null
+        val items = plan.tracks.map { buildMediaItem(it) }
+        if (items.isEmpty()) return null
+        return ResumptionMediaItems(items, plan.startIndex, plan.startPositionMs)
+    }
+
+    private fun buildMediaItem(track: Track): MediaItem {
+        val streamUrl = credentialsManager.getStreamUrl(track.id)
+        val coverUrl = track.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
+        return MediaItem.Builder().setMediaId(track.id).setUri(streamUrl)
+            .setMediaMetadata(
+                MediaMetadata.Builder().setTitle(track.title).setArtist(track.artistName)
+                    .setAlbumTitle(track.albumName)
+                    .apply { coverUrl?.let { setArtworkUri(it.toUri()) } }.build()
+            ).build()
     }
 
     override fun onDestroy() {
@@ -296,8 +449,34 @@ class AudioPlayerService : MediaSessionService() {
 
     companion object {
         private const val TAG = "AudioPlayerService"
+        private const val SESSION_ID = "velodrome-playback"
         private const val PRECACHE_ATTEMPTS = 3
         private const val PRECACHE_RETRY_DELAY_MS = 500L
         private const val PRECACHE_QUOTA_FRACTION = 0.9
     }
+}
+
+/** Plan puro de resumption: sin tipos Media3 para seguir testeable en JVM. */
+internal data class ResumptionPlan(
+    val tracks: List<Track>,
+    val startIndex: Int,
+    val startPositionMs: Long
+)
+
+internal data class ResumptionMediaItems(
+    val items: List<MediaItem>,
+    val startIndex: Int,
+    val startPositionMs: Long
+)
+
+/**
+ * Decide desde qué snapshot retomar. Null = nada que restaurar (el player ya
+ * tiene cola o no hay snapshot útil); el llamador deja todo como está.
+ */
+internal fun computeResumptionPlan(snapshot: QueueSnapshot?, playerHasItems: Boolean): ResumptionPlan? {
+    if (playerHasItems) return null
+    if (snapshot == null || snapshot.tracks.isEmpty()) return null
+    val tracks = snapshot.tracks.map { it.toDomain() }
+    val index = snapshot.currentIndex.coerceIn(0, tracks.lastIndex)
+    return ResumptionPlan(tracks, index, snapshot.positionMs.coerceAtLeast(0L))
 }
