@@ -88,10 +88,18 @@ object AppModule {
             chain.proceed(originalRequest.newBuilder().url(safeHttpUrl).build())
         }
 
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            // HEADERS avoids logging the request URL after AuthInterceptor adds
+            // the u/t/s credentials. The interceptor is installed BEFORE auth so
+            // the sanitized URL is logged; the real request still carries the
+            // credentials when it reaches the network.
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.HEADERS else HttpLoggingInterceptor.Level.NONE
+        }
+
         return OkHttpClient.Builder()
             .addInterceptor(urlRewriterInterceptor)
+            .addInterceptor(loggingInterceptor)
             .addInterceptor(authInterceptor)
-            .addInterceptor(HttpLoggingInterceptor().apply { level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE })
             .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(TIMEOUT, TimeUnit.SECONDS)
