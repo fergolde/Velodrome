@@ -1,6 +1,7 @@
 package com.fergolde.velodrome.data.repository
 
 import com.fergolde.velodrome.data.remote.NavidromeApi
+import com.fergolde.velodrome.data.remote.requireOk
 import com.fergolde.velodrome.data.remote.dto.SongDto
 import com.fergolde.velodrome.domain.model.Playlist
 import com.fergolde.velodrome.domain.model.Track
@@ -15,6 +16,7 @@ class PlaylistRepositoryImpl @Inject constructor(
 
     override suspend fun getPlaylists(): Result<List<Playlist>> = runCatching {
         val response = api.getPlaylists()
+        response.requireOk()
         response.response.playlists?.playlist?.map { summary ->
             Playlist(
                 id = summary.id,
@@ -28,6 +30,7 @@ class PlaylistRepositoryImpl @Inject constructor(
 
     override suspend fun getPlaylist(id: String): Result<Playlist> = runCatching {
         val response = api.getPlaylist(id)
+        response.requireOk()
         val detail = response.response.playlistDetail
             ?: throw IllegalStateException("Playlist not found")
         val tracks = detail.songs?.map { toTrack(it) } ?: emptyList()

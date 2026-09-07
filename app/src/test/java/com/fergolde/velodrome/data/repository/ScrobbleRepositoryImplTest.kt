@@ -48,4 +48,16 @@ class ScrobbleRepositoryImplTest {
     fun `scrobbleBatch rejects mismatched lists`() = runTest {
         repository.scrobbleBatch(listOf("t1"), times = emptyList())
     }
+
+    @Test
+    fun `scrobbleBatch subsonic failed returns failure`() = runTest {
+        val failed = SubsonicResponse(
+            SubsonicResponseDto(status = "failed", error = ErrorDto(code = 40, message = "Token expired"))
+        )
+        coEvery { api.scrobble(any(), any(), any()) } returns failed
+
+        val result = repository.scrobbleBatch(listOf("t1"), listOf(1000L))
+
+        assertTrue(result.isFailure)
+    }
 }

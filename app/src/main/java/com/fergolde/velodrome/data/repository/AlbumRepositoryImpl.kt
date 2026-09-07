@@ -6,6 +6,7 @@ import com.fergolde.velodrome.data.local.datasource.LocalMusicDataSource
 import com.fergolde.velodrome.data.local.mapper.toDomain
 import com.fergolde.velodrome.data.local.mapper.toEntity
 import com.fergolde.velodrome.data.remote.NavidromeApi
+import com.fergolde.velodrome.data.remote.requireOk
 import com.fergolde.velodrome.data.remote.dto.AlbumDetailDto
 import com.fergolde.velodrome.data.remote.dto.AlbumDto
 import com.fergolde.velodrome.domain.model.Album
@@ -27,6 +28,7 @@ class AlbumRepositoryImpl @Inject constructor(
     override suspend fun getAlbum(albumId: String): Result<Album> {
         return runCatching {
             val response = api.getAlbum(albumId)
+            response.requireOk()
             val albumDto = response.response.album
             val dto = albumDto ?: AlbumDetailDto(id = albumId)
             Album(
@@ -56,6 +58,7 @@ class AlbumRepositoryImpl @Inject constructor(
     override suspend fun getLatestAlbums(size: Int): Result<List<Album>> {
         return runCatching {
             val response = api.getAlbumList2(type = "newest", size = size)
+            response.requireOk()
             val albums = response.response.albumList2?.albums ?: emptyList()
             albums.map { mapAlbumDto(it) }
         }
@@ -64,6 +67,7 @@ class AlbumRepositoryImpl @Inject constructor(
     override suspend fun getTopAlbums(size: Int): Result<List<Album>> {
         return runCatching {
             val response = api.getAlbumList2(type = "frequent", size = size)
+            response.requireOk()
             val albums = response.response.albumList2?.albums ?: emptyList()
             albums.map { mapAlbumDto(it) }
         }
@@ -72,6 +76,7 @@ class AlbumRepositoryImpl @Inject constructor(
     override suspend fun getRecentlyPlayedAlbums(size: Int): Result<List<Album>> {
         return runCatching {
             val response = api.getAlbumList2(type = "recent", size = size)
+            response.requireOk()
             val albums = response.response.albumList2?.albums ?: emptyList()
             albums.map { mapAlbumDto(it) }
         }
@@ -80,6 +85,7 @@ class AlbumRepositoryImpl @Inject constructor(
     override suspend fun getRandomAlbums(size: Int): Result<List<Album>> {
         return runCatching {
             val response = api.getAlbumList2(type = "random", size = size)
+            response.requireOk()
             val albums = response.response.albumList2?.albums ?: emptyList()
             albums.map { mapAlbumDto(it) }
         }
@@ -88,6 +94,7 @@ class AlbumRepositoryImpl @Inject constructor(
     private suspend fun getAllAlbumsFromServer(offset: Int, size: Int): Result<List<Album>> {
         return runCatching {
             val response = api.getAlbumList2(type = "alphabeticalByName", size = size, offset = offset)
+            response.requireOk()
             val albums = response.response.albumList2?.albums ?: emptyList()
             albums.map { mapAlbumDto(it) }
         }
@@ -96,6 +103,7 @@ class AlbumRepositoryImpl @Inject constructor(
     override suspend fun getGenres(): Result<List<String>> {
         return runCatching {
             val response = api.getGenres()
+            response.requireOk()
             val genres = response.response.genres?.genres ?: emptyList()
             genres.mapNotNull { it.value ?: it.name }
         }
@@ -146,6 +154,7 @@ class AlbumRepositoryImpl @Inject constructor(
     override suspend fun hasServerChangedSince(timestamp: Long): Boolean {
         return runCatching {
             val response = api.getIndexes(ifModifiedSince = timestamp)
+            response.requireOk()
             val artistsDto = response.response.artists
             val hasChanges = artistsDto?.indexes?.isNotEmpty() == true
                 || artistsDto?.artistList?.isNotEmpty() == true

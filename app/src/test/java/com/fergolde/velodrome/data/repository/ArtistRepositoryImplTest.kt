@@ -104,6 +104,13 @@ class ArtistRepositoryImplTest {
     }
 
     @Test
+    fun getArtist_subsonicFailed_returnsFailure() = runTest {
+        val dto = SubsonicResponseDto(status = "failed", error = ErrorDto(code = 40, message = "Token expired"))
+        coEvery { api.getArtist("1") } returns SubsonicResponse(dto)
+        assertTrue(repository.getArtist("1").isFailure)
+    }
+
+    @Test
     fun searchLocal_delegates() = runTest {
         val entity = ArtistEntity(id = "1", name = "Artist", albumCount = 3, coverUrl = "art-1")
         coEvery { localDataSource.searchArtists("query") } returns listOf(entity)

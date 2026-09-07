@@ -68,6 +68,13 @@ class TrackRepositoryImplTest {
     }
 
     @Test
+    fun syncTracksForAlbum_subsonicFailed_returnsFailure() = runTest {
+        val dto = SubsonicResponseDto(status = "failed", error = ErrorDto(code = 50, message = "Server error"))
+        coEvery { api.getMusicDirectory("a1") } returns SubsonicResponse(dto)
+        assertTrue(repository.syncTracksForAlbum("a1").isFailure)
+    }
+
+    @Test
     fun getRandomSongs_success() = runTest {
         val randomDto = RandomSongsDto(song = listOf(sampleSongDto))
         val dto = SubsonicResponseDto(status = "ok", randomSongs = randomDto)
