@@ -29,16 +29,33 @@ class AuthRepositoryImplTest {
     private val repository = AuthRepositoryImpl(context, api, credentialsManager)
 
     @Test
-    fun `login success saves credentials and returns success`() = runTest {
+    fun `login success uses temp credentials then persists and returns success`() = runTest {
         val response = SubsonicResponse(SubsonicResponseDto(status = "ok"))
         coEvery { api.ping() } returns response
+        every { credentialsManager.setTemporaryCredentials(any(), any(), any()) } just runs
         every { credentialsManager.saveCredentials(any(), any(), any()) } just runs
 
         val result = repository.login("user", "pass", "https://server.com/")
 
         assertTrue(result.isSuccess)
         assertTrue(result.getOrNull()!!.success)
+        verify { credentialsManager.setTemporaryCredentials("user", "pass", "https://server.com/") }
         verify { credentialsManager.saveCredentials("user", "pass", "https://server.com/") }
+    }
+
+    @Test
+    fun `login failed does not persist credentials`() = runTest {
+        val response = SubsonicResponse(
+            SubsonicResponseDto(status = "fail", error = ErrorDto(code = 401, message = "Invalid credentials"))
+        )
+        coEvery { api.ping() } returns response
+        every { credentialsManager.setTemporaryCredentials(any(), any(), any()) } just runs
+        every { credentialsManager.clearTemporaryCredentials() } just runs
+
+        repository.login("user", "pass", "https://server.com/")
+
+        verify(exactly = 0) { credentialsManager.saveCredentials(any(), any(), any()) }
+        verify { credentialsManager.clearTemporaryCredentials() }
     }
 
     @Test
@@ -47,23 +64,23 @@ class AuthRepositoryImplTest {
             SubsonicResponseDto(status = "fail", error = ErrorDto(code = 401, message = "Invalid credentials"))
         )
         coEvery { api.ping() } returns response
-        every { credentialsManager.saveCredentials(any(), any(), any()) } just runs
-        every { credentialsManager.clearCredentials() } just runs
+        every { credentialsManager.setTemporaryCredentials(any(), any(), any()) } just runs
+        every { credentialsManager.clearTemporaryCredentials() } just runs
 
         val result = repository.login("user", "pass", "https://server.com/")
 
         assertTrue(result.isSuccess)
         assertFalse(result.getOrNull()!!.success)
         assertEquals("Invalid credentials", result.getOrNull()!!.error)
-        verify { credentialsManager.clearCredentials() }
+        verify { credentialsManager.clearTemporaryCredentials() }
     }
 
     @Test
     fun `login unknown host maps to spanish message`() = runTest {
         lastResId = null
         coEvery { api.ping() } throws UnknownHostException()
-        every { credentialsManager.saveCredentials(any(), any(), any()) } just runs
-        every { credentialsManager.clearCredentials() } just runs
+        every { credentialsManager.setTemporaryCredentials(any(), any(), any()) } just runs
+        every { credentialsManager.clearTemporaryCredentials() } just runs
 
         val result = repository.login("user", "pass", "https://server.com/")
 
@@ -77,8 +94,8 @@ class AuthRepositoryImplTest {
     fun `login connect exception maps to spanish message`() = runTest {
         lastResId = null
         coEvery { api.ping() } throws ConnectException()
-        every { credentialsManager.saveCredentials(any(), any(), any()) } just runs
-        every { credentialsManager.clearCredentials() } just runs
+        every { credentialsManager.setTemporaryCredentials(any(), any(), any()) } just runs
+        every { credentialsManager.clearTemporaryCredentials() } just runs
 
         val result = repository.login("user", "pass", "https://server.com/")
 
@@ -92,8 +109,8 @@ class AuthRepositoryImplTest {
     fun `login socket timeout maps to spanish message`() = runTest {
         lastResId = null
         coEvery { api.ping() } throws SocketTimeoutException()
-        every { credentialsManager.saveCredentials(any(), any(), any()) } just runs
-        every { credentialsManager.clearCredentials() } just runs
+        every { credentialsManager.setTemporaryCredentials(any(), any(), any()) } just runs
+        every { credentialsManager.clearTemporaryCredentials() } just runs
 
         val result = repository.login("user", "pass", "https://server.com/")
 
@@ -107,8 +124,8 @@ class AuthRepositoryImplTest {
     fun `login ioexception maps to spanish message`() = runTest {
         lastResId = null
         coEvery { api.ping() } throws IOException("Stream error")
-        every { credentialsManager.saveCredentials(any(), any(), any()) } just runs
-        every { credentialsManager.clearCredentials() } just runs
+        every { credentialsManager.setTemporaryCredentials(any(), any(), any()) } just runs
+        every { credentialsManager.clearTemporaryCredentials() } just runs
 
         val result = repository.login("user", "pass", "https://server.com/")
 
@@ -122,8 +139,8 @@ class AuthRepositoryImplTest {
     fun `login generic exception maps to default spanish message`() = runTest {
         lastResId = null
         coEvery { api.ping() } throws RuntimeException("Something went wrong")
-        every { credentialsManager.saveCredentials(any(), any(), any()) } just runs
-        every { credentialsManager.clearCredentials() } just runs
+        every { credentialsManager.setTemporaryCredentials(any(), any(), any()) } just runs
+        every { credentialsManager.clearTemporaryCredentials() } just runs
 
         val result = repository.login("user", "pass", "https://server.com/")
 
