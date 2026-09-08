@@ -25,7 +25,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -242,6 +241,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                 persistDirty = false
                 delay(PERSIST_DEBOUNCE_MS.milliseconds)
             }
+            // Capture position on the main thread: MediaController forbids calls from IO.
+            val positionMs = mediaController?.currentPosition ?: _currentPosition.value
             withContext(Dispatchers.IO) {
                 val tracks = _playlist.value
                 if (tracks.isNotEmpty()) {
@@ -249,7 +250,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                         QueueSnapshot(
                             tracks = tracks.map { it.toDto() },
                             currentIndex = _currentIndex.value.coerceIn(0, tracks.lastIndex),
-                            positionMs = mediaController?.currentPosition ?: _currentPosition.value
+                            positionMs = positionMs
                         )
                     )
                 }
@@ -377,7 +378,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
      */
     private fun buildMediaItem(track: Track): MediaItem {
         val streamUrl = getStreamUrl(track)
-        val coverUrl = track.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
+        val coverUrl = track.coverArtId?.let { credentialsManager.getCoverArtBaseUrl(it, 400) }
         return MediaItem.Builder().setMediaId(track.id).setUri(streamUrl)
             .setMediaMetadata(MediaMetadata.Builder().setTitle(track.title).setArtist(track.artistName).setAlbumTitle(track.albumName)
                 .apply { coverUrl?.let { setArtworkUri(it.toUri()) } }.build()).build()

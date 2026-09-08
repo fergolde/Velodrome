@@ -23,8 +23,7 @@ data class AlbumDetailUiState(
     val tracks: List<Track> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,
-    val currentTrackId: String? = null,
-    val isPlaying: Boolean = false
+    val currentTrackId: String? = null
 )
 
 @HiltViewModel
@@ -47,11 +46,6 @@ class AlbumDetailViewModel @Inject constructor(
         viewModelScope.launch {
             playerManager.currentTrackId.collect { trackId ->
                 _uiState.update { it.copy(currentTrackId = trackId) }
-            }
-        }
-        viewModelScope.launch {
-            playerManager.isPlaying.collect { playing ->
-                _uiState.update { it.copy(isPlaying = playing) }
             }
         }
     }
