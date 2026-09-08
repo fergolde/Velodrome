@@ -68,3 +68,8 @@ proguard/
 #Firma
 Fernando.jks
 keystore.properties
+
+# Local analysis reports (no subir a github)
+Implement.md
+Informe_*.md
+VEREDICTO_FINAL.md

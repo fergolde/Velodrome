@@ -3,6 +3,8 @@ package com.fergolde.velodrome.data.repository
 import android.content.Context
 import com.fergolde.velodrome.R
 import com.fergolde.velodrome.data.remote.NavidromeApi
+import com.fergolde.velodrome.data.remote.requireOk
+import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.fergolde.velodrome.domain.model.AuthResult
 import com.fergolde.velodrome.domain.repository.AuthRepository
@@ -18,24 +20,21 @@ class AuthRepositoryImpl @Inject constructor(
 ) : AuthRepository {
 
     override suspend fun login(username: String, password: String, serverUrl: String): Result<AuthResult> {
-        return runCatching {
+        return runCatchingWithCancellation {
             try {
                 // Save credentials securely (username + password, NO token)
                 credentialsManager.saveCredentials(username, password, serverUrl)
 
                 // Try ping - auth interceptor will add u, t, s params automatically
                 val response = api.ping()
+                response.requireOk()
 
-                if (response.response.status == "ok") {
-                    AuthResult(success = true)
-                } else {
-                    credentialsManager.clearCredentials()
-                    val errorMsg = response.response.error?.message ?: "Invalid credentials"
-                    AuthResult(success = false, error = errorMsg)
-                }
+                AuthResult(success = true)
             } catch (e: Exception) {
                 credentialsManager.clearCredentials()
                 val userMessage = when (e) {
+                    is com.fergolde.velodrome.data.remote.SubsonicApiException ->
+                        e.error.message
                     is java.net.UnknownHostException,
                     is java.net.ConnectException -> context.getString(R.string.error_no_connection)
                     is java.net.SocketTimeoutException -> context.getString(R.string.error_server_timeout)

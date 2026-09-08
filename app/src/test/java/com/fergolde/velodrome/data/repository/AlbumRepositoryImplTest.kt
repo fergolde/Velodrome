@@ -55,6 +55,14 @@ class AlbumRepositoryImplTest {
     }
 
     @Test
+    fun getLatestAlbums_subsonicFailed_returnsFailure() = runTest {
+        val dto = SubsonicResponseDto(status = "failed", error = ErrorDto(code = 40, message = "Token expired"))
+        coEvery { api.getAlbumList2(type = "newest", size = 20) } returns SubsonicResponse(dto)
+        val result = repository.getLatestAlbums(20)
+        assertTrue(result.isFailure)
+    }
+
+    @Test
     fun getTopAlbums_success() = runTest {
         val listDto = AlbumListDto(albums = listOf(sampleAlbumDto))
         val dto = SubsonicResponseDto(status = "ok", albumList2 = listDto)

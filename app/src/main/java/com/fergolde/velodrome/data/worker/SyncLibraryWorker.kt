@@ -11,6 +11,7 @@ import com.fergolde.velodrome.domain.repository.ArtistRepository
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -98,6 +99,8 @@ class SyncLibraryWorker @AssistedInject constructor(
                 Result.success()
             }
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             classifyError(e)
         }

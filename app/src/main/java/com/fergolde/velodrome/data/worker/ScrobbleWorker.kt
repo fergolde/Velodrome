@@ -8,6 +8,7 @@ import com.fergolde.velodrome.data.local.dao.ScrobbleDao
 import com.fergolde.velodrome.domain.repository.ScrobbleRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -52,6 +53,8 @@ class ScrobbleWorker @AssistedInject constructor(
             }
 
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             Result.retry()
         }

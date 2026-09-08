@@ -6,6 +6,8 @@ import com.fergolde.velodrome.data.local.datasource.LocalMusicDataSource
 import com.fergolde.velodrome.data.local.mapper.toDomain
 import com.fergolde.velodrome.data.local.mapper.toEntity
 import com.fergolde.velodrome.data.remote.NavidromeApi
+import com.fergolde.velodrome.data.remote.requireOk
+import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
 import com.fergolde.velodrome.data.remote.dto.AlbumDto
 import com.fergolde.velodrome.data.remote.dto.ArtistDetailDto
 import com.fergolde.velodrome.domain.model.Album
@@ -34,8 +36,9 @@ class ArtistRepositoryImpl @Inject constructor(
     }
 
     private suspend fun getArtists(offset: Int, size: Int): Result<List<Artist>> {
-        return runCatching {
+        return runCatchingWithCancellation {
             val response = api.getArtists(size, offset)
+            response.requireOk()
 
             val indexes = response.response.artists?.indexes
             val flatArtists = response.response.artists?.artistList
@@ -59,8 +62,9 @@ class ArtistRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getArtist(artistId: String): Result<ArtistWithAlbums> {
-        return runCatching {
+        return runCatchingWithCancellation {
             val response = api.getArtist(artistId)
+            response.requireOk()
             val artistDto = response.response.artist
 
             val dto = artistDto ?: ArtistDetailDto(id = artistId, name = "Unknown")
@@ -106,7 +110,7 @@ class ArtistRepositoryImpl @Inject constructor(
         startOffset: Int,
         onPageProcessed: suspend (newOffset: Int) -> Unit
     ): Result<Int> {
-        return runCatching {
+        return runCatchingWithCancellation {
             var offset = startOffset
             val pageSize = 500
             var totalSynced = 0

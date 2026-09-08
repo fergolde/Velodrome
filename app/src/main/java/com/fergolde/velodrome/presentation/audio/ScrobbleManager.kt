@@ -10,6 +10,7 @@ import com.fergolde.velodrome.data.worker.ScrobbleWorker
 import com.fergolde.velodrome.domain.repository.ScrobbleRepository
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -50,6 +51,8 @@ class ScrobbleManager @Inject constructor(
                 if (!scrobbleEnabled) return@launch
 
                 scrobble(trackId)
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
             }
         }
@@ -76,6 +79,8 @@ class ScrobbleManager @Inject constructor(
 
                 // Send now playing (submission = false)
                 scrobbleRepository.scrobble(trackId, System.currentTimeMillis(), submission = false)
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) { }
         }
     }
@@ -93,6 +98,8 @@ class ScrobbleManager @Inject constructor(
             enqueueScrobbleWork()
 
             // Mark as tracked (don't set currentScrobbleTrackId until WorkManager succeeds)
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) { }
     }
 

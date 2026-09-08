@@ -21,6 +21,7 @@ import com.fergolde.velodrome.util.CredentialsManager
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -112,6 +113,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                 mediaController = controllerFuture?.get()
                 setupControllerListener()
                 restoreQueueMetadata()
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 Log.e(TAG, "Unable to connect MediaController", error)
             }
@@ -335,6 +338,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             try {
                 mediaController = future.get()
                 doPlayWithController(mediaItems, startIndex)
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 Log.e(TAG, "Unable to prepare playlist", error)
             }
@@ -346,6 +351,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             try {
                 mediaController = future.get()
                 doPlayWithController(mediaItems, startIndex)
+            } catch (error: CancellationException) {
+                throw error
             } catch (error: Exception) {
                 Log.e(TAG, "Unable to connect MediaController for playlist", error)
             }
@@ -393,6 +400,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         try {
             mediaController = future.get()
             mediaController?.addMediaItems(index, mediaItems)
+        } catch (error: CancellationException) {
+            throw error
         } catch (error: Exception) {
             Log.e(TAG, "Unable to insert tracks", error)
         }
@@ -420,6 +429,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         try {
             mediaController = future.get()
             mediaController?.addMediaItems(mediaItems)
+        } catch (error: CancellationException) {
+            throw error
         } catch (error: Exception) {
             Log.e(TAG, "Unable to add tracks", error)
         }
@@ -447,6 +458,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                 controller.prepare()
                 controller.play()
             }
+        } catch (error: CancellationException) {
+            throw error
         } catch (error: Exception) {
             Log.e(TAG, "Unable to append ${tracks.size} tracks", error)
         }
