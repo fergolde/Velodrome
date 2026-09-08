@@ -12,6 +12,7 @@ import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -97,42 +98,39 @@ class ArtistDetailViewModel @Inject constructor(
         val name = uiState.value.artist?.name ?: return
         smartRadioEngine.stopRadio()
         smartRadioEngine.startRadio(RadioContext.Artist(artistName = name))
-        _uiState.update { it.copy(isPreparingPlayback = true) }
+        // Smart radio prepares tracks asynchronously; do not lock the UI flag here.
     }
 
-    fun playAll() {
-        smartRadioEngine.stopRadio()
-        viewModelScope.launch {
-            _uiState.update { it.copy(isPreparingPlayback = true) }
-            val tracks = gatherAllArtistTracks()
-            if (tracks.isNotEmpty()) {
-                playerManager.setPlaylist(tracks, startIndex = 0, startPlaying = true)
-            }
-            _uiState.update { it.copy(isPreparingPlayback = false) }
+    fun playAll() = prepareTracks { tracks ->
+        playerManager.setPlaylist(tracks, startIndex = 0, startPlaying = true)
+    }
+
+    fun shuffleAll() = prepareTracks { tracks ->
+        playerManager.setPlaylist(tracks.shuffled(), startIndex = 0, startPlaying = true)
+    }
+
+    fun addToQueue() = prepareTracks { tracks ->
+        tracks.shuffled().forEach { track ->
+            playerManager.addToQueue(track)
         }
     }
 
-    fun shuffleAll() {
+    private fun prepareTracks(block: suspend (List<Track>) -> Unit) {
         smartRadioEngine.stopRadio()
         viewModelScope.launch {
             _uiState.update { it.copy(isPreparingPlayback = true) }
-            val tracks = gatherAllArtistTracks()
-            if (tracks.isNotEmpty()) {
-                playerManager.setPlaylist(tracks.shuffled(), startIndex = 0, startPlaying = true)
+            try {
+                val tracks = gatherAllArtistTracks()
+                if (tracks.isNotEmpty()) {
+                    block(tracks)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            } finally {
+                _uiState.update { it.copy(isPreparingPlayback = false) }
             }
-            _uiState.update { it.copy(isPreparingPlayback = false) }
-        }
-    }
-
-    fun addToQueue() {
-        smartRadioEngine.stopRadio()
-        viewModelScope.launch {
-            _uiState.update { it.copy(isPreparingPlayback = true) }
-            val tracks = gatherAllArtistTracks()
-            tracks.shuffled().forEach { track ->
-                playerManager.addToQueue(track)
-            }
-            _uiState.update { it.copy(isPreparingPlayback = false) }
         }
     }
 }
