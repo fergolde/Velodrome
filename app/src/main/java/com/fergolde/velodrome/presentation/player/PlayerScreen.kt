@@ -110,6 +110,7 @@ fun PlayerScreen(
     onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currentPosition by viewModel.currentPositionSeconds.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showQueue by remember { mutableStateOf(false) }
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -172,7 +173,7 @@ fun PlayerScreen(
                             )
                             Spacer(Modifier.height(10.dp))
                             SeekBar(
-                                currentPosition = uiState.currentPosition,
+                                currentPosition = currentPosition,
                                 duration = uiState.currentTrack?.durationSec ?: 0,
                                 onSeek = viewModel::onSeek
                             )
@@ -247,7 +248,7 @@ fun PlayerScreen(
                     )
                     Spacer(modifier = Modifier.height(14.dp))
                     SeekBar(
-                        currentPosition = uiState.currentPosition,
+                        currentPosition = currentPosition,
                         duration = uiState.currentTrack?.durationSec ?: 0,
                         onSeek = viewModel::onSeek
                     )

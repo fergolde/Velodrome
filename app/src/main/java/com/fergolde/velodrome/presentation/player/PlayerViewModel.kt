@@ -7,6 +7,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
@@ -17,14 +18,16 @@ class PlayerViewModel @Inject constructor(
 
     /**
      * Consolidated UI state using combine pattern.
-     * 
+     *
      * Instead of multiple separate collectors (which cause multiple recompositions),
      * we combine all playerManager flows into a single state emission.
+     *
+     * currentPosition is collected separately because it ticks every second and
+     * would otherwise re-emit the entire PlayerUiState continuously.
      */
     val uiState: StateFlow<PlayerUiState> = combine(
         playerManager.playlist,
         playerManager.isPlaying,
-        playerManager.currentPosition,
         playerManager.currentTrack,
         playerManager.currentIndex,
         playerManager.isShuffleEnabled,
@@ -34,18 +37,24 @@ class PlayerViewModel @Inject constructor(
         PlayerUiState(
             playlist = values[0] as List<Track>,
             isPlaying = values[1] as Boolean,
-            // Convert milliseconds to seconds for UI
-            currentPosition = ((values[2] as Long) / 1000).toInt(),
-            currentTrack = values[3] as Track?,
-            currentIndex = values[4] as Int,
-            isShuffleEnabled = values[5] as Boolean,
-            isRepeatEnabled = values[6] as Boolean
+            currentTrack = values[2] as Track?,
+            currentIndex = values[3] as Int,
+            isShuffleEnabled = values[4] as Boolean,
+            isRepeatEnabled = values[5] as Boolean
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = PlayerUiState()
     )
+
+    val currentPositionSeconds: StateFlow<Int> = playerManager.currentPosition
+        .map { (it / 1000).toInt() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0
+        )
 
     /**
      * Play/Pause toggle
