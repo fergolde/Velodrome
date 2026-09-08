@@ -144,18 +144,26 @@ class CredentialsManager @Inject constructor(
     // URL HELPERS (Refactorizadas para usar la caché)
     // -------------------------
 
-    fun getCoverArtUrl(coverArtId: String?, size: Int): String? {
+    /**
+     * Cover-art URL WITHOUT auth params. Use this everywhere the URL is stored
+     * in Media3 metadata or passed to Coil; the consumer adds authentication
+     * separately so rotating tokens do not leak into cache keys or persisted URIs.
+     */
+    fun getCoverArtBaseUrl(coverArtId: String?, size: Int): String? {
         if (coverArtId.isNullOrBlank()) return null
         val serverUrl = getServerUrl() ?: return null
 
-        // AHORA usamos getValidAuthParams en lugar de generateAuthParams
+        return "${serverUrl.trimEnd('/')}/rest/getCoverArt.view" +
+                "?id=$coverArtId&size=$size" +
+                "&v=${NavidromeApi.API_VERSION}&c=${NavidromeApi.CLIENT_NAME}"
+    }
+
+    fun getCoverArtUrl(coverArtId: String?, size: Int): String? {
+        val baseUrl = getCoverArtBaseUrl(coverArtId, size) ?: return null
         val auth = getValidAuthParams() ?: return null
         val (username, token, salt) = auth
 
-        return "${serverUrl.trimEnd('/')}/rest/getCoverArt.view" +
-                "?id=$coverArtId&size=$size" +
-                "&u=$username&t=$token&s=$salt" +
-                "&v=${NavidromeApi.API_VERSION}&c=${NavidromeApi.CLIENT_NAME}"
+        return "$baseUrl&u=$username&t=$token&s=$salt"
     }
 
     fun getStreamUrl(trackId: String): String { // Eliminamos maxBitRate del argumento

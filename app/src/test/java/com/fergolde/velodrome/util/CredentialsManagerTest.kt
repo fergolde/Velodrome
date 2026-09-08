@@ -227,6 +227,22 @@ class CredentialsManagerTest {
     }
 
     @Test
+    fun getCoverArtBaseUrl_returnsUrlWithoutAuth() {
+        seedFull()
+
+        val url = newManager().getCoverArtBaseUrl("cov-1", 300)
+
+        assertNotNull(url)
+        assertTrue(url!!.contains("id=cov-1"))
+        assertTrue(url.contains("size=300"))
+        assertTrue(url.contains("v=1.16.1"))
+        assertTrue(url.contains("c=Velodrome"))
+        assertFalse(url.contains("u="))
+        assertFalse(url.contains("t="))
+        assertFalse(url.contains("s="))
+    }
+
+    @Test
     fun getCoverArtUrl_blankCoverArtId_returnsNull() {
         val manager = newManager()
 

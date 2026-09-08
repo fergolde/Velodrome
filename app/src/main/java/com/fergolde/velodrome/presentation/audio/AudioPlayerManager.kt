@@ -376,7 +376,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
      */
     private fun buildMediaItem(track: Track): MediaItem {
         val streamUrl = getStreamUrl(track)
-        val coverUrl = track.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
+        val coverUrl = track.coverArtId?.let { credentialsManager.getCoverArtBaseUrl(it, 400) }
         return MediaItem.Builder().setMediaId(track.id).setUri(streamUrl)
             .setMediaMetadata(MediaMetadata.Builder().setTitle(track.title).setArtist(track.artistName).setAlbumTitle(track.albumName)
                 .apply { coverUrl?.let { setArtworkUri(it.toUri()) } }.build()).build()

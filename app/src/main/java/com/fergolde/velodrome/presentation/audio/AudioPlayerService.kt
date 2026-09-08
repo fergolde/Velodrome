@@ -125,6 +125,7 @@ class AudioPlayerService : MediaSessionService() {
             .setSessionActivity(pendingIntent)
             .setId(SESSION_ID)
             .setCallback(sessionCallback)
+            .setBitmapLoader(NavidromeBitmapLoader(this))
             .build()
 
         restoreQueueForExternalControl()
@@ -317,7 +318,7 @@ class AudioPlayerService : MediaSessionService() {
 
     private fun buildMediaItem(track: Track): MediaItem {
         val streamUrl = credentialsManager.getStreamUrl(track.id)
-        val coverUrl = track.coverArtId?.let { credentialsManager.getCoverArtUrl(it, 400) }
+        val coverUrl = track.coverArtId?.let { credentialsManager.getCoverArtBaseUrl(it, 400) }
         return MediaItem.Builder().setMediaId(track.id).setUri(streamUrl)
             .setMediaMetadata(
                 MediaMetadata.Builder().setTitle(track.title).setArtist(track.artistName)
