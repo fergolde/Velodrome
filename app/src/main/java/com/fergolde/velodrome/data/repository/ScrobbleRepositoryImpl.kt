@@ -4,6 +4,7 @@ import com.fergolde.velodrome.data.local.dao.ScrobbleDao
 import com.fergolde.velodrome.data.local.entity.ScrobbleEntity
 import com.fergolde.velodrome.data.remote.NavidromeApi
 import com.fergolde.velodrome.data.remote.requireOk
+import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
 import com.fergolde.velodrome.domain.repository.ScrobbleRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,7 +16,7 @@ class ScrobbleRepositoryImpl @Inject constructor(
 ) : ScrobbleRepository {
 
     override suspend fun scrobble(trackId: String, time: Long?, submission: Boolean): Result<Unit> {
-        return runCatching {
+        return runCatchingWithCancellation {
             val response = api.scrobble(
                 trackIds = listOf(trackId),
                 times = time?.let { listOf(it) },
@@ -27,7 +28,7 @@ class ScrobbleRepositoryImpl @Inject constructor(
 
     override suspend fun scrobbleBatch(ids: List<String>, times: List<Long>, submission: Boolean): Result<Unit> {
         require(ids.size == times.size) { "ids and times must be parallel lists" }
-        return runCatching {
+        return runCatchingWithCancellation {
             val response = api.scrobble(trackIds = ids, times = times, submission = submission)
             response.requireOk()
         }

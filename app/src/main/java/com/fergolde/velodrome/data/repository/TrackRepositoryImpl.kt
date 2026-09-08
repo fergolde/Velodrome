@@ -7,6 +7,7 @@ import com.fergolde.velodrome.data.local.mapper.toDomain
 import com.fergolde.velodrome.data.local.mapper.toEntity
 import com.fergolde.velodrome.data.remote.NavidromeApi
 import com.fergolde.velodrome.data.remote.requireOk
+import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
 import com.fergolde.velodrome.data.remote.dto.SongDto
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.TrackRepository
@@ -36,13 +37,13 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
     }
 
     override suspend fun syncTracksForAlbum(albumId: String): Result<Unit> {
-        return runCatching {
+        return runCatchingWithCancellation {
             val response = api.getMusicDirectory(albumId)
             response.requireOk()
 
             // Filtramos asegurando que solo procesamos archivos (isDir = false o null)
             val songsList = response.response.directory?.child?.filter { it.isDir != true }
-                ?: return@runCatching // Si no hay directorio o hijos, terminamos exitosamente
+                ?: return@runCatchingWithCancellation // Si no hay directorio o hijos, terminamos exitosamente
 
             val entities = songsList.map { song ->
                 Track(
@@ -82,7 +83,7 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
     }
 
     override suspend fun getRandomSongs(size: Int, genre: String?, fromYear: Int?, toYear: Int?): Result<List<Track>> {
-        return runCatching {
+        return runCatchingWithCancellation {
             val response = api.getRandomSongs(size, genre, fromYear, toYear)
             response.requireOk()
             val songDtos = response.response.randomSongs?.song ?: emptyList()
@@ -96,7 +97,7 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
     }
 
     override suspend fun searchRemoteTracks(query: String): Result<List<Track>> {
-        return runCatching {
+        return runCatchingWithCancellation {
             val response = api.search3(query = query, songCount = 100)
             response.requireOk()
             val songDtos = response.response.searchResult3?.songs ?: emptyList()
@@ -121,7 +122,7 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
 
     @OptIn(UnstableApi::class)
     override suspend fun getTopGlobalTracks(size: Int): Result<List<Track>> {
-        return runCatching {
+        return runCatchingWithCancellation {
             val response = api.getAlbumList2(type = "frequent", size = 50)
             response.requireOk()
             val albums = response.response.albumList2?.albums ?: emptyList()

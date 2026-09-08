@@ -4,6 +4,7 @@ import android.content.Context
 import com.fergolde.velodrome.R
 import com.fergolde.velodrome.data.remote.NavidromeApi
 import com.fergolde.velodrome.data.remote.requireOk
+import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.fergolde.velodrome.domain.model.AuthResult
 import com.fergolde.velodrome.domain.repository.AuthRepository
@@ -19,7 +20,7 @@ class AuthRepositoryImpl @Inject constructor(
 ) : AuthRepository {
 
     override suspend fun login(username: String, password: String, serverUrl: String): Result<AuthResult> {
-        return runCatching {
+        return runCatchingWithCancellation {
             try {
                 // Save credentials securely (username + password, NO token)
                 credentialsManager.saveCredentials(username, password, serverUrl)

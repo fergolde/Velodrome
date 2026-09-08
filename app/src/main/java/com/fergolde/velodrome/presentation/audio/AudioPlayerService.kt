@@ -260,6 +260,8 @@ class AudioPlayerService : MediaSessionService() {
                     } else {
                         future.set(MediaSession.MediaItemsWithStartPosition(emptyList(), 0, 0))
                     }
+                } catch (error: CancellationException) {
+                    throw error
                 } catch (error: Exception) {
                     Log.w(TAG, "Resumption failed", error)
                     future.setException(error)
