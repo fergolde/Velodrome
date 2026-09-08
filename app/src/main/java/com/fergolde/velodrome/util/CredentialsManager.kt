@@ -1,9 +1,10 @@
 package com.fergolde.velodrome.util
 
 import android.content.SharedPreferences
+import androidx.core.content.edit
+import com.fergolde.velodrome.data.remote.NavidromeApi
 import javax.inject.Inject
 import javax.inject.Singleton
-import androidx.core.content.edit
 
 
 private const val STREAMING_BITRATE_ORIGINAL = 999
@@ -154,7 +155,7 @@ class CredentialsManager @Inject constructor(
         return "${serverUrl.trimEnd('/')}/rest/getCoverArt.view" +
                 "?id=$coverArtId&size=$size" +
                 "&u=$username&t=$token&s=$salt" +
-                "&v=1.16.1&c=Velodrome"
+                "&v=${NavidromeApi.API_VERSION}&c=${NavidromeApi.CLIENT_NAME}"
     }
 
     fun getStreamUrl(trackId: String): String { // Eliminamos maxBitRate del argumento
@@ -165,7 +166,7 @@ class CredentialsManager @Inject constructor(
         return "${serverUrl.trimEnd('/')}/rest/stream.view" +
                 "?id=$trackId" +
                 "&u=$username&t=$token&s=$salt" +
-                "&v=1.16.1&c=Velodrome" +
+                "&v=${NavidromeApi.API_VERSION}&c=${NavidromeApi.CLIENT_NAME}" +
                 "&maxBitRate=$STREAMING_BITRATE_ORIGINAL" // Fuerza calidad original
     }
 }
