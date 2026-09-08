@@ -116,4 +116,41 @@ class TrackRepositoryImplTest {
         val result = repository.getOfflineTracks()
         assertTrue(result.isEmpty())
     }
+
+    @Test
+    fun getTopGlobalTracks_ignoresFailedAlbums() = runTest {
+        val albumList = AlbumListDto(albums = listOf(
+            AlbumDto(id = "a1", name = "Album 1"),
+            AlbumDto(id = "a2", name = "Album 2")
+        ))
+        coEvery { api.getAlbumList2(type = "frequent", size = 50) } returns
+                SubsonicResponse(SubsonicResponseDto(status = "ok", albumList2 = albumList))
+
+        val okAlbum = AlbumDetailDto(id = "a1", songs = listOf(sampleSongDto))
+        coEvery { api.getAlbum("a1") } returns SubsonicResponse(SubsonicResponseDto(status = "ok", album = okAlbum))
+        coEvery { api.getAlbum("a2") } throws RuntimeException("404")
+
+        val result = repository.getTopGlobalTracks(10)
+
+        assertTrue(result.isSuccess)
+        assertEquals(1, result.getOrNull()!!.size)
+    }
+
+    @Test
+    fun getTracksForAlbumIds_returnsMappedTracks() = runTest {
+        val entity = TrackEntity(id = "t1", albumId = "a1", artistName = "A", albumName = "B", title = "T", durationSec = 180, trackNumber = 1, coverArtId = null)
+        coEvery { trackDao.getTracksForAlbumIds(listOf("a1", "a2")) } returns listOf(entity)
+
+        val result = repository.getTracksForAlbumIds(listOf("a1", "a2"))
+
+        assertEquals(1, result.size)
+        assertEquals("t1", result[0].id)
+    }
+
+    @Test
+    fun getTracksForAlbumIds_emptyInputReturnsEmpty() = runTest {
+        val result = repository.getTracksForAlbumIds(emptyList())
+        assertTrue(result.isEmpty())
+        coVerify(exactly = 0) { trackDao.getTracksForAlbumIds(any()) }
+    }
 }

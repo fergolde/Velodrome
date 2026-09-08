@@ -7,6 +7,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.fergolde.velodrome.domain.model.Artist
+import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.ArtistRepository
 import com.fergolde.velodrome.domain.usecase.ArtistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
@@ -18,6 +19,9 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -91,16 +95,7 @@ class ArtistsViewModel @Inject constructor(
     fun onPlayArtistNow(artist: Artist) {
         smartRadioEngine.stopRadio()
         viewModelScope.launch {
-            val artistWithAlbums = artistUseCases.getArtist(artist.id).getOrNull() ?: return@launch
-            val albums = artistWithAlbums.albums
-
-            // Sync all albums and gather all tracks
-            albums.map { album -> async { trackUseCases.syncTracksForAlbum(album.id) } }.awaitAll()
-
-            val allTracks = albums.flatMap { album ->
-                trackUseCases.observeTracksByAlbum(album.id).first()
-            }
-
+            val allTracks = gatherTracksForArtist(artist)
             playerManager.playNow(allTracks)
         }
     }
@@ -108,15 +103,7 @@ class ArtistsViewModel @Inject constructor(
     fun onPlayArtistNext(artist: Artist) {
         smartRadioEngine.stopRadio()
         viewModelScope.launch {
-            val artistWithAlbums = artistUseCases.getArtist(artist.id).getOrNull() ?: return@launch
-            val albums = artistWithAlbums.albums
-
-            albums.map { album -> async { trackUseCases.syncTracksForAlbum(album.id) } }.awaitAll()
-
-            val allTracks = albums.flatMap { album ->
-                trackUseCases.observeTracksByAlbum(album.id).first()
-            }
-
+            val allTracks = gatherTracksForArtist(artist)
             playerManager.playNext(allTracks)
         }
     }
@@ -124,16 +111,24 @@ class ArtistsViewModel @Inject constructor(
     fun onAddArtistToQueue(artist: Artist) {
         smartRadioEngine.stopRadio()
         viewModelScope.launch {
-            val artistWithAlbums = artistUseCases.getArtist(artist.id).getOrNull() ?: return@launch
-            val albums = artistWithAlbums.albums
-
-            albums.map { album -> async { trackUseCases.syncTracksForAlbum(album.id) } }.awaitAll()
-
-            val allTracks = albums.flatMap { album ->
-                trackUseCases.observeTracksByAlbum(album.id).first()
-            }
-
+            val allTracks = gatherTracksForArtist(artist)
             playerManager.addToQueue(allTracks)
         }
+    }
+
+    private suspend fun gatherTracksForArtist(artist: Artist): List<Track> = supervisorScope {
+        val artistWithAlbums = artistUseCases.getArtist(artist.id).getOrNull() ?: return@supervisorScope emptyList()
+        val albums = artistWithAlbums.albums
+        val albumIds = albums.map { it.id }
+        if (albumIds.isEmpty()) return@supervisorScope emptyList()
+
+        val semaphore = Semaphore(5)
+        albums.map { album ->
+            async {
+                semaphore.withPermit { trackUseCases.syncTracksForAlbum(album.id) }
+            }
+        }.awaitAll()
+
+        trackUseCases.getTracksForAlbumIds(albumIds)
     }
 }

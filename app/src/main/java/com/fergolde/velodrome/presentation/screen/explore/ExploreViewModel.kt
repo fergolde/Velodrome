@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -113,10 +112,14 @@ class ExploreViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // Artistas: ahora desde BD local, aleatorios
-            val localArtists = artistUseCases.observeArtists().first()
-            _uiState.update {
-                it.copy(randomArtists = localArtists.shuffled().take(20), isLoading = false)
+            // Artistas: colectamos el Flow local para reaccionar a la sync sin bloquear.
+            artistUseCases.observeArtists().collect { artists ->
+                _uiState.update {
+                    it.copy(
+                        randomArtists = artists.shuffled().take(20),
+                        isLoading = false
+                    )
+                }
             }
         }
 

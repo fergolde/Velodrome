@@ -53,7 +53,10 @@ class HomeViewModelTest {
     }
 
     private fun createViewModel(): HomeViewModel {
-        return HomeViewModel(context, albumUseCases, trackUseCases, playlistUseCases, playerManager, smartRadioEngine)
+        return HomeViewModel(
+            context, albumUseCases, trackUseCases, playlistUseCases, playerManager, smartRadioEngine,
+            defaultDispatcher = testDispatcher
+        )
     }
 
     @Test

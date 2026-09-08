@@ -146,9 +146,7 @@ class SettingsViewModel @Inject constructor(
             val musicGb = _pendingMusicCacheGb.value
             settingsRepository.setImageCacheSizeMb(imageMb)
             settingsRepository.setMusicCacheSizeGb(musicGb)
-            withContext(Dispatchers.IO) {
-                cacheManager.setMusicCacheLimitGb(musicGb)
-            }
+            cacheManager.setMusicCacheLimitGb(musicGb)
 
             refreshCacheSizes()
             _hasPendingChanges.value = false

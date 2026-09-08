@@ -16,4 +16,5 @@ interface TrackRepository {
 
     suspend fun getOfflineTracks(): List<Track>
     suspend fun getTopGlobalTracks(size: Int = 100): Result<List<Track>>
+    suspend fun getTracksForAlbumIds(albumIds: List<String>): List<Track>
 }

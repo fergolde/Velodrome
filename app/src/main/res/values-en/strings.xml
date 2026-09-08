@@ -121,6 +121,7 @@
     <string name="error_no_connection">Cannot reach the server. Check the URL and your connection.</string>
     <string name="error_server_timeout">The server took too long to respond. Check your connection.</string>
     <string name="error_invalid_url">The provided URL has an invalid format.</string>
+    <string name="error_cleartext_not_allowed">The server must use HTTPS. HTTP traffic is not allowed in release builds.</string>
     <string name="error_network_generic">Network error: Wrong user or password, or server unreachable.</string>
 
     <!-- Sound settings -->

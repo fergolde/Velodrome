@@ -58,7 +58,8 @@ class ArtistDetailViewModelTest {
         searchRemoteTracks = mockk(),
         getOfflineTracks = mockk(),
         getTopGlobalTracks = mockk(),
-        getAllLocalTracks = mockk()
+        getAllLocalTracks = mockk(),
+        getTracksForAlbumIds = mockk()
     )
 
     @Before

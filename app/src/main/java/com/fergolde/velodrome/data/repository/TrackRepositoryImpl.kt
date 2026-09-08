@@ -13,11 +13,16 @@ import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.TrackRepository
 import com.fergolde.velodrome.util.CacheManager
 import com.fergolde.velodrome.util.CredentialsManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -113,13 +118,17 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
         return trackDao.getAllTracksOnce().map { it.toDomain() }
     }
 
+    override suspend fun getTracksForAlbumIds(albumIds: List<String>): List<Track> {
+        if (albumIds.isEmpty()) return emptyList()
+        return trackDao.getTracksForAlbumIds(albumIds).map { it.toDomain() }
+    }
+
     @OptIn(UnstableApi::class)
-    override suspend fun getOfflineTracks(): List<Track> {
+    override suspend fun getOfflineTracks(): List<Track> = withContext(Dispatchers.IO) {
         val allLocalTracks = trackDao.getAllTracksOnce()
 
-        return allLocalTracks.filter { track ->
-            val spans = cacheManager.isTrackFullyCached(track.id, track.sizeBytes)
-            spans
+        allLocalTracks.filter { track ->
+            cacheManager.isTrackFullyCached(track.id, track.sizeBytes)
         }.map { it.toDomain() }
     }
 
@@ -131,12 +140,16 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
             response.requireOk()
             val albums = response.response.albumList2?.albums ?: emptyList()
 
-            val allTracks = coroutineScope {
+            val semaphore = Semaphore(5)
+            val allTracks = supervisorScope {
                 albums.map { album ->
                     async {
-                        val albumResponse = api.getAlbum(album.id)
-                        val songs = albumResponse.response.album?.songs ?: emptyList()
-                        songs.map { mapSongDto(it, album.id) }
+                        semaphore.withPermit {
+                            runCatching {
+                                val albumResponse = api.getAlbum(album.id)
+                                albumResponse.response.album?.songs ?: emptyList()
+                            }.getOrDefault(emptyList()).map { mapSongDto(it, album.id) }
+                        }
                     }
                 }.awaitAll().flatten()
             }
@@ -146,7 +159,6 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
                 .distinctBy { it.id }
                 .sortedByDescending { it.playCount }
                 .take(size)
-                .shuffled()
         }
     }
 

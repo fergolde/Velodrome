@@ -334,7 +334,7 @@ class AudioPlayerService : MediaSessionService() {
             mediaSession = null
         }
         exoPlayer = null
-        precacheJobs.clear()
+        cancelStalePrecacheJobs(keepTrackId = null)
         serviceJob.cancel()
         equalizerEngine?.release()
         equalizerEngine = null
@@ -396,6 +396,17 @@ class AudioPlayerService : MediaSessionService() {
         }
     }
 
+    private fun cancelStalePrecacheJobs(keepTrackId: String?) {
+        val iterator = precacheJobs.entries.iterator()
+        while (iterator.hasNext()) {
+            val (trackId, job) = iterator.next()
+            if (trackId != keepTrackId) {
+                job.cancel()
+                iterator.remove()
+            }
+        }
+    }
+
     private fun precacheNextTrack() {
         val player = exoPlayer ?: return
         val nextIndex = player.currentMediaItemIndex + 1
@@ -404,6 +415,10 @@ class AudioPlayerService : MediaSessionService() {
         val mediaItem = player.getMediaItemAt(nextIndex)
         val uri = mediaItem.localConfiguration?.uri ?: return
         val trackId = mediaItem.mediaId
+
+        // Cancel any precache that is no longer for the upcoming track.
+        cancelStalePrecacheJobs(keepTrackId = trackId)
+
         if (precacheJobs[trackId]?.isActive == true) return
 
         val job = serviceScope.launch {
