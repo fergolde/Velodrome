@@ -143,8 +143,6 @@ data class SongDto(
 
 @JsonClass(generateAdapter = true)
 data class SearchResultDto(
-    @param:Json(name = "artist") val artists: List<ArtistDto>? = null,
-    @param:Json(name = "album") val albums: List<AlbumDto>? = null,
     @param:Json(name = "song") val songs: List<SongDto>? = null
 )
 

@@ -9,7 +9,6 @@ import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import com.fergolde.velodrome.domain.repository.SettingsRepository
-import com.fergolde.velodrome.presentation.audio.ScrobbleManager
 import com.fergolde.velodrome.util.CredentialsManager
 import com.fergolde.velodrome.util.NavidromeCoverArtKeyer
 import com.fergolde.velodrome.util.NavidromeImageInterceptor

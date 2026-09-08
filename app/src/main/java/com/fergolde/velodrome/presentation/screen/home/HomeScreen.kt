@@ -132,7 +132,7 @@ fun HomeScreen(
         item {
             VeloSectionHeader(
                 eyebrow = stringResource(R.string.home_discover),
-                title   = stringResource(R.string.home_random),
+                title   = stringResource(R.string.home_shuffle),
                 modifier = Modifier.padding(horizontal = 20.dp),
                 onViewAll = null
             )
