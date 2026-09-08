@@ -75,7 +75,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             albumUseCases.getLatestAlbums(size)
                 .onSuccess { albums ->
-                    _uiState.update { it.copy(latestAlbums = albums) }
+                    _uiState.update { it.copy(latestAlbums = albums, isLoading = false) }
                 }
         }
     }
@@ -89,7 +89,7 @@ class HomeViewModel @Inject constructor(
             albumUseCases.getTopAlbums(size)
                 .onSuccess { albums ->
                     _uiState.update {
-                        it.copy(topAlbums = albums)
+                        it.copy(topAlbums = albums, isLoading = false)
                     }
                 }
         }
@@ -103,7 +103,7 @@ class HomeViewModel @Inject constructor(
             albumUseCases.getRecentlyPlayedAlbums(size)
                 .onSuccess { albums ->
                     _uiState.update {
-                        it.copy(recentlyPlayedAlbums = albums)
+                        it.copy(recentlyPlayedAlbums = albums, isLoading = false)
                     }
                 }
         }
@@ -117,7 +117,7 @@ class HomeViewModel @Inject constructor(
             albumUseCases.getRandomAlbums(size)
                 .onSuccess { albums ->
                     _uiState.update {
-                        it.copy(randomAlbums = albums)
+                        it.copy(randomAlbums = albums, isLoading = false)
                     }
                 }
         }
@@ -128,7 +128,7 @@ class HomeViewModel @Inject constructor(
             runCatching {
                 playlistUseCases.getPlaylists().getOrDefault(emptyList())
             }.onSuccess { list ->
-                _uiState.update { it.copy(playlists = list.take(10)) }
+                _uiState.update { it.copy(playlists = list.take(10), isLoading = false) }
             }
         }
     }

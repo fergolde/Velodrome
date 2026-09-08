@@ -121,6 +121,33 @@ fun ExploreScreen(
                     onClearSearch   = viewModel::clearSearch,
                 )
             }
+        } else if (uiState.isLoading) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(400.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        } else if (uiState.randomArtists.isEmpty() && uiState.randomAlbums.isEmpty() && uiState.genres.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(400.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.explore_empty),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontFamily = DmSansFontFamily,
+                        fontSize = 14.sp
+                    )
+                }
+            }
         } else {
             // ── Artists carousel ───────────────────────────────────────────
             item {

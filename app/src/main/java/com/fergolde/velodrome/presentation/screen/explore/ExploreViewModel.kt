@@ -106,9 +106,9 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val minYear = albumUseCases.getMinYear()
-                _uiState.update { it.copy(minYear = if (minYear > 0) minYear else 1950) }
+                _uiState.update { it.copy(minYear = if (minYear > 0) minYear else 1950, isLoading = false) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(minYear = 1950) }
+                _uiState.update { it.copy(minYear = 1950, isLoading = false) }
             }
         }
 
@@ -116,7 +116,7 @@ class ExploreViewModel @Inject constructor(
             // Artistas: ahora desde BD local, aleatorios
             val localArtists = artistUseCases.observeArtists().first()
             _uiState.update {
-                it.copy(randomArtists = localArtists.shuffled().take(20))
+                it.copy(randomArtists = localArtists.shuffled().take(20), isLoading = false)
             }
         }
 
@@ -124,14 +124,20 @@ class ExploreViewModel @Inject constructor(
         viewModelScope.launch {
             albumUseCases.getRandomAlbums(size = 20)
                 .onSuccess { albums ->
-                    _uiState.update { it.copy(randomAlbums = albums) }
+                    _uiState.update { it.copy(randomAlbums = albums, isLoading = false) }
+                }
+                .onFailure {
+                    _uiState.update { it.copy(isLoading = false) }
                 }
         }
 
         viewModelScope.launch {
             albumUseCases.getGenres()
                 .onSuccess { genres ->
-                    _uiState.update { it.copy(genres = genres) }
+                    _uiState.update { it.copy(genres = genres, isLoading = false) }
+                }
+                .onFailure {
+                    _uiState.update { it.copy(isLoading = false) }
                 }
         }
     }
