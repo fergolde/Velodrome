@@ -12,7 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Leer accent color del repositorio en tiempo real
             val accentColorHex by settingsRepository.accentColor
-                .collectAsState(initial = "#C8FF00")
+                .collectAsStateWithLifecycle(initialValue = "#C8FF00")
             val accentColor = parseHexColor(accentColorHex)
 
             VelodromeTheme(accentColor = accentColor) {

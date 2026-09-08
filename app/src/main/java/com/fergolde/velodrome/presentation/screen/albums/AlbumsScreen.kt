@@ -30,7 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.paging.LoadState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,7 +61,7 @@ fun AlbumsScreen(
     viewModel: AlbumsViewModel = hiltViewModel(),
     onAlbumClick: (Album) -> Unit = {}
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagedAlbums = viewModel.pagedAlbums.collectAsLazyPagingItems()
 
     var showOptions by remember { mutableStateOf(false) }

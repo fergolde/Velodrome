@@ -31,7 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.paging.LoadState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,7 +64,7 @@ fun ArtistsScreen(
     viewModel: ArtistsViewModel = hiltViewModel(),
     onArtistClick: (Artist) -> Unit = {},
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagedArtists = viewModel.pagedArtists.collectAsLazyPagingItems()
     val snackbarHostState = remember { SnackbarHostState() }
 

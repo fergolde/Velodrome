@@ -38,7 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,7 +70,7 @@ fun HomeScreen(
     onAlbumClick: (String) -> Unit = {},
     onPlaylistClick: (String) -> Unit = {},
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isContentEmpty = state.latestAlbums.isEmpty() &&
             state.randomAlbums.isEmpty() &&
             state.topAlbums.isEmpty() &&
