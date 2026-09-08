@@ -82,6 +82,8 @@ class ArtistDetailViewModel @Inject constructor(
     // Lógica para obtener todas las canciones de todos los álbumes
     private suspend fun gatherAllArtistTracks(): List<Track> = supervisorScope {
         val albums = _uiState.value.albums
+        val albumIds = albums.map { it.id }
+        if (albumIds.isEmpty()) return@supervisorScope emptyList()
 
         // 1. Sincronizar todos los álbumes en paralelo con fan-out acotado
         val semaphore = Semaphore(5)
@@ -91,12 +93,8 @@ class ArtistDetailViewModel @Inject constructor(
             }
         }.awaitAll()
 
-        // 2. Obtener las canciones de la DB local
-        val allTracks = albums.flatMap { album ->
-            trackUseCases.observeTracksByAlbum(album.id).first()
-        }
-
-        allTracks
+        // 2. Obtener las canciones de la DB local en una sola query IN
+        trackUseCases.getTracksForAlbumIds(albumIds)
     }
 
     /** Smart artist radio: dense on this artist, opening toward taste affinities. */

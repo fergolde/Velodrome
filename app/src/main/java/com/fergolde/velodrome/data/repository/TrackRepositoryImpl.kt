@@ -116,6 +116,11 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
         return trackDao.getAllTracksOnce().map { it.toDomain() }
     }
 
+    override suspend fun getTracksForAlbumIds(albumIds: List<String>): List<Track> {
+        if (albumIds.isEmpty()) return emptyList()
+        return trackDao.getTracksForAlbumIds(albumIds).map { it.toDomain() }
+    }
+
     @OptIn(UnstableApi::class)
     override suspend fun getOfflineTracks(): List<Track> {
         val allLocalTracks = trackDao.getAllTracksOnce()

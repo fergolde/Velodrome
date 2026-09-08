@@ -119,6 +119,8 @@ class ArtistsViewModel @Inject constructor(
     private suspend fun gatherTracksForArtist(artist: Artist): List<Track> = supervisorScope {
         val artistWithAlbums = artistUseCases.getArtist(artist.id).getOrNull() ?: return@supervisorScope emptyList()
         val albums = artistWithAlbums.albums
+        val albumIds = albums.map { it.id }
+        if (albumIds.isEmpty()) return@supervisorScope emptyList()
 
         val semaphore = Semaphore(5)
         albums.map { album ->
@@ -127,8 +129,6 @@ class ArtistsViewModel @Inject constructor(
             }
         }.awaitAll()
 
-        albums.flatMap { album ->
-            trackUseCases.observeTracksByAlbum(album.id).first()
-        }
+        trackUseCases.getTracksForAlbumIds(albumIds)
     }
 }

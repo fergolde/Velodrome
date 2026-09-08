@@ -135,4 +135,22 @@ class TrackRepositoryImplTest {
         assertTrue(result.isSuccess)
         assertEquals(1, result.getOrNull()!!.size)
     }
+
+    @Test
+    fun getTracksForAlbumIds_returnsMappedTracks() = runTest {
+        val entity = TrackEntity(id = "t1", albumId = "a1", artistName = "A", albumName = "B", title = "T", durationSec = 180, trackNumber = 1, coverArtId = null)
+        coEvery { trackDao.getTracksForAlbumIds(listOf("a1", "a2")) } returns listOf(entity)
+
+        val result = repository.getTracksForAlbumIds(listOf("a1", "a2"))
+
+        assertEquals(1, result.size)
+        assertEquals("t1", result[0].id)
+    }
+
+    @Test
+    fun getTracksForAlbumIds_emptyInputReturnsEmpty() = runTest {
+        val result = repository.getTracksForAlbumIds(emptyList())
+        assertTrue(result.isEmpty())
+        coVerify(exactly = 0) { trackDao.getTracksForAlbumIds(any()) }
+    }
 }
