@@ -2,8 +2,16 @@ package com.fergolde.velodrome.data.worker
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import com.fergolde.velodrome.data.local.datasource.LocalMusicDataSource
 import com.fergolde.velodrome.data.local.mapper.toEntity
 import com.fergolde.velodrome.domain.repository.AlbumRepository
@@ -20,6 +28,7 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.util.concurrent.TimeUnit
 
 @HiltWorker
 class SyncLibraryWorker @AssistedInject constructor(
@@ -33,7 +42,14 @@ class SyncLibraryWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            val lastSyncTimestamp = settingsRepository.lastSyncTimestamp.first()
+            val forceFullSync = inputData.getBoolean(KEY_FORCE_FULL_SYNC, false)
+            val lastSyncTimestamp = if (forceFullSync) {
+                settingsRepository.setLastSyncTimestamp(0)
+                settingsRepository.setLastSyncOffset(0)
+                0L
+            } else {
+                settingsRepository.lastSyncTimestamp.first()
+            }
             val lastSyncOffset = settingsRepository.lastSyncOffset.first()
 
             if (lastSyncTimestamp > 0) {
@@ -106,9 +122,39 @@ class SyncLibraryWorker @AssistedInject constructor(
         }
     }
 
-    private companion object {
+    companion object {
         /** Minimum gap between lightweight server-change probes (3 hours). */
-        const val SYNC_CHECK_INTERVAL_MS = 3L * 60 * 60 * 1000
+        private const val SYNC_CHECK_INTERVAL_MS = 3L * 60 * 60 * 1000
+
+        private const val KEY_FORCE_FULL_SYNC = "force_full_sync"
+
+        const val WORK_NAME_IMMEDIATE = "sync_library_immediate"
+        const val WORK_NAME_PERIODIC = "sync_library_periodic"
+
+        private fun networkConstraints() = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        fun enqueueImmediate(context: Context) {
+            val request = OneTimeWorkRequestBuilder<SyncLibraryWorker>()
+                .setConstraints(networkConstraints())
+                .build()
+            WorkManager.getInstance(context)
+                .enqueueUniqueWork(WORK_NAME_IMMEDIATE, ExistingWorkPolicy.KEEP, request)
+        }
+
+        fun enqueuePeriodic(context: Context) {
+            val request = PeriodicWorkRequestBuilder<SyncLibraryWorker>(24, TimeUnit.HOURS)
+                .setInputData(workDataOf(KEY_FORCE_FULL_SYNC to true))
+                .setConstraints(networkConstraints())
+                .build()
+            WorkManager.getInstance(context)
+                .enqueueUniquePeriodicWork(
+                    WORK_NAME_PERIODIC,
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    request
+                )
+        }
     }
 
     private fun classifyError(e: Throwable?): Result {

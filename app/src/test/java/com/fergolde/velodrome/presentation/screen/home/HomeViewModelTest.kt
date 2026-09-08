@@ -1,9 +1,10 @@
 package com.fergolde.velodrome.presentation.screen.home
 
+import android.app.Application
+import android.content.Context
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
-import com.fergolde.velodrome.domain.usecase.ArtistUseCases
 import com.fergolde.velodrome.domain.usecase.PlaylistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
@@ -24,8 +25,8 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
 
+    private val context: Context = mockk(relaxed = true)
     private val albumUseCases: AlbumUseCases = mockk(relaxed = true)
-    private val artistUseCases: ArtistUseCases = mockk(relaxed = true)
     private val trackUseCases: TrackUseCases = mockk(relaxed = true)
     private val playerManager: PlayerManager = mockk(relaxed = true)
     private val smartRadioEngine: SmartRadioEngine = mockk(relaxed = true)
@@ -39,9 +40,7 @@ class HomeViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         coEvery { albumUseCases.albumCount() } returns 10
-        coEvery { artistUseCases.artistCount() } returns 10
         coEvery { albumUseCases.syncAlbums() } returns Result.success(0)
-        coEvery { artistUseCases.syncArtists() } returns Result.success(0)
         coEvery { albumUseCases.getLatestAlbums(any()) } returns Result.success(emptyList())
         coEvery { albumUseCases.getTopAlbums(any()) } returns Result.success(emptyList())
         coEvery { albumUseCases.getRecentlyPlayedAlbums(any()) } returns Result.success(emptyList())
@@ -54,7 +53,7 @@ class HomeViewModelTest {
     }
 
     private fun createViewModel(): HomeViewModel {
-        return HomeViewModel(albumUseCases, artistUseCases, trackUseCases, playlistUseCases, playerManager, smartRadioEngine)
+        return HomeViewModel(context, albumUseCases, trackUseCases, playlistUseCases, playerManager, smartRadioEngine)
     }
 
     @Test

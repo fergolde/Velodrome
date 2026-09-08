@@ -1,9 +1,10 @@
 package com.fergolde.velodrome.presentation.screen.home
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fergolde.velodrome.data.worker.SyncLibraryWorker
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
-import com.fergolde.velodrome.domain.usecase.ArtistUseCases
 import com.fergolde.velodrome.domain.usecase.PlaylistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.RadioContext
@@ -11,6 +12,7 @@ import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import com.fergolde.velodrome.util.shuffledWithArtistSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,8 +29,8 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val albumUseCases: AlbumUseCases,
-    private val artistUseCases: ArtistUseCases,
     private val trackUseCases: TrackUseCases,
     private val playlistUseCases: PlaylistUseCases,
     private val playerManager: PlayerManager,
@@ -45,12 +47,10 @@ class HomeViewModel @Inject constructor(
 
     private fun syncIfEmpty() {
         viewModelScope.launch {
-            // COUNT(*) probes instead of materializing whole tables just to call isEmpty()
+            // Single owner of library sync: delegate to WorkManager instead of calling
+            // use cases directly, avoiding duplicate network work on the UI scope.
             if (albumUseCases.albumCount() == 0) {
-                albumUseCases.syncAlbums()
-            }
-            if (artistUseCases.artistCount() == 0) {
-                artistUseCases.syncArtists()
+                SyncLibraryWorker.enqueueImmediate(context)
             }
         }
     }
