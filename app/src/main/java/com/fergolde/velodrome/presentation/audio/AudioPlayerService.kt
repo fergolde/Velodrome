@@ -212,7 +212,7 @@ class AudioPlayerService : MediaSessionService() {
             // AcceptedResultBuilder(session) parte de los comandos de sesión por
             // defecto; luego se abre el set de player al completo. El set final
             // se intersecta con lo que ExoPlayer expone, así que solo amplía.
-            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
                 .setAvailablePlayerCommands(Player.Commands.Builder().addAllCommands().build())
                 .build()
         }
