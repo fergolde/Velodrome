@@ -75,6 +75,8 @@ class SmartRadioEngine @Inject constructor(
     private val pool = mutableListOf<Track>()
     private val sessionPlayedIds = mutableSetOf<String>()
     private var isRefilling = false
+    @Volatile
+    private var isLoadingMore = false
     private val recentArtists = ArrayDeque<String>(2)
 
     // ── Smart contexts (Song / Artist) ──────────────────────────────────────
@@ -187,16 +189,22 @@ class SmartRadioEngine @Inject constructor(
 
     private fun onLoadMoreRequested() {
         val gen = sessionGen
+        if (isLoadingMore) return
+        isLoadingMore = true
         engineScope.launch(radioDispatcher) {
-            // A callback from a superseded or stopped session must not append
-            // tracks over a newer playlist.
-            if (gen != sessionGen || currentContext == null) return@launch
-            refillPool()
-            val nextTracks = pickNext(10)
-            if (nextTracks.isNotEmpty()) {
-                withContext(Dispatchers.Main) {
-                    playerManager.appendToPlaylist(nextTracks)
+            try {
+                // A callback from a superseded or stopped session must not append
+                // tracks over a newer playlist.
+                if (gen != sessionGen || currentContext == null) return@launch
+                refillPool()
+                val nextTracks = pickNext(10)
+                if (nextTracks.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        playerManager.appendToPlaylist(nextTracks)
+                    }
                 }
+            } finally {
+                isLoadingMore = false
             }
         }
     }
