@@ -241,6 +241,8 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                 persistDirty = false
                 delay(PERSIST_DEBOUNCE_MS.milliseconds)
             }
+            // Capture position on the main thread: MediaController forbids calls from IO.
+            val positionMs = mediaController?.currentPosition ?: _currentPosition.value
             withContext(Dispatchers.IO) {
                 val tracks = _playlist.value
                 if (tracks.isNotEmpty()) {
@@ -248,7 +250,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                         QueueSnapshot(
                             tracks = tracks.map { it.toDto() },
                             currentIndex = _currentIndex.value.coerceIn(0, tracks.lastIndex),
-                            positionMs = mediaController?.currentPosition ?: _currentPosition.value
+                            positionMs = positionMs
                         )
                     )
                 }
