@@ -13,6 +13,7 @@ import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.TrackRepository
 import com.fergolde.velodrome.util.CacheManager
 import com.fergolde.velodrome.util.CredentialsManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -122,12 +124,11 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
     }
 
     @OptIn(UnstableApi::class)
-    override suspend fun getOfflineTracks(): List<Track> {
+    override suspend fun getOfflineTracks(): List<Track> = withContext(Dispatchers.IO) {
         val allLocalTracks = trackDao.getAllTracksOnce()
 
-        return allLocalTracks.filter { track ->
-            val spans = cacheManager.isTrackFullyCached(track.id, track.sizeBytes)
-            spans
+        allLocalTracks.filter { track ->
+            cacheManager.isTrackFullyCached(track.id, track.sizeBytes)
         }.map { it.toDomain() }
     }
 

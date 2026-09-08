@@ -9,15 +9,18 @@ import com.fergolde.velodrome.domain.usecase.PlaylistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
+import com.fergolde.velodrome.di.DefaultDispatcher
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import com.fergolde.velodrome.util.shuffledWithArtistSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -34,7 +37,8 @@ class HomeViewModel @Inject constructor(
     private val trackUseCases: TrackUseCases,
     private val playlistUseCases: PlaylistUseCases,
     private val playerManager: PlayerManager,
-    private val smartRadioEngine: SmartRadioEngine
+    private val smartRadioEngine: SmartRadioEngine,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -150,7 +154,10 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             trackUseCases.getTopGlobalTracks(size = 100).onSuccess { tracks ->
                 if (tracks.isNotEmpty()) {
-                    playerManager.playNow(tracks.shuffledWithArtistSpacing())
+                    val shuffled = withContext(defaultDispatcher) {
+                        tracks.shuffledWithArtistSpacing()
+                    }
+                    playerManager.playNow(shuffled)
                     playerManager.setLoadMoreCallback { /* no auto-load for static list */ }
                 }
             }
@@ -164,7 +171,10 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val offlineTracks = trackUseCases.getOfflineTracks()
             if (offlineTracks.isNotEmpty()) {
-                playerManager.playNow(offlineTracks.shuffledWithArtistSpacing())
+                val shuffled = withContext(defaultDispatcher) {
+                    offlineTracks.shuffledWithArtistSpacing()
+                }
+                playerManager.playNow(shuffled)
                 playerManager.setLoadMoreCallback { /* no auto-load for offline list */ }
             }
         }

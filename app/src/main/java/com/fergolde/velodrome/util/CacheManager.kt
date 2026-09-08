@@ -13,8 +13,10 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Manages app cache for images and music.
@@ -98,7 +100,7 @@ class CacheManager @Inject constructor(
      * Uses ImageLoader.diskCache?.clear() and memoryCache?.clear().
      */
     @OptIn(ExperimentalCoilApi::class)
-    fun clearImageCache() {
+    suspend fun clearImageCache() = withContext(Dispatchers.IO) {
         imageLoader.diskCache?.clear()
         imageLoader.memoryCache?.clear()
     }
@@ -107,14 +109,14 @@ class CacheManager @Inject constructor(
      * Clear all music cache using official Media3 SimpleCache API.
      * Iterates over cache keys and removes each resource safely.
      */
-    fun clearMusicCache() {
+    suspend fun clearMusicCache() = withContext(Dispatchers.IO) {
         simpleCache.keys.forEach { key ->
             simpleCache.removeResource(key)
         }
     }
 
     /** Updates music cache limit and evicts oldest spans immediately when needed. */
-    fun setMusicCacheLimitGb(sizeGb: Int) {
+    suspend fun setMusicCacheLimitGb(sizeGb: Int) = withContext(Dispatchers.IO) {
         val limitBytes = sizeGb.coerceIn(0, 20).toLong() * 1024 * 1024 * 1024
         musicCacheEvictor.setMaxBytes(simpleCache, limitBytes)
     }
@@ -122,7 +124,7 @@ class CacheManager @Inject constructor(
     /**
      * Clear both caches.
      */
-    fun clearAllCaches() {
+    suspend fun clearAllCaches() = withContext(Dispatchers.IO) {
         clearImageCache()
         clearMusicCache()
     }
