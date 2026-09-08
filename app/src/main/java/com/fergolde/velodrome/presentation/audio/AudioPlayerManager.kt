@@ -249,7 +249,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                         QueueSnapshot(
                             tracks = tracks.map { it.toDto() },
                             currentIndex = _currentIndex.value.coerceIn(0, tracks.lastIndex),
-                            positionMs = _currentPosition.value
+                            positionMs = mediaController?.currentPosition ?: _currentPosition.value
                         )
                     )
                 }
@@ -282,11 +282,18 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
      * First playback interaction after a cold start: materialize the restored
      * queue inside MediaController at the saved index/position, prepared but
      * paused. Returns true if a restore was consumed.
+     *
+     * Only applies when the controller has no items, preventing a stored
+     * snapshot from clobbering an active queue.
      */
     private fun consumePendingRestore(): Boolean {
         val snapshot = pendingRestore ?: return false
-        pendingRestore = null
         val controller = mediaController ?: return false
+        if (controller.mediaItemCount > 0) {
+            pendingRestore = null
+            return false
+        }
+        pendingRestore = null
         val items = snapshot.tracks.map { buildMediaItem(it.toDomain()) }
         val startIndex = snapshot.currentIndex.coerceIn(0, items.lastIndex)
         controller.setMediaItems(items, startIndex, snapshot.positionMs.coerceAtLeast(0L))
@@ -377,6 +384,39 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     }
 
     /**
+     * Ejecuta una operación sobre el MediaController, esperando a que esté
+     * conectado si es necesario. Evita que add/insert/append se pierdan por
+     * una carrera con la conexión del controller.
+     */
+    private fun withController(block: (MediaController) -> Unit) {
+        mediaController?.let { block(it); return }
+
+        val future = controllerFuture ?: return
+        if (future.isDone) {
+            try {
+                mediaController = future.get()
+                mediaController?.let(block)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                Log.e(TAG, "Unable to connect MediaController", error)
+            }
+            return
+        }
+
+        future.addListener({
+            try {
+                mediaController = future.get()
+                mediaController?.let(block)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                Log.e(TAG, "Unable to connect MediaController", error)
+            }
+        }, MoreExecutors.directExecutor())
+    }
+
+    /**
      * Inserta tracks en la playlist en el índice especificado.
      * Actualiza TANTO el StateFlow local como la lista interna del MediaController.
      */
@@ -388,22 +428,10 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         _playlist.value = currentPlaylist
 
         val mediaItems = tracks.map { buildMediaItem(it) }
-
         persistQueue()
-        mediaController?.let { controller ->
-            controller.addMediaItems(index, mediaItems)
-            return
-        }
 
-        val future = controllerFuture
-        if (future == null || !future.isDone) return
-        try {
-            mediaController = future.get()
-            mediaController?.addMediaItems(index, mediaItems)
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
-            Log.e(TAG, "Unable to insert tracks", error)
+        withController { controller ->
+            controller.addMediaItems(index, mediaItems)
         }
     }
 
@@ -417,22 +445,10 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         _playlist.value += tracks
 
         val mediaItems = tracks.map { buildMediaItem(it) }
-
         persistQueue()
-        mediaController?.let { controller ->
-            controller.addMediaItems(mediaItems)
-            return
-        }
 
-        val future = controllerFuture
-        if (future == null || !future.isDone) return
-        try {
-            mediaController = future.get()
-            mediaController?.addMediaItems(mediaItems)
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
-            Log.e(TAG, "Unable to add tracks", error)
+        withController { controller ->
+            controller.addMediaItems(mediaItems)
         }
     }
 
@@ -441,27 +457,16 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         consumePendingRestore()
         _playlist.value += tracks
         val mediaItems = tracks.map { buildMediaItem(it) }
+        persistQueue()
 
-        try {
-            val controller = mediaController ?: run {
-                val future = controllerFuture
-                if (future == null || !future.isDone) return
-                mediaController = future.get()
-                mediaController ?: return
-            }
-
+        withController { controller ->
             controller.addMediaItems(mediaItems)
-            persistQueue()
             if (controller.playbackState == Player.STATE_ENDED ||
                 controller.playbackState == Player.STATE_IDLE
             ) {
                 controller.prepare()
                 controller.play()
             }
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: Exception) {
-            Log.e(TAG, "Unable to append ${tracks.size} tracks", error)
         }
     }
 

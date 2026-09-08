@@ -56,7 +56,7 @@ class PlayerViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state.playlist.isEmpty())
         assertFalse(state.isPlaying)
-        assertEquals(0, state.currentPosition)
+        assertEquals(0, viewModel.currentPositionSeconds.value)
         assertNull(state.currentTrack)
         assertEquals(0, state.currentIndex)
         assertFalse(state.isShuffleEnabled)

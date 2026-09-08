@@ -40,7 +40,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -110,7 +112,8 @@ class AudioPlayerService : MediaSessionService() {
         exoPlayer?.addAnalyticsListener(analyticsListener)
         exoPlayer?.addListener(playerListener)
 
-        setupEqualizer()
+        // EQ will be wired once the audio session id is reported by the player.
+        observeEqualizerSettings()
 
         val intent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
@@ -128,22 +131,14 @@ class AudioPlayerService : MediaSessionService() {
     }
 
     /**
-     * Attaches the session audio effects (genre auto-preset EQ + optional bass
-     * boost) to ExoPlayer's audio session and keeps them in sync with settings.
-     * Best-effort: devices without effect support just stay silent.
+     * Wires settings changes to the current [equalizerEngine]. Runs once in
+     * onCreate; the engine instance itself is recreated on audio session changes.
      */
-    private fun setupEqualizer() {
-        val player = exoPlayer ?: return
-        val engine = EqualizerEngine(player.audioSessionId)
-        equalizerEngine = engine
-
-        // lifecycleScope runs on Main: ExoPlayer must only be touched on its
-        // creation thread. DataStore does its own I/O off-thread, so collecting
-        // here costs nothing.
+    private fun observeEqualizerSettings() {
         lifecycleScope.launch {
             settingsRepository.eqEnabled.collect { enabled ->
                 eqEnabled = enabled
-                engine.setEnabled(enabled)
+                equalizerEngine?.setEnabled(enabled)
                 if (enabled) {
                     applyPresetForCurrentTrack()
                 }
@@ -151,8 +146,32 @@ class AudioPlayerService : MediaSessionService() {
         }
         lifecycleScope.launch {
             settingsRepository.bassBoostEnabled.collect { enabled ->
-                engine.setBassBoostEnabled(enabled)
+                equalizerEngine?.setBassBoostEnabled(enabled)
             }
+        }
+    }
+
+    /**
+     * Attaches the session audio effects (genre auto-preset EQ + optional bass
+     * boost) to ExoPlayer's audio session and keeps them in sync with settings.
+     * Best-effort: devices without effect support just stay silent.
+     *
+     * Called from [onAudioSessionIdChanged] so the effects are recreated
+     * whenever ExoPlayer acquires a new audio session (including after release).
+     * A session id of 0 means the track has no audio output yet.
+     */
+    private fun setupEqualizer(audioSessionId: Int) {
+        equalizerEngine?.release()
+        equalizerEngine = null
+
+        if (audioSessionId == 0) return
+
+        val engine = EqualizerEngine(audioSessionId)
+        equalizerEngine = engine
+        engine.setEnabled(eqEnabled)
+        engine.setBassBoostEnabled(runBlocking { settingsRepository.bassBoostEnabled.first() })
+        if (eqEnabled) {
+            applyPresetForCurrentTrack()
         }
     }
 
@@ -193,7 +212,7 @@ class AudioPlayerService : MediaSessionService() {
             // AcceptedResultBuilder(session) parte de los comandos de sesión por
             // defecto; luego se abre el set de player al completo. El set final
             // se intersecta con lo que ExoPlayer expone, así que solo amplía.
-            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+            return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
                 .setAvailablePlayerCommands(Player.Commands.Builder().addAllCommands().build())
                 .build()
         }
@@ -446,6 +465,13 @@ class AudioPlayerService : MediaSessionService() {
                 scrobbleManager.onTrackChanged()
                 scrobbleManager.sendNowPlaying(trackId)
             }
+        }
+
+        override fun onAudioSessionIdChanged(
+            eventTime: AnalyticsListener.EventTime,
+            audioSessionId: Int
+        ) {
+            setupEqualizer(audioSessionId)
         }
     }
 

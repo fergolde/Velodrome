@@ -7,7 +7,6 @@ import com.fergolde.velodrome.domain.model.Track
  */
 data class PlayerUiState(
     val isPlaying: Boolean = false,
-    val currentPosition: Int = 0,
     val currentTrack: Track? = null,
     val playlist: List<Track> = emptyList(),
     val currentIndex: Int = 0,

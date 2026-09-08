@@ -117,7 +117,7 @@ class ScrobbleManager @Inject constructor(
 
         workManager.enqueueUniqueWork(
             SCROBBLE_WORK_NAME,
-            ExistingWorkPolicy.KEEP,
+            ExistingWorkPolicy.APPEND,
             workRequest
         )
     }
