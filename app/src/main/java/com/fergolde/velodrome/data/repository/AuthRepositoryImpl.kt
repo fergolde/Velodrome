@@ -22,16 +22,19 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun login(username: String, password: String, serverUrl: String): Result<AuthResult> {
         return runCatchingWithCancellation {
             try {
-                // Save credentials securely (username + password, NO token)
-                credentialsManager.saveCredentials(username, password, serverUrl)
+                // Use in-memory credentials for the ping so bad credentials are never persisted.
+                credentialsManager.setTemporaryCredentials(username, password, serverUrl)
 
                 // Try ping - auth interceptor will add u, t, s params automatically
                 val response = api.ping()
                 response.requireOk()
 
+                // Persist only after the server accepts the credentials.
+                credentialsManager.saveCredentials(username, password, serverUrl)
+
                 AuthResult(success = true)
             } catch (e: Exception) {
-                credentialsManager.clearCredentials()
+                credentialsManager.clearTemporaryCredentials()
                 val userMessage = when (e) {
                     is com.fergolde.velodrome.data.remote.SubsonicApiException ->
                         e.error.message

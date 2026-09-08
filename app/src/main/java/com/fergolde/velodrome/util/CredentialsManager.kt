@@ -28,6 +28,11 @@ class CredentialsManager @Inject constructor(
     private var cachedServerUrl: String? = null
     private var credentialsLoaded = false
 
+    // In-memory credentials used during login ping; never persisted.
+    private var tempUsername: String? = null
+    private var tempPassword: String? = null
+    private var tempServerUrl: String? = null
+
     private val KEY_USERNAME = "username"
     private val KEY_PASSWORD = "password"
     private val KEY_SERVER_URL = "server_url"
@@ -38,8 +43,8 @@ class CredentialsManager @Inject constructor(
 
     @Synchronized
     fun getValidAuthParams(): Triple<String, String, String>? {
-        val username = getUsername() ?: return null
-        val password = getPassword() ?: return null
+        val username = tempUsername ?: getUsername() ?: return null
+        val password = tempPassword ?: getPassword() ?: return null
         val now = System.currentTimeMillis()
 
         if (cachedToken != null && cachedSalt != null && (now - lastAuthTimestamp) < SESSION_DURATION_MS) {
@@ -69,18 +74,39 @@ class CredentialsManager @Inject constructor(
     // PERSISTENCE
     // -------------------------
 
+    /**
+     * Sets in-memory credentials for the login ping. These are NOT persisted and
+     * are cleared when the real credentials are saved or when login fails.
+     */
+    fun setTemporaryCredentials(username: String, password: String, serverUrl: String) {
+        tempUsername = username
+        tempPassword = password
+        tempServerUrl = serverUrl
+        invalidateAuth() // Force the interceptor to build a token from the new secrets.
+    }
+
+    /**
+     * Clears temporary in-memory credentials and invalidates cached auth tokens.
+     */
+    fun clearTemporaryCredentials() {
+        tempUsername = null
+        tempPassword = null
+        tempServerUrl = null
+        invalidateAuth()
+    }
+
     fun saveCredentials(username: String, password: String, serverUrl: String) {
         encryptedPrefs.edit {
             putString(KEY_USERNAME, username)
                 .putString(KEY_PASSWORD, password)
                 .putString(KEY_SERVER_URL, serverUrl)
         }
-        invalidateAuth() // Importante: al cambiar credenciales, limpiar caché
+        clearTemporaryCredentials() // Wipe temp state; next read loads persisted values.
     }
 
     fun clearCredentials() {
         encryptedPrefs.edit { clear() }
-        invalidateAuth() // Importante: al salir, limpiar caché
+        clearTemporaryCredentials()
     }
 
     private fun ensureCredentialsLoaded() {
@@ -106,6 +132,7 @@ class CredentialsManager @Inject constructor(
     }
 
     fun getServerUrl(): String? {
+        tempServerUrl?.let { return it }
         ensureCredentialsLoaded()
         return cachedServerUrl
     }
