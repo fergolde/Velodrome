@@ -32,8 +32,6 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class ArtistsUiState(
-    val isLoading: Boolean = true,
-    val error: String? = null,
     val searchQuery: String = "",
     val searchResults: List<Artist> = emptyList(),
     val isSearching: Boolean = false
@@ -60,7 +58,6 @@ class ArtistsViewModel @Inject constructor(
 
     init {
         observeSearch()
-        _uiState.update { it.copy(isLoading = false) }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)

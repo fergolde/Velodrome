@@ -13,11 +13,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +28,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.paging.LoadState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +53,7 @@ import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
 import com.fergolde.velodrome.presentation.components.VeloSearchBar
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
+import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,26 +80,22 @@ fun AlbumsScreen(
             .fillMaxSize()
             .statusBarsPadding()
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            if (uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-            } else if (uiState.error != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(text = uiState.error!!, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            } else {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 15.dp)) {
-                    VeloSearchBar(
-                        query = uiState.searchQuery,
-                        onQueryChange = viewModel::onSearchQueryChange,
-                        onClearClick = { viewModel.onSearchQueryChange("") },
-                        hint = stringResource(R.string.albums_search_hint),
-                    )
-                    Spacer(modifier = Modifier.height(36.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp, vertical = 15.dp)
+        ) {
+            VeloSearchBar(
+                query = uiState.searchQuery,
+                onQueryChange = viewModel::onSearchQueryChange,
+                onClearClick = { viewModel.onSearchQueryChange("") },
+                hint = stringResource(R.string.albums_search_hint),
+            )
+            Spacer(modifier = Modifier.height(36.dp))
 
-                    if (uiState.isSearching) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    uiState.isSearching -> {
                         LazyVerticalGrid(
                             columns = gridColumns,
                             modifier = Modifier.fillMaxSize(),
@@ -112,7 +114,35 @@ fun AlbumsScreen(
                                 )
                             }
                         }
-                    } else {
+                    }
+
+                    pagedAlbums.loadState.refresh is LoadState.Loading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+
+                    pagedAlbums.loadState.refresh is LoadState.Error -> {
+                        val error = (pagedAlbums.loadState.refresh as LoadState.Error).error
+                        PagingErrorMessage(
+                            message = error.localizedMessage ?: stringResource(R.string.error_loading),
+                            onRetry = { pagedAlbums.retry() },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    pagedAlbums.itemCount == 0 -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = stringResource(R.string.albums_empty),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontFamily = DmSansFontFamily,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+
+                    else -> {
                         LazyVerticalGrid(
                             columns = gridColumns,
                             modifier = Modifier.fillMaxSize(),
@@ -134,6 +164,37 @@ fun AlbumsScreen(
                                             showOptions = true
                                         }
                                     )
+                                }
+                            }
+
+                            pagedAlbums.apply {
+                                when (loadState.append) {
+                                    is LoadState.Loading -> item {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(24.dp),
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+
+                                    is LoadState.Error -> {
+                                        val error = (loadState.append as LoadState.Error).error
+                                        item {
+                                            PagingErrorMessage(
+                                                message = error.localizedMessage ?: stringResource(R.string.error_loading),
+                                                onRetry = { pagedAlbums.retry() },
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                    }
+
+                                    else -> {}
                                 }
                             }
                         }
@@ -165,6 +226,40 @@ fun AlbumsScreen(
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PagingErrorMessage(
+    message: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = message,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontFamily = DmSansFontFamily,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Button(
+            onClick = onRetry,
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Text(
+                text = stringResource(R.string.retry),
+                fontFamily = DmSansFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp
+            )
         }
     }
 }

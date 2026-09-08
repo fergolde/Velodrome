@@ -16,11 +16,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.work.Constraints
-import androidx.work.ExistingWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.fergolde.velodrome.data.worker.SyncLibraryWorker
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.presentation.VelodromeMainApp
@@ -85,19 +80,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun triggerLibrarySync() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
-        val syncRequest = OneTimeWorkRequestBuilder<SyncLibraryWorker>()
-            .setConstraints(constraints)
-            .build()
-
-        WorkManager.getInstance(this)
-            .enqueueUniqueWork(
-                "sync_library",
-                ExistingWorkPolicy.KEEP,
-                syncRequest
-            )
+        SyncLibraryWorker.enqueueImmediate(this)
+        SyncLibraryWorker.enqueuePeriodic(this)
     }
 }

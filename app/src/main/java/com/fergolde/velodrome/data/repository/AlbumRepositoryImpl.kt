@@ -190,25 +190,23 @@ class AlbumPagingSource(
 
     override fun getRefreshKey(state: PagingState<Int, Album>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
-            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
-                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
+            val closest = state.closestPageToPosition(anchorPosition)
+            closest?.prevKey?.let { it + closest.data.size }
+                ?: closest?.nextKey?.let { (it - closest.data.size).coerceAtLeast(0) }
         }
     }
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Album> {
         return try {
-            val page = params.key ?: 0
             val pageSize = params.loadSize
-            // offset real = página * tamaño de página
-            val offset = page * pageSize
+            val offset = params.key ?: 0
 
-            // getAlbumsPage devuelve List<AlbumEntity>, no un Flow
             val albums = localDataSource.getAlbumsPage(offset = offset, limit = pageSize)
 
             LoadResult.Page(
                 data = albums.map { it.toDomain() },
-                prevKey = if (page == 0) null else page - 1,
-                nextKey = if (albums.isEmpty()) null else page + 1
+                prevKey = if (offset == 0) null else (offset - pageSize).coerceAtLeast(0),
+                nextKey = if (albums.isEmpty() || albums.size < pageSize) null else offset + albums.size
             )
         } catch (e: Exception) {
             LoadResult.Error(e)

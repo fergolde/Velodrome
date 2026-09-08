@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -70,13 +71,40 @@ fun HomeScreen(
     onPlaylistClick: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
+    val isContentEmpty = state.latestAlbums.isEmpty() &&
+            state.randomAlbums.isEmpty() &&
+            state.topAlbums.isEmpty() &&
+            state.recentlyPlayedAlbums.isEmpty() &&
+            state.playlists.isEmpty()
 
-    LazyColumn(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding()
     ) {
+        when {
+            state.isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            isContentEmpty -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = stringResource(R.string.home_empty),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontFamily = DmSansFontFamily,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
 
         // ── Shuffle button ─────────────────────────────────────────────────
         item {
@@ -172,6 +200,9 @@ fun HomeScreen(
                     onPlaylistClick = { onPlaylistClick(it.id) }
                 )
                 Spacer(Modifier.height(100.dp)) // mini-player clearance
+            }
+        }
+                }
             }
         }
     }

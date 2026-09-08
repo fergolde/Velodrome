@@ -8,6 +8,9 @@ import com.fergolde.velodrome.domain.model.Playlist
  * Represents the complete state of the HomeScreen UI.
  */
 data class HomeUiState(
+    // True until at least one section has loaded.
+    val isLoading: Boolean = true,
+
     // Recently added albums (RecentlyAdded section)
     val latestAlbums: List<Album> = emptyList(),
 

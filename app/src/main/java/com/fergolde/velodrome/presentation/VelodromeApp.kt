@@ -74,7 +74,18 @@ fun VelodromeMainApp(
             MainScaffold(
                 navController = navController,
                 startDestination = if (isLoggedIn == true) Routes.Home else Routes.Login,
-                onLoginSuccess = { isLoggedIn = true },
+                onLoginSuccess = {
+                    isLoggedIn = true
+                    navController.navigate(Routes.Home) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onLogout = {
+                    isLoggedIn = false
+                    navController.navigate(Routes.Login) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
                 sharedPlayerViewModel = sharedPlayerViewModel
             )
         }
@@ -87,6 +98,7 @@ fun MainScaffold(
     navController: NavHostController,
     startDestination: Any,
     onLoginSuccess: () -> Unit,
+    onLogout: () -> Unit,
     sharedPlayerViewModel: SharedPlayerViewModel
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -257,7 +269,8 @@ fun MainScaffold(
                         }
                         composable<Routes.Settings> {
                             SettingsScreen(
-                                onNavigateBack = { navController.popBackStack() }
+                                onNavigateBack = { navController.popBackStack() },
+                                onLogout = onLogout
                             )
                         }
                         composable<Routes.ArtistDetail> { backStackEntry ->

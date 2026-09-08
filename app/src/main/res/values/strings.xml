@@ -99,12 +99,21 @@
     <string name="settings_cancel">Cancelar</string>
     <string name="settings_clear_cache_dialog_title">¿Limpiar caché?</string>
     <string name="settings_clear_cache_dialog_message">Se eliminarán todos los datos en caché. Tendrás que volver a cargar el contenido la próxima vez.</string>
+    <string name="settings_account">Cuenta</string>
+    <string name="settings_logout">Cerrar sesión</string>
+    <string name="settings_logout_dialog_title">¿Cerrar sesión?</string>
+    <string name="settings_logout_dialog_message">Se borrarán tus credenciales. Los datos de música locales no se eliminarán.</string>
 
     <!-- Common -->
     <string name="nav_back">Atrás</string>
     <string name="view_all">Ver Todo</string>
     <string name="play">Reproducir</string>
     <string name="error_loading">Error al cargar</string>
+    <string name="retry">Reintentar</string>
+    <string name="artists_empty">No hay artistas guardados</string>
+    <string name="albums_empty">No hay álbumes guardados</string>
+    <string name="home_empty">Aún no hay contenido. Sincroniza tu biblioteca para empezar.</string>
+    <string name="explore_empty">No hay nada para explorar todavía.</string>
 
     <!-- Universal options sheet -->
     <string name="options_play_now_title">Reproducir ahora</string>

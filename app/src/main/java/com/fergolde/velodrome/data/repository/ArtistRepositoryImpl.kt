@@ -159,23 +159,23 @@ class ArtistPagingSource(
 
     override fun getRefreshKey(state: PagingState<Int, Artist>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
-            state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
-                ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)
+            val closest = state.closestPageToPosition(anchorPosition)
+            closest?.prevKey?.let { it + closest.data.size }
+                ?: closest?.nextKey?.let { (it - closest.data.size).coerceAtLeast(0) }
         }
     }
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Artist> {
         return try {
-            val page = params.key ?: 0
             val pageSize = params.loadSize
-            val offset = page * pageSize
+            val offset = params.key ?: 0
 
             val artists = localDataSource.getArtistsPage(offset = offset, limit = pageSize)
 
             LoadResult.Page(
                 data = artists.map { it.toDomain() },
-                prevKey = if (page == 0) null else page - 1,
-                nextKey = if (artists.isEmpty()) null else page + 1
+                prevKey = if (offset == 0) null else (offset - pageSize).coerceAtLeast(0),
+                nextKey = if (artists.isEmpty() || artists.size < pageSize) null else offset + artists.size
             )
         } catch (e: Exception) {
             LoadResult.Error(e)
