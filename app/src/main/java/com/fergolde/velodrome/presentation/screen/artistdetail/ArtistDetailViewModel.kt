@@ -17,6 +17,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -77,12 +80,15 @@ class ArtistDetailViewModel @Inject constructor(
     }
 
     // Lógica para obtener todas las canciones de todos los álbumes
-    private suspend fun gatherAllArtistTracks(): List<Track> = coroutineScope {
+    private suspend fun gatherAllArtistTracks(): List<Track> = supervisorScope {
         val albums = _uiState.value.albums
 
-        // 1. Sincronizar todos los álbumes en paralelo
+        // 1. Sincronizar todos los álbumes en paralelo con fan-out acotado
+        val semaphore = Semaphore(5)
         albums.map { album ->
-            async { trackUseCases.syncTracksForAlbum(album.id) }
+            async {
+                semaphore.withPermit { trackUseCases.syncTracksForAlbum(album.id) }
+            }
         }.awaitAll()
 
         // 2. Obtener las canciones de la DB local

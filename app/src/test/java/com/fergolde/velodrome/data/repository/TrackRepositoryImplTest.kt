@@ -116,4 +116,23 @@ class TrackRepositoryImplTest {
         val result = repository.getOfflineTracks()
         assertTrue(result.isEmpty())
     }
+
+    @Test
+    fun getTopGlobalTracks_ignoresFailedAlbums() = runTest {
+        val albumList = AlbumListDto(albums = listOf(
+            AlbumDto(id = "a1", name = "Album 1"),
+            AlbumDto(id = "a2", name = "Album 2")
+        ))
+        coEvery { api.getAlbumList2(type = "frequent", size = 50) } returns
+                SubsonicResponse(SubsonicResponseDto(status = "ok", albumList2 = albumList))
+
+        val okAlbum = AlbumDetailDto(id = "a1", songs = listOf(sampleSongDto))
+        coEvery { api.getAlbum("a1") } returns SubsonicResponse(SubsonicResponseDto(status = "ok", album = okAlbum))
+        coEvery { api.getAlbum("a2") } throws RuntimeException("404")
+
+        val result = repository.getTopGlobalTracks(10)
+
+        assertTrue(result.isSuccess)
+        assertEquals(1, result.getOrNull()!!.size)
+    }
 }
