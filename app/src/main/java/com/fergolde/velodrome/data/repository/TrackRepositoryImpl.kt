@@ -89,8 +89,12 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
             val songDtos = response.response.randomSongs?.song ?: emptyList()
             val tracks = songDtos.map { mapSongDto(it, it.albumId ?: "") }
 
-            // ¡Guardamos en Room para tener el sizeBytes disponible en el futuro!
-            saveTracksToLocalDb(tracks)
+            // Persist only tracks that belong to an album so the DB stays
+            // relationally consistent.
+            val tracksToPersist = tracks.filter { it.albumId.isNotBlank() }
+            if (tracksToPersist.isNotEmpty()) {
+                saveTracksToLocalDb(tracksToPersist)
+            }
 
             tracks
         }
