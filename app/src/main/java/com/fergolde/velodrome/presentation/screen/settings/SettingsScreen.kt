@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -45,14 +46,23 @@ import com.fergolde.velodrome.ui.theme.VeloPalette
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
+    onLogout: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showColorPicker by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showClearCacheDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.hasPendingChanges) {
         if (uiState.hasPendingChanges) showConfirmDialog = true
+    }
+
+    LaunchedEffect(uiState.shouldLogout) {
+        if (uiState.shouldLogout) {
+            viewModel.logoutHandled()
+            onLogout()
+        }
     }
 
     // Refrescar tamaños de cache cada vez que se entra a la pantalla
@@ -382,6 +392,105 @@ fun SettingsScreen(
                         fontSize = 13.sp,
                     )
                 }
+            }
+
+            // Account
+            VeloSettingsSection(eyebrow = stringResource(R.string.settings_account)) {
+                OutlinedButton(
+                    onClick = { showLogoutDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(42.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = VeloPalette.Destructive,
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                        brush = SolidColor(VeloPalette.Destructive.copy(alpha = .5f)),
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Logout, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        stringResource(R.string.settings_logout),
+                        fontFamily = DmSansFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                    )
+                }
+            }
+
+            if (showLogoutDialog) {
+                AlertDialog(
+                    onDismissRequest = { showLogoutDialog = false },
+                    shape = RoundedCornerShape(20.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    icon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = null,
+                            tint = VeloPalette.Destructive,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    },
+                    title = {
+                        Text(
+                            text = stringResource(R.string.settings_logout_dialog_title),
+                            fontFamily = DmSansFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = stringResource(R.string.settings_logout_dialog_message),
+                            fontFamily = DmSansFontFamily,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    dismissButton = {
+                        OutlinedButton(
+                            onClick = { showLogoutDialog = false },
+                            shape = RoundedCornerShape(12.dp),
+                            border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                                brush = SolidColor(VeloPalette.Border),
+                            ),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_cancel),
+                                fontFamily = DmSansFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        OutlinedButton(
+                            onClick = {
+                                showLogoutDialog = false
+                                viewModel.logout()
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = VeloPalette.Destructive,
+                            ),
+                            border = ButtonDefaults.outlinedButtonBorder(true).copy(
+                                brush = SolidColor(VeloPalette.Destructive.copy(alpha = .5f)),
+                            ),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_logout),
+                                fontFamily = DmSansFontFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp,
+                            )
+                        }
+                    },
+                )
             }
 
             // About

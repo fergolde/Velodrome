@@ -7,6 +7,7 @@ import androidx.media3.common.util.UnstableApi
 import com.fergolde.velodrome.BuildConfig
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.util.CacheManager
+import com.fergolde.velodrome.util.CredentialsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +35,8 @@ data class SettingsUiState(
     val pendingImageCacheMb: Int = 200,
     val pendingMusicCacheGb: Int = 2,
     val hasPendingChanges: Boolean = false,
-    val appVersion: String = BuildConfig.VERSION_NAME
+    val appVersion: String = BuildConfig.VERSION_NAME,
+    val shouldLogout: Boolean = false
 )
 
 /**
@@ -45,7 +47,8 @@ data class SettingsUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val cacheManager: CacheManager
+    private val cacheManager: CacheManager,
+    private val credentialsManager: CredentialsManager
 ) : ViewModel() {
 
     private val _currentCacheSizes = MutableStateFlow(Pair("0 MB", "0 GB"))
@@ -56,6 +59,8 @@ class SettingsViewModel @Inject constructor(
     private val _pendingImageCacheMb = MutableStateFlow(200)
     private val _pendingMusicCacheGb = MutableStateFlow(2)
     private val _hasPendingChanges = MutableStateFlow(false)
+
+    private val _shouldLogout = MutableStateFlow(false)
 
     /**
      * UI State as a StateFlow.
@@ -71,7 +76,8 @@ class SettingsViewModel @Inject constructor(
         _isClearingCache,
         _pendingImageCacheMb,
         _pendingMusicCacheGb,
-        _hasPendingChanges
+        _hasPendingChanges,
+        _shouldLogout
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         SettingsUiState(
@@ -87,7 +93,8 @@ class SettingsViewModel @Inject constructor(
             pendingImageCacheMb = values[8] as Int,
             pendingMusicCacheGb = values[9] as Int,
             hasPendingChanges = values[10] as Boolean,
-            appVersion = BuildConfig.VERSION_NAME
+            appVersion = BuildConfig.VERSION_NAME,
+            shouldLogout = values[11] as Boolean
         )
     }.stateIn(
         scope = viewModelScope,
@@ -203,6 +210,22 @@ class SettingsViewModel @Inject constructor(
             refreshCacheSizes()
             _isClearingCache.value = false
         }
+    }
+
+    /**
+     * Clears credentials and signals the UI to return to the login screen.
+     * Does NOT delete local music DB, cache or queue snapshots.
+     */
+    fun logout() {
+        credentialsManager.clearCredentials()
+        _shouldLogout.value = true
+    }
+
+    /**
+     * Marks the logout navigation as handled.
+     */
+    fun logoutHandled() {
+        _shouldLogout.value = false
     }
 
     /**

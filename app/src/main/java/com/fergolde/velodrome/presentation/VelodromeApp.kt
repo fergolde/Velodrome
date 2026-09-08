@@ -257,7 +257,12 @@ fun MainScaffold(
                         }
                         composable<Routes.Settings> {
                             SettingsScreen(
-                                onNavigateBack = { navController.popBackStack() }
+                                onNavigateBack = { navController.popBackStack() },
+                                onLogout = {
+                                    navController.navigate(Routes.Login) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
                             )
                         }
                         composable<Routes.ArtistDetail> { backStackEntry ->
