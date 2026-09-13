@@ -4,6 +4,7 @@ import com.fergolde.velodrome.data.repository.AlbumRepositoryImpl
 import com.fergolde.velodrome.data.repository.ArtistRepositoryImpl
 import com.fergolde.velodrome.data.repository.AuthRepositoryImpl
 import com.fergolde.velodrome.data.repository.ScrobbleRepositoryImpl
+import com.fergolde.velodrome.data.repository.ServerMigrationRepositoryImpl
 import com.fergolde.velodrome.data.repository.TrackRepositoryImpl
 import com.fergolde.velodrome.data.repository.PlaylistRepositoryImpl
 import com.fergolde.velodrome.domain.repository.AlbumRepository
@@ -11,6 +12,7 @@ import com.fergolde.velodrome.domain.repository.ArtistRepository
 import com.fergolde.velodrome.domain.repository.AuthRepository
 import com.fergolde.velodrome.domain.repository.PlaylistRepository
 import com.fergolde.velodrome.domain.repository.ScrobbleRepository
+import com.fergolde.velodrome.domain.repository.ServerMigrationRepository
 import com.fergolde.velodrome.domain.repository.TrackRepository
 import dagger.Binds
 import dagger.Module
@@ -45,4 +47,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindPlaylistRepository(impl: PlaylistRepositoryImpl): PlaylistRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindServerMigrationRepository(
+        impl: ServerMigrationRepositoryImpl
+    ): ServerMigrationRepository
 }

@@ -71,6 +71,12 @@ interface SettingsRepository {
      */
     val lastServerCheckAt: Flow<Long>
 
+    /**
+     * Last Navidrome version reported by the server (`serverVersion` attribute).
+     * Default: null (never recorded)
+     */
+    val lastServerVersion: Flow<String?>
+
     // --- Actions ---
 
     suspend fun setImageCacheSizeMb(sizeMb: Int)
@@ -90,4 +96,6 @@ interface SettingsRepository {
     suspend fun setLastSyncOffset(offset: Int)
 
     suspend fun setLastServerCheckAt(timestamp: Long)
+
+    suspend fun setLastServerVersion(version: String)
 }

@@ -27,6 +27,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val LAST_SYNC_TIMESTAMP = longPreferencesKey("last_sync_timestamp")
         val LAST_SYNC_OFFSET = intPreferencesKey("last_sync_offset")
         val LAST_SERVER_CHECK_AT = longPreferencesKey("last_server_check_at")
+        val LAST_SERVER_VERSION = stringPreferencesKey("last_server_version")
     }
 
     companion object {
@@ -68,6 +69,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override val lastServerCheckAt: Flow<Long> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.LAST_SERVER_CHECK_AT] ?: DEFAULT_LAST_SYNC_TIMESTAMP }
+
+    override val lastServerVersion: Flow<String?> = dataStore.data
+        .map { preferences -> preferences[PreferencesKeys.LAST_SERVER_VERSION] }
 
     // --- Actions ---
 
@@ -114,5 +118,9 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setLastServerCheckAt(timestamp: Long) {
         dataStore.edit { it[PreferencesKeys.LAST_SERVER_CHECK_AT] = timestamp }
+    }
+
+    override suspend fun setLastServerVersion(version: String) {
+        dataStore.edit { it[PreferencesKeys.LAST_SERVER_VERSION] = version }
     }
 }

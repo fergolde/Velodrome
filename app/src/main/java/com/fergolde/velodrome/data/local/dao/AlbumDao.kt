@@ -25,4 +25,7 @@ interface AlbumDao {
 
     @Query("SELECT MIN(year) FROM albums WHERE year IS NOT NULL AND year > 1950")
     suspend fun getMinYear(): Int?
+
+    @Query("DELETE FROM albums")
+    suspend fun deleteAll()
 }

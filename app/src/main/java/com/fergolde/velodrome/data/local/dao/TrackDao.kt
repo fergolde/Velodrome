@@ -29,4 +29,7 @@ interface TrackDao {
 
     @Upsert
     suspend fun insertTracks(tracks: List<TrackEntity>)
+
+    @Query("DELETE FROM tracks")
+    suspend fun deleteAll()
 }
