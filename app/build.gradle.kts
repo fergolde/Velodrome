@@ -19,7 +19,7 @@ android {
     namespace = "com.fergolde.velodrome"
     compileSdk {
         version = release(37) {
-            minorApiLevel = 1
+            minorApiLevel = 2
         }
     }
 
@@ -28,7 +28,7 @@ android {
         minSdk = 34
         targetSdk = 37
         versionCode = 36
-        versionName = "2.7.0"
+        versionName = "2.7.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
