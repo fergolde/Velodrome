@@ -5,6 +5,7 @@ import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.player.PlayerManager
+import com.fergolde.velodrome.util.ServerDataResetNotifier
 import kotlinx.coroutines.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -52,7 +53,8 @@ private const val GENRE_WEIGHT_MULTIPLIER = 2.0
 class SmartRadioEngine @Inject constructor(
     private val trackUseCases: TrackUseCases,
     private val playerManager: PlayerManager,
-    private val albumUseCases: AlbumUseCases
+    private val albumUseCases: AlbumUseCases,
+    private val serverDataResetNotifier: ServerDataResetNotifier
 ) {
     private val engineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -91,6 +93,28 @@ class SmartRadioEngine @Inject constructor(
 
     /** Set for Song seeds: the seed itself always opens the mix. */
     private var smartSeedTrack: Track? = null
+
+    init {
+        engineScope.launch(radioDispatcher) {
+            serverDataResetNotifier.epoch.collect { epoch ->
+                if (epoch > 0) invalidateAfterServerReset()
+            }
+        }
+    }
+
+    /**
+     * A server-side ID migration invalidates the cached library snapshot and
+     * any running session, both keyed by server IDs. Runs on the confined
+     * radio dispatcher so it cannot race with a pool build.
+     */
+    private fun invalidateAfterServerReset() {
+        sessionGen++
+        engineJob?.cancel()
+        playerManager.setLoadMoreCallback { }
+        clearRadioState(context = null)
+        libraryCache = null
+        libraryCacheAlbumCount = -1
+    }
 
     /** Removes and returns a random element, or null when empty. */
     private fun <T> MutableList<T>.removeRandomOrNull(): T? =

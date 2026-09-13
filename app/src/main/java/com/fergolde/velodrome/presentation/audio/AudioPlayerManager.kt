@@ -18,6 +18,7 @@ import com.fergolde.velodrome.data.local.queue.toDto
 import com.fergolde.velodrome.data.local.queue.toDomain
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.util.CredentialsManager
+import com.fergolde.velodrome.util.ServerDataResetNotifier
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -61,6 +62,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     @param:ApplicationContext private val context: Context,
     private val credentialsManager: CredentialsManager,
     private val queueSnapshotStore: QueueSnapshotStore,
+    private val serverDataResetNotifier: ServerDataResetNotifier,
 ) {
 
     private val _isPlaying = MutableStateFlow(false)
@@ -90,6 +92,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     private var controllerFuture: ListenableFuture<MediaController>? = null
 
     private val playerScope = CoroutineScope(Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
+    @Volatile
     private var loadMoreCallback: (() -> Unit)? = null
     private val retryAttempts = mutableMapOf<String, Int>()
 
@@ -118,6 +121,34 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                 Log.e(TAG, "Unable to connect MediaController", error)
             }
         }, MoreExecutors.directExecutor())
+        observeServerDataResets()
+    }
+
+    /**
+     * A server-side ID migration invalidates every queued track: drop the
+     * queue so the user never plays a stream URL with a stale id. Disk caches
+     * are deliberately left alone (removing spans of a track Media3 is
+     * currently reading can break playback); the LRU evictor reclaims them as
+     * new tracks are cached.
+     */
+    private fun observeServerDataResets() {
+        playerScope.launch {
+            serverDataResetNotifier.epoch.collect { epoch ->
+                if (epoch > 0) clearQueueAfterServerReset()
+            }
+        }
+    }
+
+    private fun clearQueueAfterServerReset() {
+        pendingRestore = null
+        _playlist.value = emptyList()
+        _currentIndex.value = 0
+        _currentTrack.value = null
+        _currentTrackId.value = null
+        _isPlaying.value = false
+        mediaController?.stop()
+        mediaController?.clearMediaItems()
+        clearPersistedQueue()
     }
 
     private fun setupControllerListener() {
