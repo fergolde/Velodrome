@@ -74,6 +74,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -81,6 +82,9 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -89,6 +93,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -305,7 +310,8 @@ fun PlayerScreen(
                     showQueue = false
                 },
                 onRemoveTrack = viewModel::onRemoveTrack,
-                onQueueReorder = viewModel::onQueueReorder
+                onQueueReorder = viewModel::onQueueReorder,
+                blockParentOverscroll = true
             )
             Spacer(modifier = Modifier.height(20.dp))
         }
@@ -632,7 +638,8 @@ fun QueueContent(
     isPlaying: Boolean,
     onTrackClick: (Int) -> Unit,
     onRemoveTrack: (Int) -> Unit = {},
-    onQueueReorder: (Int, Int) -> Unit = { _, _ -> }
+    onQueueReorder: (Int, Int) -> Unit = { _, _ -> },
+    blockParentOverscroll: Boolean = false
 ) {
     val listState = rememberLazyListState()
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
@@ -641,6 +648,25 @@ fun QueueContent(
     var itemHeightPx by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current
     val haptics = LocalHapticFeedback.current
+
+    // In the queue sheet the LazyColumn sits inside a ModalBottomSheet. Material3
+    // forwards any scroll delta the list can't consume to the sheet's anchored
+    // draggable, so hitting the list boundary bounces the sheet toward dismiss or
+    // expand in a loop until the next touch. Swallowing the leftover post-scroll
+    // (and post-fling velocity) here starves the parent sheet of that delta,
+    // while leaving the sheet's pre-scroll dismissal gesture untouched.
+    val parentOverscrollGuard = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset = if (source == NestedScrollSource.UserInput) available else Offset.Zero
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+                available
+        }
+    }
 
     // Follow playback ONLY when the song itself changes: every reorder commit
     // shifts currentIndex, and keying on it would yank the viewport to the
@@ -729,7 +755,11 @@ fun QueueContent(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        LazyColumn(
+            state = listState,
+            modifier = if (blockParentOverscroll) Modifier.nestedScroll(parentOverscrollGuard) else Modifier,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
             itemsIndexed(visualItems, key = { _, item -> item.first }) { pos, item ->
                 val isDragging = draggingIndex == pos
                 Box(
