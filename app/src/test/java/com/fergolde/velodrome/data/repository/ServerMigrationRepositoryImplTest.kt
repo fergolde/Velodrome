@@ -41,6 +41,7 @@ class ServerMigrationRepositoryImplTest {
     private fun localDataPresent(present: Boolean) {
         coEvery { albumDao.getAlbumCount() } returns if (present) 10 else 0
         coEvery { artistDao.getArtistCount() } returns if (present) 5 else 0
+        coEvery { trackDao.getTrackCount() } returns if (present) 25 else 0
     }
 
     @Test
@@ -87,6 +88,19 @@ class ServerMigrationRepositoryImplTest {
         assertTrue(reset)
         coVerify { trackDao.deleteAll() }
         coVerify { settingsRepository.setLastServerVersion("0.64.0") }
+    }
+
+    @Test
+    fun `cached tracks alone count as local data`() = runTest {
+        storedVersion(null)
+        coEvery { albumDao.getAlbumCount() } returns 0
+        coEvery { artistDao.getArtistCount() } returns 0
+        coEvery { trackDao.getTrackCount() } returns 3
+
+        val reset = repository.checkAndMigrate("0.64.0")
+
+        assertTrue(reset)
+        coVerify { trackDao.deleteAll() }
     }
 
     @Test

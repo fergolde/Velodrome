@@ -36,7 +36,11 @@ class ServerMigrationRepositoryImpl @Inject constructor(
 
     override suspend fun checkAndMigrate(currentServerVersion: String?): Boolean {
         val storedVersion = settingsRepository.lastServerVersion.first()
-        val hasLocalData = albumDao.getAlbumCount() > 0 || artistDao.getArtistCount() > 0
+        // Tracks can be cached without their album/artist rows (e.g. random
+        // songs), so all three tables must be checked.
+        val hasLocalData = albumDao.getAlbumCount() > 0 ||
+            artistDao.getArtistCount() > 0 ||
+            trackDao.getTrackCount() > 0
 
         val shouldReset = ServerVersion.requiresIdMigrationReset(
             storedVersion = storedVersion,
