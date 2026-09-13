@@ -14,8 +14,12 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.fergolde.velodrome.data.local.datasource.LocalMusicDataSource
 import com.fergolde.velodrome.data.local.mapper.toEntity
+import com.fergolde.velodrome.data.remote.NavidromeApi
+import com.fergolde.velodrome.data.remote.requireOk
+import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
 import com.fergolde.velodrome.domain.repository.AlbumRepository
 import com.fergolde.velodrome.domain.repository.ArtistRepository
+import com.fergolde.velodrome.domain.repository.ServerMigrationRepository
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -37,11 +41,18 @@ class SyncLibraryWorker @AssistedInject constructor(
     private val settingsRepository: SettingsRepository,
     private val artistRepository: ArtistRepository,
     private val albumRepository: AlbumRepository,
-    private val localMusicDataSource: LocalMusicDataSource
+    private val localMusicDataSource: LocalMusicDataSource,
+    private val api: NavidromeApi,
+    private val serverMigrationRepository: ServerMigrationRepository
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
+            // Must run before any incremental decision: a server-side ID
+            // migration wipes local data and zeroes the sync stamps, so the
+            // full-sync path below picks the reset up in this same run.
+            checkServerMigration()
+
             val forceFullSync = inputData.getBoolean(KEY_FORCE_FULL_SYNC, false)
             val lastSyncTimestamp = if (forceFullSync) {
                 settingsRepository.setLastSyncTimestamp(0)
@@ -120,6 +131,23 @@ class SyncLibraryWorker @AssistedInject constructor(
         } catch (e: Exception) {
             classifyError(e)
         }
+    }
+
+    /**
+     * Probes the server version and resets local data when the server crossed
+     * into the canonical ID format (Navidrome 0.64.0). Probe failures are
+     * swallowed on purpose: the regular sync flow below already surfaces
+     * connectivity and auth errors with its own retry policy, and a missing
+     * version must never wipe local data.
+     */
+    private suspend fun checkServerMigration() {
+        val serverVersion = runCatchingWithCancellation {
+            val response = api.ping()
+            response.requireOk()
+            response.response.serverVersion
+        }.getOrNull()
+
+        serverMigrationRepository.checkAndMigrate(serverVersion)
     }
 
     companion object {
