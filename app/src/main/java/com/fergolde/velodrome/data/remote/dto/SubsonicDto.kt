@@ -15,6 +15,12 @@ data class SubsonicResponse(
 data class SubsonicResponseDto(
     val status: String,
 
+    // Server metadata (OpenSubsonic / Navidrome)
+    @param:Json(name = "version") val version: String? = null,
+    @param:Json(name = "type") val type: String? = null,
+    @param:Json(name = "serverVersion") val serverVersion: String? = null,
+    @param:Json(name = "openSubsonic") val openSubsonic: Boolean? = null,
+
     // Artists
     @param:Json(name = "artists") val artists: ArtistsDto? = null,
     @param:Json(name = "artist") val artist: ArtistDetailDto? = null,
