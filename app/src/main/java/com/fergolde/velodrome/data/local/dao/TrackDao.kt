@@ -24,9 +24,15 @@ interface TrackDao {
     @Query("SELECT * FROM tracks WHERE albumId = :albumId ORDER BY trackNumber ASC")
     fun observeTracksByAlbum(albumId: String): Flow<List<TrackEntity>>
 
+    @Query("SELECT COUNT(*) FROM tracks")
+    suspend fun getTrackCount(): Int
+
     @Query("SELECT * FROM tracks WHERE albumId IN (:albumIds) ORDER BY trackNumber ASC")
     suspend fun getTracksForAlbumIds(albumIds: List<String>): List<TrackEntity>
 
     @Upsert
     suspend fun insertTracks(tracks: List<TrackEntity>)
+
+    @Query("DELETE FROM tracks")
+    suspend fun deleteAll()
 }

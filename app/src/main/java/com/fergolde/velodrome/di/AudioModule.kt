@@ -11,6 +11,7 @@ import com.fergolde.velodrome.presentation.audio.AudioPlayerManager
 import com.fergolde.velodrome.util.ConfigurableLruCacheEvictor
 import com.fergolde.velodrome.util.CredentialsManager
 import com.fergolde.velodrome.util.NavidromeCacheKeyFactory
+import com.fergolde.velodrome.util.ServerDataResetNotifier
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -73,12 +74,14 @@ object AudioModule {
     fun provideAudioPlayerManager(
         @ApplicationContext context: Context,
         credentialsManager: CredentialsManager,
-        queueSnapshotStore: QueueSnapshotStore
+        queueSnapshotStore: QueueSnapshotStore,
+        serverDataResetNotifier: ServerDataResetNotifier
     ): AudioPlayerManager {
         return AudioPlayerManager(
             context = context,
             credentialsManager = credentialsManager,
-            queueSnapshotStore = queueSnapshotStore
+            queueSnapshotStore = queueSnapshotStore,
+            serverDataResetNotifier = serverDataResetNotifier
         )
     }
 }

@@ -15,4 +15,7 @@ interface ScrobbleDao {
 
     @Query("DELETE FROM pending_scrobbles WHERE id IN (:ids)")
     suspend fun deleteScrobbles(ids: List<Long>)
+
+    @Query("DELETE FROM pending_scrobbles")
+    suspend fun deleteAll()
 }
