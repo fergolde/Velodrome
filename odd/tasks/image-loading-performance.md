@@ -70,7 +70,7 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 - Added pure tests for canonical size selection and bounded prefetch ranges.
 - Focused check: `./gradlew :app:testDebugUnitTest` — `BUILD SUCCESSFUL`.
 - Parent spot check repeated the full unit suite — `BUILD SUCCESSFUL`.
-- Build check: `./gradlew :app:assembleDebug` — writer reported `BUILD SUCCESSFUL`; parent rerun pending.
+- Build check: `./gradlew :app:assembleDebug` — writer reported `BUILD SUCCESSFUL`; parent rerun `BUILD SUCCESSFUL`.
 - Runtime scroll harness: pending — no device/server session available.
 - Rollback boundary: revert IMG-02 changes in `ArtworkImage.kt`, `ArtworkPrefetcher.kt`, shared image components, the four lazy screens, their focused tests, and this evidence block.
 - Commit: `a697094` (`perf(images): prefetch canonical artwork sizes`).
@@ -83,4 +83,4 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 - Writer build check: `./gradlew :app:assembleDebug` — `BUILD SUCCESSFUL`.
 - Runtime player/scroll harness: pending — no device/server session available.
 - Rollback boundary: revert IMG-03 changes in `PlayerScreen.kt`, `AlbumCover.kt`, `ArtistAvatar.kt`, and this evidence block.
-- Commit: pending parent commit.
+- Commit: `34f2926` (`perf(images): isolate player artwork recomposition`).
