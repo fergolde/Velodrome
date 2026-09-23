@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,6 +57,7 @@ import androidx.compose.ui.platform.LocalResources
 import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
 import com.fergolde.velodrome.presentation.components.VeloSearchBar
 import com.fergolde.velodrome.presentation.screen.home.ArtistAvatar
+import com.fergolde.velodrome.presentation.screen.home.ArtworkPrefetcher
 import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,6 +75,7 @@ fun ArtistsScreen(
     val sheetState = rememberModalBottomSheetState()
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val isTablet = LocalResources.current.getBoolean(R.bool.allow_rotation)
+    val gridState = rememberLazyGridState()
     val gridColumns = when {
         isLandscape -> GridCells.Adaptive(180.dp)
         isTablet -> GridCells.Fixed(4)
@@ -101,6 +104,7 @@ fun ArtistsScreen(
                     uiState.isSearching -> {
                         LazyVerticalGrid(
                             columns = gridColumns,
+                            state = gridState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 100.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -146,8 +150,15 @@ fun ArtistsScreen(
                     }
 
                     else -> {
+                        ArtworkPrefetcher(
+                            state = gridState,
+                            itemCount = pagedArtists.itemCount,
+                            artworkIdAt = { pagedArtists[it]?.coverUrl },
+                            size = 96.dp,
+                        )
                         LazyVerticalGrid(
                             columns = gridColumns,
+                            state = gridState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 100.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),

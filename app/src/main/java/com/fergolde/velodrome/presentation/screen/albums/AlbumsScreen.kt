@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -53,6 +54,7 @@ import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
 import com.fergolde.velodrome.presentation.components.VeloSearchBar
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
+import com.fergolde.velodrome.presentation.screen.home.ArtworkPrefetcher
 import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,6 +71,7 @@ fun AlbumsScreen(
     val sheetState = rememberModalBottomSheetState()
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val isTablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
+    val gridState = rememberLazyGridState()
     val gridColumns = when {
         isLandscape -> GridCells.Adaptive(180.dp)
         isTablet -> GridCells.Fixed(4)
@@ -98,6 +101,7 @@ fun AlbumsScreen(
                     uiState.isSearching -> {
                         LazyVerticalGrid(
                             columns = gridColumns,
+                            state = gridState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 100.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -143,8 +147,15 @@ fun AlbumsScreen(
                     }
 
                     else -> {
+                        ArtworkPrefetcher(
+                            state = gridState,
+                            itemCount = pagedAlbums.itemCount,
+                            artworkIdAt = { pagedAlbums[it]?.coverUrl },
+                            size = 200.dp,
+                        )
                         LazyVerticalGrid(
                             columns = gridColumns,
+                            state = gridState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 100.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),

@@ -10,17 +10,13 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
 import com.fergolde.velodrome.ui.theme.VeloPalette
 
 @Composable
@@ -47,26 +43,13 @@ fun ArtistAvatar(
                 // pasando directamente el coverArtId. Se fuerza el tamaño explícito
                 // para evitar decodificaciones innecesarias.
                 AsyncImage(
-                    model = rememberAvatarImageRequest(coverArtId, size),
+                    model = rememberArtworkImageRequest(coverArtId, size),
                     contentDescription = contentDescription,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun rememberAvatarImageRequest(coverArtId: String, size: Dp): ImageRequest {
-    val context = LocalContext.current
-    val density = LocalDensity.current
-    return remember(coverArtId, size) {
-        val px = with(density) { size.roundToPx() }
-        ImageRequest.Builder(context)
-            .data(coverArtId)
-            .size(px, px)
-            .build()
     }
 }
 

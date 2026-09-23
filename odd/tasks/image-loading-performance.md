@@ -26,7 +26,7 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 ## Tasks
 
 - [x] IMG-01 — Prove and stabilize Coil cache identity; remove duplicate image authentication. Route: delegated direct writer because this spans image loader, interceptor, auth client, and tests. Checks: focused key/interceptor tests and unit test suite.
-- [ ] IMG-02 — Normalize rendered image sizes and add bounded prefetch for high-traffic lazy surfaces. Route: delegated direct writer because this spans shared Compose components and multiple screens. Checks: focused unit/UI-compilation checks and manual scroll scenario.
+- [x] IMG-02 — Normalize rendered image sizes and add bounded prefetch for high-traffic lazy surfaces. Route: delegated direct writer because this spans shared Compose components and multiple screens. Checks: focused unit/UI-compilation checks and manual scroll scenario.
 - [ ] IMG-03 — Isolate avoidable recomposition and improve loading-state continuity with placeholders. Route: delegated direct writer because this spans player and shared image components. Checks: unit/build checks and manual player/scroll scenario.
 - [ ] IMG-04 — Measure final behavior, record residual risks, and close work units. Route: inline verification. Checks: `./gradlew :app:testDebugUnitTest` and `./gradlew :app:assembleDebug` where environment permits.
 
@@ -42,8 +42,8 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 ## Progress
 
 - Exploration complete: likely causes and affected files mapped.
-- Current step: IMG-02.
-- Next step: normalize rendered sizes and add bounded image prefetch.
+- Current step: IMG-03.
+- Next step: isolate avoidable recomposition and improve loading-state continuity.
 
 ## Verification evidence
 
@@ -62,3 +62,15 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 - Runtime harness: `N/A` — no device/server session authorized or available for this local analysis task.
 - Rollback boundary: revert IMG-01 changes in `AuthInterceptor.kt`, `NavidromeCoverArtKeyer.kt`, `NavidromeImageInterceptor.kt`, their focused tests, and this evidence block.
 - Commit: `4f70b75` (`fix(images): stabilize Coil cache identity`).
+
+## IMG-02 evidence
+
+- Added canonical artwork buckets: `64`, `96`, `128`, `192`, and `512` dp; visible requests and prefetch requests share the same builder.
+- Added bounded four-item prefetch with cancellation and deduplication for Home, Explore, Albums, and Artists lazy surfaces.
+- Added pure tests for canonical size selection and bounded prefetch ranges.
+- Focused check: `./gradlew :app:testDebugUnitTest` — `BUILD SUCCESSFUL`.
+- Parent spot check repeated the full unit suite — `BUILD SUCCESSFUL`.
+- Build check: `./gradlew :app:assembleDebug` — writer reported `BUILD SUCCESSFUL`; parent rerun pending.
+- Runtime scroll harness: pending — no device/server session available.
+- Rollback boundary: revert IMG-02 changes in `ArtworkImage.kt`, `ArtworkPrefetcher.kt`, shared image components, the four lazy screens, their focused tests, and this evidence block.
+- Commit: pending parent commit.
