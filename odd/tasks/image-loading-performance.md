@@ -28,7 +28,7 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 - [x] IMG-01 — Prove and stabilize Coil cache identity; remove duplicate image authentication. Route: delegated direct writer because this spans image loader, interceptor, auth client, and tests. Checks: focused key/interceptor tests and unit test suite.
 - [x] IMG-02 — Normalize rendered image sizes and add bounded prefetch for high-traffic lazy surfaces. Route: delegated direct writer because this spans shared Compose components and multiple screens. Checks: focused unit/UI-compilation checks and manual scroll scenario.
 - [x] IMG-03 — Isolate avoidable recomposition and improve loading-state continuity with placeholders. Route: delegated direct writer because this spans player and shared image components. Checks: unit/build checks and manual player/scroll scenario.
-- [ ] IMG-04 — Measure final behavior, record residual risks, and close work units. Route: inline verification. Checks: `./gradlew :app:testDebugUnitTest` and `./gradlew :app:assembleDebug` where environment permits.
+- [x] IMG-04 — Measure final behavior, record residual risks, and close work units. Route: inline verification. Checks: `./gradlew :app:testDebugUnitTest` and `./gradlew :app:assembleDebug` where environment permits.
 
 ## Acceptance criteria
 
@@ -42,8 +42,8 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 ## Progress
 
 - Exploration complete: likely causes and affected files mapped.
-- Current step: IMG-04.
-- Next step: final measurement, residual-risk recording, and work-unit closure.
+- Current step: complete.
+- Next step: user decides whether to run device/server validation and whether to request delivery.
 
 ## Verification evidence
 
@@ -84,3 +84,12 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 - Runtime player/scroll harness: pending — no device/server session available.
 - Rollback boundary: revert IMG-03 changes in `PlayerScreen.kt`, `AlbumCover.kt`, `ArtistAvatar.kt`, and this evidence block.
 - Commit: `34f2926` (`perf(images): isolate player artwork recomposition`).
+
+## IMG-04 final evidence
+
+- Final unit check: `./gradlew :app:testDebugUnitTest` — `BUILD SUCCESSFUL`.
+- Final build check: `./gradlew :app:assembleDebug` — `BUILD SUCCESSFUL`.
+- All three executable work-unit commits assessed by RDD as `medium`, `under_budget`, `review_due=false`; no native review transaction was required by the risk/budget gate.
+- Device/server validation remains pending; no runtime performance metrics are claimed.
+- Residual risks: server-side artwork response time, device decode/frame timing, cache hit ratios in a real process, and behavior after changing cache size still require on-device validation.
+- No push, pull request, merge, release, or GitHub operation performed.
