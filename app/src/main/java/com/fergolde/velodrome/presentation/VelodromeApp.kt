@@ -1,6 +1,8 @@
 package com.fergolde.velodrome.presentation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -238,7 +240,16 @@ fun MainScaffold(
                 Box(modifier = Modifier.padding(bottom = innerPaddingNavHost.calculateBottomPadding())) {
                     NavHost(
                         navController = navController,
-                        startDestination = startDestination
+                        startDestination = startDestination,
+                        // No transitions in either direction: forward nav would
+                        // default to a 700ms crossfade, and back would still show
+                        // the system predictive-back scale during the edge swipe.
+                        // enableOnBackInvokedCallback=false in the manifest kills
+                        // that system animation; these kill any in-app crossfade.
+                        enterTransition = { EnterTransition.None },
+                        exitTransition = { ExitTransition.None },
+                        popEnterTransition = { EnterTransition.None },
+                        popExitTransition = { ExitTransition.None }
                     ) {
                         composable<Routes.Login> {
                             LoginScreen(onLoginSuccess = onLoginSuccess)
