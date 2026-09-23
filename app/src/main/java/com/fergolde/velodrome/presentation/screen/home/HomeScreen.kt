@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -273,7 +274,15 @@ fun AlbumCarousel(
     onAlbumClick: (String) -> Unit,
     artSize: Dp = 130.dp,
 ) {
+    val listState = rememberLazyListState()
+    ArtworkPrefetcher(
+        state = listState,
+        itemCount = albums.size,
+        artworkIdAt = { albums[it].coverUrl },
+        size = artSize,
+    )
     LazyRow(
+        state = listState,
         contentPadding = PaddingValues(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {

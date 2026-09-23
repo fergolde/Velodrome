@@ -128,6 +128,26 @@ class AuthInterceptorTest {
     }
 
     @Test
+    fun replacesExistingAuthParams_insteadOfDuplicatingThem() {
+        every { credentialsManager.getValidAuthParams() } returns Triple("user", "new-token", "new-salt")
+
+        val chain = chainWithUrl(
+            "https://server.com/rest/getCoverArt.view?id=al-123&u=old-user&t=old-token&s=old-salt"
+        )
+        mockChainProceed(chain)
+
+        interceptor.intercept(chain)
+
+        val capturedRequest = slot<Request>()
+        verify { chain.proceed(capture(capturedRequest)) }
+
+        val url = capturedRequest.captured.url
+        assertEquals(listOf("user"), url.queryParameterValues("u"))
+        assertEquals(listOf("new-token"), url.queryParameterValues("t"))
+        assertEquals(listOf("new-salt"), url.queryParameterValues("s"))
+    }
+
+    @Test
     fun response500_doesNotInvalidateAuth() {
         every { credentialsManager.getValidAuthParams() } returns Triple("user", "token", "salt")
         every { credentialsManager.invalidateAuth() } just runs

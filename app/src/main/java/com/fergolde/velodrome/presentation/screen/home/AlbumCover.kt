@@ -13,13 +13,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
 import com.fergolde.velodrome.ui.theme.VeloPalette
 
 @Composable
@@ -43,32 +41,20 @@ fun AlbumCover(
             }
 
             else -> {
+                val placeholder = remember { ColorPainter(VeloPalette.Bg3) }
+
                 // Coil 3 + NavidromeImageInterceptor se encarga de la autenticación
                 // pasando directamente el coverArtId. Se fuerza el tamaño explícito
                 // para evitar decodificaciones innecesarias.
                 AsyncImage(
-                    model = rememberCoverImageRequest(coverArtId, size),
+                    model = rememberArtworkImageRequest(coverArtId, size),
                     contentDescription = contentDescription,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    placeholder = placeholder
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun rememberCoverImageRequest(coverArtId: String, size: Dp): ImageRequest {
-    val context = LocalContext.current
-    val density = LocalDensity.current
-    return remember(coverArtId, size) {
-        val builder = ImageRequest.Builder(context)
-            .data(coverArtId)
-        if (size > 0.dp) {
-            val px = with(density) { size.roundToPx() }
-            builder.size(px, px)
-        }
-        builder.build()
     }
 }
 

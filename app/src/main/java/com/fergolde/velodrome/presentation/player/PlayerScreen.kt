@@ -104,6 +104,7 @@ import com.fergolde.velodrome.presentation.components.SharedBottomNavigationBar
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,7 +116,6 @@ fun PlayerScreen(
     onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val currentPosition by viewModel.currentPositionSeconds.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showQueue by remember { mutableStateOf(false) }
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -177,8 +177,8 @@ fun PlayerScreen(
                                 album = uiState.currentTrack?.albumName ?: stringResource(R.string.albums_unknown_title)
                             )
                             Spacer(Modifier.height(10.dp))
-                            SeekBar(
-                                currentPosition = currentPosition,
+                            PlayerProgress(
+                                positionFlow = viewModel.currentPositionSeconds,
                                 duration = uiState.currentTrack?.durationSec ?: 0,
                                 onSeek = viewModel::onSeek
                             )
@@ -252,8 +252,8 @@ fun PlayerScreen(
                         album = uiState.currentTrack?.albumName ?: stringResource(R.string.albums_unknown_title)
                     )
                     Spacer(modifier = Modifier.height(14.dp))
-                    SeekBar(
-                        currentPosition = currentPosition,
+                    PlayerProgress(
+                        positionFlow = viewModel.currentPositionSeconds,
                         duration = uiState.currentTrack?.durationSec ?: 0,
                         onSeek = viewModel::onSeek
                     )
@@ -316,6 +316,21 @@ fun PlayerScreen(
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
+}
+
+@Composable
+private fun PlayerProgress(
+    positionFlow: StateFlow<Int>,
+    duration: Int,
+    onSeek: (Int) -> Unit
+) {
+    val currentPosition by positionFlow.collectAsStateWithLifecycle()
+
+    SeekBar(
+        currentPosition = currentPosition,
+        duration = duration,
+        onSeek = onSeek
+    )
 }
 
 // ─── Top Bar ──────────────────────────────────────────────────────────────────

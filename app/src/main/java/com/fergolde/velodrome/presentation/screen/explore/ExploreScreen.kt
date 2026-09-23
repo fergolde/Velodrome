@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -68,6 +69,7 @@ import com.fergolde.velodrome.presentation.components.VeloSearchBar
 import com.fergolde.velodrome.presentation.components.VeloSectionHeader
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import com.fergolde.velodrome.presentation.screen.home.ArtistAvatar
+import com.fergolde.velodrome.presentation.screen.home.ArtworkPrefetcher
 import com.fergolde.velodrome.presentation.screen.home.VeloAlbumCard
 import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 import com.fergolde.velodrome.ui.theme.SyneFontFamily
@@ -174,7 +176,15 @@ fun ExploreScreen(
                     onViewAll = onAlbumsViewAllClick,
                 )
                 Spacer(Modifier.height(16.dp))
+                val albumsListState = rememberLazyListState()
+                ArtworkPrefetcher(
+                    state = albumsListState,
+                    itemCount = uiState.randomAlbums.size,
+                    artworkIdAt = { uiState.randomAlbums[it].coverUrl },
+                    size = 130.dp,
+                )
                 LazyRow(
+                    state = albumsListState,
                     contentPadding = PaddingValues(horizontal = 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
@@ -278,7 +288,15 @@ fun ArtistsCarousel(
         }
         return
     }
+    val listState = rememberLazyListState()
+    ArtworkPrefetcher(
+        state = listState,
+        itemCount = artists.size,
+        artworkIdAt = { artists[it].coverUrl },
+        size = 96.dp,
+    )
     LazyRow(
+        state = listState,
         contentPadding = PaddingValues(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -751,4 +769,3 @@ fun VeloTrackRow(
         }
     }
 }
-
