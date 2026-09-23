@@ -61,4 +61,4 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 - Parent spot check repeated same command — `BUILD SUCCESSFUL`.
 - Runtime harness: `N/A` — no device/server session authorized or available for this local analysis task.
 - Rollback boundary: revert IMG-01 changes in `AuthInterceptor.kt`, `NavidromeCoverArtKeyer.kt`, `NavidromeImageInterceptor.kt`, their focused tests, and this evidence block.
-- Commit: pending parent commit.
+- Commit: `4f70b75` (`fix(images): stabilize Coil cache identity`).
