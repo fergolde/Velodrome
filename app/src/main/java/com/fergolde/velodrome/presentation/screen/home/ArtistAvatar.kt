@@ -10,9 +10,11 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,9 @@ fun ArtistAvatar(
             }
 
             else -> {
+                val placeholderColor = MaterialTheme.colorScheme.surfaceVariant
+                val placeholder = remember(placeholderColor) { ColorPainter(placeholderColor) }
+
                 // Coil 3 + NavidromeImageInterceptor se encarga de la autenticación
                 // pasando directamente el coverArtId. Se fuerza el tamaño explícito
                 // para evitar decodificaciones innecesarias.
@@ -46,7 +51,8 @@ fun ArtistAvatar(
                     model = rememberArtworkImageRequest(coverArtId, size),
                     contentDescription = contentDescription,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    placeholder = placeholder
                 )
             }
         }

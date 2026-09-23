@@ -27,7 +27,7 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 
 - [x] IMG-01 — Prove and stabilize Coil cache identity; remove duplicate image authentication. Route: delegated direct writer because this spans image loader, interceptor, auth client, and tests. Checks: focused key/interceptor tests and unit test suite.
 - [x] IMG-02 — Normalize rendered image sizes and add bounded prefetch for high-traffic lazy surfaces. Route: delegated direct writer because this spans shared Compose components and multiple screens. Checks: focused unit/UI-compilation checks and manual scroll scenario.
-- [ ] IMG-03 — Isolate avoidable recomposition and improve loading-state continuity with placeholders. Route: delegated direct writer because this spans player and shared image components. Checks: unit/build checks and manual player/scroll scenario.
+- [x] IMG-03 — Isolate avoidable recomposition and improve loading-state continuity with placeholders. Route: delegated direct writer because this spans player and shared image components. Checks: unit/build checks and manual player/scroll scenario.
 - [ ] IMG-04 — Measure final behavior, record residual risks, and close work units. Route: inline verification. Checks: `./gradlew :app:testDebugUnitTest` and `./gradlew :app:assembleDebug` where environment permits.
 
 ## Acceptance criteria
@@ -42,14 +42,14 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 ## Progress
 
 - Exploration complete: likely causes and affected files mapped.
-- Current step: IMG-03.
-- Next step: isolate avoidable recomposition and improve loading-state continuity.
+- Current step: IMG-04.
+- Next step: final measurement, residual-risk recording, and work-unit closure.
 
 ## Verification evidence
 
 - Base branch: `master` at `fb8f69e`.
 - Feature branch created: `perf/image-loading`.
-- IMG-01 source and tests are implemented; IMG-02/03 remain untouched.
+- IMG-01, IMG-02, and IMG-03 source/tests are implemented; final device validation remains pending.
 - Work-unit commits required per completed task; commit identities will be recorded here.
 
 ## IMG-01 evidence
@@ -73,4 +73,14 @@ Images appear to load in bursts even when Coil cache entries should exist. Curre
 - Build check: `./gradlew :app:assembleDebug` — writer reported `BUILD SUCCESSFUL`; parent rerun pending.
 - Runtime scroll harness: pending — no device/server session available.
 - Rollback boundary: revert IMG-02 changes in `ArtworkImage.kt`, `ArtworkPrefetcher.kt`, shared image components, the four lazy screens, their focused tests, and this evidence block.
+- Commit: `a697094` (`perf(images): prefetch canonical artwork sizes`).
+
+## IMG-03 evidence
+
+- Isolated 1 Hz playback-position collection inside `PlayerProgress`, preventing unrelated player artwork/queue content from recomposing with each tick.
+- Added stable theme-colored Coil placeholders to shared album and artist image components without animations or extra network work.
+- Parent spot check: `./gradlew :app:testDebugUnitTest` — `BUILD SUCCESSFUL`.
+- Writer build check: `./gradlew :app:assembleDebug` — `BUILD SUCCESSFUL`.
+- Runtime player/scroll harness: pending — no device/server session available.
+- Rollback boundary: revert IMG-03 changes in `PlayerScreen.kt`, `AlbumCover.kt`, `ArtistAvatar.kt`, and this evidence block.
 - Commit: pending parent commit.
