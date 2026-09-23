@@ -34,12 +34,12 @@ class AuthInterceptor @Inject constructor(
         val (username, token, salt) = authParams
 
         val newUrl = originalRequest.url.newBuilder()
-            .addQueryParameter("u", username)
-            .addQueryParameter("t", token)
-            .addQueryParameter("s", salt)
-            .addQueryParameter("v", NavidromeApi.API_VERSION)
-            .addQueryParameter("c", NavidromeApi.CLIENT_NAME)
-            .addQueryParameter("f", "json")
+            .setQueryParameter("u", username)
+            .setQueryParameter("t", token)
+            .setQueryParameter("s", salt)
+            .setQueryParameter("v", NavidromeApi.API_VERSION)
+            .setQueryParameter("c", NavidromeApi.CLIENT_NAME)
+            .setQueryParameter("f", "json")
             .build()
 
         val newRequest = originalRequest.newBuilder().url(newUrl).build()

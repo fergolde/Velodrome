@@ -7,11 +7,9 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 /**
  * Stable cache key for Navidrome cover-art URLs.
  *
- * [CredentialsManager.getCoverArtUrl] embeds a rotating token/salt (1h TTL +
- * regenerated on every cold start). Without a custom keyer those rotating query
- * params leak into Coil's memory/disk cache keys, busting the whole image cache
- * every hour. Stripping them yields one stable key per (host, coverArt id, size),
- * mirroring what NavidromeCacheKeyFactory does for the audio SimpleCache.
+ * AuthInterceptor appends rotating token/salt values to cover-art requests.
+ * Stripping them yields one stable key per (host, coverArt id, size), mirroring
+ * what NavidromeCacheKeyFactory does for the audio SimpleCache.
  */
 class NavidromeCoverArtKeyer : Keyer<String> {
 

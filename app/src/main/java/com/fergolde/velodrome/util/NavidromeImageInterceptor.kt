@@ -17,31 +17,36 @@ class NavidromeImageInterceptor @Inject constructor(
             return chain.proceed()
         }
 
-        // Already authenticated URLs can pass through unchanged.
-        if (data.isAuthenticatedCoverUrl()) {
-            return chain.proceed()
-        }
-
-        val (coverArtId, size) = when {
+        val coverArtUrl = when {
             data.startsWith("http") && data.contains(COVER_ART_PATH) -> {
                 val parsed = data.toHttpUrlOrNull() ?: return chain.proceed()
                 val id = parsed.queryParameter("id") ?: return chain.proceed()
                 val requestedSize = parsed.queryParameter("size")?.toIntOrNull()
                     ?: chain.request.sizeResolver.size().width.pxOrElse { DEFAULT_SIZE }
-                id to requestedSize
+                parsed.newBuilder()
+                    .setQueryParameter("id", id)
+                    .setQueryParameter("size", requestedSize.toString())
+                    .removeAllQueryParameters("u")
+                    .removeAllQueryParameters("t")
+                    .removeAllQueryParameters("s")
+                    .build()
+                    .toString()
             }
             !data.startsWith("http") -> {
                 val requestedSize = chain.request.sizeResolver.size().width.pxOrElse { DEFAULT_SIZE }
-                data to requestedSize
+                credentialsManager.getCoverArtBaseUrl(data, requestedSize) ?: return chain.proceed()
             }
             else -> return chain.proceed()
         }
 
-        val authenticatedUrl = credentialsManager.getCoverArtUrl(coverArtId, size)
-            ?: return chain.proceed()
+        val canonicalUrl = NavidromeCoverArtKeyer.normalize(coverArtUrl)
 
         val newRequest = request.newBuilder()
-            .data(authenticatedUrl)
+            .data(coverArtUrl)
+            // AuthInterceptor adds u/t/s to the shared OkHttp request. Keep those
+            // credentials out of both Coil cache identities.
+            .memoryCacheKey(canonicalUrl)
+            .diskCacheKey(canonicalUrl)
             .build()
 
         return chain.withRequest(newRequest).proceed()
@@ -51,10 +56,5 @@ class NavidromeImageInterceptor @Inject constructor(
         private const val COVER_ART_PATH = "getCoverArt"
         private const val DEFAULT_SIZE = 400
 
-        private fun String.isAuthenticatedCoverUrl(): Boolean {
-            if (!startsWith("http") || !contains(COVER_ART_PATH)) return false
-            val parsed = toHttpUrlOrNull() ?: return false
-            return parsed.queryParameterNames.containsAll(setOf("u", "t", "s"))
-        }
     }
 }
