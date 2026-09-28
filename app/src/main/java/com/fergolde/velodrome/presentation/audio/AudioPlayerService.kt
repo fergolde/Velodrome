@@ -19,7 +19,6 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
-import androidx.media3.session.SessionResult
 import com.fergolde.velodrome.MainActivity
 import com.fergolde.velodrome.data.local.dao.TrackDao
 import com.fergolde.velodrome.data.local.queue.QueueSnapshot
@@ -194,40 +193,41 @@ class AudioPlayerService : MediaSessionService() {
     }
 
     /**
-     * Callback explícito: acepta TODO controlador —incluidos los no confiables
-     * como apps compañeras de reloj (Garmin Connect)— con el set completo de
-     * comandos. Sin esto, un controlador externo puede recibir una máscara sin
-     * pause/next/prev según el estado transitorio del player, mientras los
-     * botones del sistema (auriculares BT) siguen funcionando.
+     * Callback explícito con split por confianza del controller.
+     *
+     * Los relojes/companions como Garmin Connect se conectan como controllers
+     * NO confiables (no son el sistema, no tienen MEDIA_CONTENT_CONTROL). Darles
+     * la sesión completa sin más habilita a CUALQUIER app instalada a leer la
+     * cola y a empujar sus propios MediaItems al player, así que se les limita
+     * a leer + controlar el transporte.
+     *
+     * El set de comandos se define explícitamente en vez de delegar al default
+     * de Media3 porque el default es READ-ONLY: sin pause/next/prev el reloj
+     * queda mudo, que es el bug que este callback vino a arreglar.
      */
     private val sessionCallback = object : MediaSession.Callback {
         override fun onConnect(
             session: MediaSession,
             controller: MediaSession.ControllerInfo
         ): MediaSession.ConnectionResult {
+            val trusted = controller.isTrusted
             Log.i(
                 TAG,
                 "Controller connect package=${controller.packageName} " +
-                    "trusted=${controller.isTrusted} playerCommands=${exoPlayer?.availableCommands?.size()}"
+                    "trusted=$trusted playerCommands=${exoPlayer?.availableCommands?.size()}"
             )
-            // AcceptedResultBuilder(session) parte de los comandos de sesión por
-            // defecto; luego se abre el set de player al completo. El set final
-            // se intersecta con lo que ExoPlayer expone, así que solo amplía.
+            // El set final se intersecta con lo que ExoPlayer expone, así que
+            // sólo amplía; nunca otorga un comando que el player no soporta.
+            val commands = if (trusted) {
+                Player.Commands.Builder().addAllCommands().build()
+            } else {
+                Player.Commands.Builder().addAllReadOnlyCommands()
+                    .apply { untrustedTransportCommands().forEach { add(it) } }
+                    .build()
+            }
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session, controller)
-                .setAvailablePlayerCommands(Player.Commands.Builder().addAllCommands().build())
+                .setAvailablePlayerCommands(commands)
                 .build()
-        }
-
-        override fun onPlayerCommandRequest(
-            session: MediaSession,
-            controller: MediaSession.ControllerInfo,
-            command: Int
-        ): Int {
-            Log.i(TAG, "External command=$command from=${controller.packageName}")
-            // El stub interpreta este retorno como SessionResult.Code: solo
-            // RESULT_SUCCESS ejecuta el comando. Retornar el código player
-            // (pattern antiguo) rechaza TODO y deja la app muda.
-            return SessionResult.RESULT_SUCCESS
         }
 
         /**
@@ -524,3 +524,27 @@ internal fun computeResumptionPlan(snapshot: QueueSnapshot?, playerHasItems: Boo
     val index = snapshot.currentIndex.coerceIn(0, tracks.lastIndex)
     return ResumptionPlan(tracks, index, snapshot.positionMs.coerceAtLeast(0L))
 }
+
+/**
+ * Comandos que un controller NO confiable (reloj/companion app) puede emitir
+ * sobre la sesión.
+ *
+ * Función pura aparte del service para poder testearla en JVM sin levantar
+ * Media3. Read-only + transporte: el reloj reproduce y salta, pero no puede
+ * inyectar ni reemplazar MediaItems.
+ *
+ * `COMMAND_SET_MEDIA_ITEM` y `COMMAND_CHANGE_MEDIA_ITEMS` quedan fuera a
+ * propósito: permiten a cualquier app instalada empujar una URI arbitraria al
+ * player, que saldría por el OkHttp compartido.
+ */
+internal fun untrustedTransportCommands(): IntArray = intArrayOf(
+    Player.COMMAND_PLAY_PAUSE,
+    Player.COMMAND_PREPARE,
+    Player.COMMAND_STOP,
+    Player.COMMAND_SEEK_TO_DEFAULT_POSITION,
+    Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM,
+    Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+    Player.COMMAND_SEEK_TO_PREVIOUS,
+    Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+    Player.COMMAND_SEEK_TO_NEXT
+)
