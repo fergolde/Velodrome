@@ -61,6 +61,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
+    testOptions {
+        unitTests {
+            // android.util.Log is a stub in JVM unit tests and throws by
+            // default, so any test that exercises a code path containing a
+            // Log call fails on the log, not on the behaviour under test.
+            isReturnDefaultValues = true
+        }
+    }
     buildFeatures {
         compose = true
         buildConfig = true
