@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <!-- Never back up encrypted credential storage. -->
+    <!-- Credentials: encrypted at rest, never leave the device. -->
     <exclude domain="sharedpref" path="velodrome_encrypted_prefs.xml"/>
+
+    <!--
+      The listening library and the audio cache belong to one account and can
+      reach gigabytes. Excluding them keeps a signed-in user's listening
+      history and downloaded music out of cloud backups and device transfers.
+      The next login re-syncs the library; audio is re-downloaded on demand.
+    -->
+    <exclude domain="database" path="velodrome_db"/>
+    <exclude domain="file" path="audioCache/"/>
+    <exclude domain="file" path="datastore/"/>
 </full-backup-content>
