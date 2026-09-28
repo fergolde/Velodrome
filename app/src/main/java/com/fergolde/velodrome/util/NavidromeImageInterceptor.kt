@@ -39,7 +39,7 @@ class NavidromeImageInterceptor @Inject constructor(
             else -> return chain.proceed()
         }
 
-        val canonicalUrl = NavidromeCoverArtKeyer.normalize(coverArtUrl)
+        val canonicalUrl = NavidromeCoverArtKeyer.normalize(coverArtUrl, credentialsManager.getAccountScope())
 
         val newRequest = request.newBuilder()
             .data(coverArtUrl)

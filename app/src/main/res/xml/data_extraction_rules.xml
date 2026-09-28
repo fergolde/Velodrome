@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
     <cloud-backup>
-        <!-- Never back up encrypted credential storage. -->
+        <!-- Credentials: encrypted at rest, never leave the device. -->
         <exclude domain="sharedpref" path="velodrome_encrypted_prefs.xml"/>
+        <!-- Listening history, metadata and downloaded audio stay local. -->
+        <exclude domain="database" path="velodrome_db"/>
+        <exclude domain="file" path="audioCache/"/>
+        <exclude domain="file" path="datastore/"/>
     </cloud-backup>
     <device-transfer>
-        <!-- Never transfer encrypted credential storage. -->
+        <!-- Credentials: encrypted at rest, never leave the device. -->
         <exclude domain="sharedpref" path="velodrome_encrypted_prefs.xml"/>
+        <exclude domain="database" path="velodrome_db"/>
+        <exclude domain="file" path="audioCache/"/>
+        <exclude domain="file" path="datastore/"/>
     </device-transfer>
 </data-extraction-rules>

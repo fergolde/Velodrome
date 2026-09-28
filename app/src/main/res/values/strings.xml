@@ -101,7 +101,7 @@
     <string name="settings_account">Cuenta</string>
     <string name="settings_logout">Cerrar sesión</string>
     <string name="settings_logout_dialog_title">¿Cerrar sesión?</string>
-    <string name="settings_logout_dialog_message">Se borrarán tus credenciales. Los datos de música locales no se eliminarán.</string>
+    <string name="settings_logout_dialog_message">Se borrarán tus credenciales y la biblioteca local. La música descargada se conserva, pero solo para tu cuenta.</string>
 
     <!-- Common -->
     <string name="nav_back">Atrás</string>

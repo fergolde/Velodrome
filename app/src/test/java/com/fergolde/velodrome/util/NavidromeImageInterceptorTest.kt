@@ -9,6 +9,7 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 class NavidromeImageInterceptorTest {
@@ -16,6 +17,13 @@ class NavidromeImageInterceptorTest {
     private val credentialsManager: CredentialsManager = mockk()
     private val interceptor = NavidromeImageInterceptor(credentialsManager)
     private val context: Context = mockk(relaxed = true)
+
+    @Before
+    fun stubAccountScope() {
+        // Cache keys are account-scoped; without a scope the keyer would throw
+        // on the unstubbed call and the assertions below would be meaningless.
+        every { credentialsManager.getAccountScope() } returns "acct-1"
+    }
 
     @Test
     fun coverId_usesUnauthenticatedUrlAndExplicitStableCacheKeys() = runTest {
@@ -37,9 +45,10 @@ class NavidromeImageInterceptorTest {
             "https://music.example.com/rest/getCoverArt.view?id=al-123&size=400&v=1.16.1&c=Velodrome",
             transformed.captured.data
         )
-        assertEquals(transformed.captured.data, transformed.captured.memoryCacheKey)
-        assertEquals(transformed.captured.data, transformed.captured.diskCacheKey)
-        verify(exactly = 0) { credentialsManager.getCoverArtUrl(any(), any()) }
+        // Cache identity is the account-scoped, credential-free URL: stable
+        // across token rotation, but never shared between accounts.
+        assertEquals("acct-1|${transformed.captured.data}", transformed.captured.memoryCacheKey)
+        assertEquals("acct-1|${transformed.captured.data}", transformed.captured.diskCacheKey)
     }
 
     @Test

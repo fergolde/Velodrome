@@ -88,13 +88,7 @@ object AppModule {
             chain.proceed(originalRequest.newBuilder().url(safeHttpUrl).build())
         }
 
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            // HEADERS avoids logging the request URL after AuthInterceptor adds
-            // the u/t/s credentials. The interceptor is installed BEFORE auth so
-            // the sanitized URL is logged; the real request still carries the
-            // credentials when it reaches the network.
-            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.HEADERS else HttpLoggingInterceptor.Level.NONE
-        }
+        val loggingInterceptor = createHttpLoggingInterceptor(BuildConfig.DEBUG)
 
         return OkHttpClient.Builder()
             .addInterceptor(urlRewriterInterceptor)
@@ -134,3 +128,22 @@ object AppModule {
         )
     }
 }
+
+/**
+ * Builds the HTTP logging interceptor used by the shared OkHttp client.
+ *
+ * This interceptor sits ABOVE [AuthInterceptor] in the chain, which means the
+ * request line it logs is sanitized — but the RESPONSE line logs
+ * `response.request.url`, and by then the request that reached the network
+ * already carries `u`/`t`/`s`. Without explicit redaction the Subsonic token
+ * lands in logcat on every single request. `redactQueryParams` is therefore
+ * load-bearing, not cosmetic.
+ */
+internal fun createHttpLoggingInterceptor(
+    debug: Boolean,
+    logger: HttpLoggingInterceptor.Logger = HttpLoggingInterceptor.Logger.DEFAULT
+): HttpLoggingInterceptor =
+    HttpLoggingInterceptor(logger).apply {
+        level = if (debug) HttpLoggingInterceptor.Level.HEADERS else HttpLoggingInterceptor.Level.NONE
+        redactQueryParams("u", "t", "s")
+    }

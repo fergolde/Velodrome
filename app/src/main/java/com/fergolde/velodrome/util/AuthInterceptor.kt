@@ -7,17 +7,24 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * OkHttp Interceptor that automatically adds authentication parameters to ALL requests.
- * 
+ * OkHttp Interceptor that adds Subsonic authentication parameters to requests
+ * aimed at the configured server.
+ *
  * Per Subsonic API requirements:
  * - u: username
  * - t: token (md5(password + salt))
- * - s: salt (random per request)
+ * - s: salt
  * - v: API version (1.16.1)
  * - c: client name (Velodrome)
- * 
- * This generates NEW salt and token for EACH request (per requirements).
- * NO token persistence - always regenerated.
+ *
+ * The token/salt pair is cached by [CredentialsManager] and reused until the
+ * session window expires; it is never written to disk.
+ *
+ * Credentials are attached ONLY when the request host matches the configured
+ * server. This client is shared by Retrofit, Coil and ExoPlayer, so a URL
+ * that originates outside the configured server (a `coverArt` value returned
+ * by the server, or a media URI pushed by an external MediaController) would
+ * otherwise carry the account token to a third party.
  */
 @Singleton
 class AuthInterceptor @Inject constructor(
@@ -27,7 +34,10 @@ class AuthInterceptor @Inject constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
 
-        // Obtenemos los parámetros (reutiliza el token si es válido)
+        if (!isRequestForConfiguredServer(originalRequest.url.host)) {
+            return chain.proceed(originalRequest)
+        }
+
         val authParams = credentialsManager.getValidAuthParams()
             ?: return chain.proceed(originalRequest)
 
@@ -51,5 +61,20 @@ class AuthInterceptor @Inject constructor(
         }
 
         return response
+    }
+
+    /**
+     * True when [requestHost] is the host the user configured. Hostless URLs
+     * never qualify, and an unset server URL means no request can match.
+     */
+    private fun isRequestForConfiguredServer(requestHost: String): Boolean {
+        val serverUrl = credentialsManager.getServerUrl() ?: return false
+        val serverHost = serverUrl.trim()
+            .substringAfter("://", "")
+            .substringBefore('/')
+            .substringBefore('?')
+            .substringBefore(':')
+            .lowercase()
+        return serverHost.isNotEmpty() && serverHost == requestHost.lowercase()
     }
 }

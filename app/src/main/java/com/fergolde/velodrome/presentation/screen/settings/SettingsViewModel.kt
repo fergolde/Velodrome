@@ -1,14 +1,17 @@
 package com.fergolde.velodrome.presentation.screen.settings
 
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import com.fergolde.velodrome.BuildConfig
+import com.fergolde.velodrome.domain.repository.AccountDataRepository
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.util.CacheManager
 import com.fergolde.velodrome.util.CredentialsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -48,7 +51,8 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val cacheManager: CacheManager,
-    private val credentialsManager: CredentialsManager
+    private val credentialsManager: CredentialsManager,
+    private val accountDataRepository: AccountDataRepository
 ) : ViewModel() {
 
     private val _currentCacheSizes = MutableStateFlow(Pair("0 MB", "0 GB"))
@@ -211,12 +215,32 @@ class SettingsViewModel @Inject constructor(
     }
 
     /**
-     * Clears credentials and signals the UI to return to the login screen.
-     * Does NOT delete local music DB, cache or queue snapshots.
+     * Clears credentials, discards the previous account's local data and
+     * signals the UI to return to the login screen.
+     *
+     * The purge matters: without it the next account inherits the previous
+     * user's library and queue, and pending scrobbles get replayed under the
+     * new account's token. Audio/image caches survive because their keys are
+     * account-scoped, so the signed-in user keeps downloaded music.
      */
     fun logout() {
-        credentialsManager.clearCredentials()
-        _shouldLogout.value = true
+        viewModelScope.launch {
+            // The purge is best-effort cleanup. It touches the Room tables, the
+            // queue DataStore and four settings keys, any of which can throw
+            // (disk full, corrupted DataStore file). Letting that failure
+            // escape would strand the user on this screen with live
+            // credentials and no way to sign out, so the logout itself always
+            // completes.
+            try {
+                accountDataRepository.purgeAccountData()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Account purge failed, signing out anyway", e)
+            }
+            credentialsManager.clearCredentials()
+            _shouldLogout.value = true
+        }
     }
 
     /**
@@ -270,6 +294,10 @@ class SettingsViewModel @Inject constructor(
         AccentColorOption("Blue Grey", "#90A4AE"),
         AccentColorOption("White", "#FFFFFF")
     )
+
+    private companion object {
+        private const val TAG = "SettingsViewModel"
+    }
 }
 
 /**

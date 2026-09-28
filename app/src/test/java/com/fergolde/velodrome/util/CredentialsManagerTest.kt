@@ -213,20 +213,6 @@ class CredentialsManagerTest {
     // ========= URL HELPERS =========
 
     @Test
-    fun getCoverArtUrl_returnsFormattedUrl() {
-        seedFull()
-
-        val url = newManager().getCoverArtUrl("cov-1", 300)
-
-        assertNotNull(url)
-        assertTrue(url!!.contains("id=cov-1"))
-        assertTrue(url.contains("size=300"))
-        assertTrue(url.contains("u=user"))
-        assertTrue(url.contains("t="))
-        assertTrue(url.contains("s="))
-    }
-
-    @Test
     fun getCoverArtBaseUrl_returnsUrlWithoutAuth() {
         seedFull()
 
@@ -243,16 +229,16 @@ class CredentialsManagerTest {
     }
 
     @Test
-    fun getCoverArtUrl_blankCoverArtId_returnsNull() {
+    fun getCoverArtBaseUrl_blankCoverArtId_returnsNull() {
         val manager = newManager()
 
-        assertNull(manager.getCoverArtUrl("", 300))
-        assertNull(manager.getCoverArtUrl(null, 300))
+        assertNull(manager.getCoverArtBaseUrl("", 300))
+        assertNull(manager.getCoverArtBaseUrl(null, 300))
     }
 
     @Test
-    fun getCoverArtUrl_nullServerUrl_returnsNull() {
-        assertNull(newManager().getCoverArtUrl("cov-1", 300))
+    fun getCoverArtBaseUrl_nullServerUrl_returnsNull() {
+        assertNull(newManager().getCoverArtBaseUrl("cov-1", 300))
     }
 
     @Test
@@ -262,12 +248,31 @@ class CredentialsManagerTest {
         val url = newManager().getStreamUrl("track-1")
 
         assertTrue(url.contains("id=track-1"))
-        assertTrue(url.contains("u=user"))
+        assertTrue(url.contains("v=1.16.1"))
+        assertTrue(url.contains("c=Velodrome"))
         assertTrue(url.contains("maxBitRate=999"))
     }
 
+    /**
+     * The MediaItem URI is readable by any controller connected to the media
+     * session, including untrusted watch companions. Embedding credentials here
+     * would hand the account token to any installed app that opens a
+     * MediaController, so the URL must stay free of u/t/s and let
+     * AuthInterceptor add them at request time.
+     */
     @Test
-    fun getStreamUrl_nullCredentials_returnsEmpty() {
+    fun getStreamUrl_neverEmbedsCredentials() {
+        seedFull()
+
+        val url = newManager().getStreamUrl("track-1")
+
+        assertFalse("Stream URL must not carry the username", url.contains("u=user"))
+        assertFalse("Stream URL must not carry a token param", url.contains("t="))
+        assertFalse("Stream URL must not carry a salt param", url.contains("s="))
+    }
+
+    @Test
+    fun getStreamUrl_nullServerUrl_returnsEmpty() {
         assertEquals("", newManager().getStreamUrl("track-1"))
     }
 }

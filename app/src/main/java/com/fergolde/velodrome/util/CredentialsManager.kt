@@ -3,11 +3,18 @@ package com.fergolde.velodrome.util
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.fergolde.velodrome.data.remote.NavidromeApi
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
 
 private const val STREAMING_BITRATE_ORIGINAL = 999
+
+/** Scope used before any account is configured. */
+const val NO_ACCOUNT_SCOPE = "anonymous"
+
+/** 8 bytes of the digest is plenty to separate accounts and keeps keys short. */
+private const val SCOPE_HASH_BYTES = 8
 
 
 @Singleton
@@ -42,6 +49,16 @@ class CredentialsManager @Inject constructor(
     // SESSION MANAGEMENT
     // -------------------------
 
+    /**
+     * Returns the (username, token, salt) triple for the current session, or
+     * null when no credentials are available.
+     *
+     * The token/salt pair is memoized for [SESSION_DURATION_MS] to avoid one
+     * MD5 per request. The pair is NOT persisted and is discarded on
+     * [invalidateAuth]. Note that reuse bounds how often the app mints a new
+     * token, not how long a leaked token stays valid: the server accepts a
+     * token until the account password changes.
+     */
     @Synchronized
     fun getValidAuthParams(): Triple<String, String, String>? {
         val username = tempUsername ?: getUsername() ?: return null
@@ -140,6 +157,23 @@ class CredentialsManager @Inject constructor(
 
     fun hasCredentials(): Boolean = !getUsername().isNullOrBlank() && !getPassword().isNullOrBlank() && !getServerUrl().isNullOrBlank()
 
+    /**
+     * Opaque identifier for the currently configured account + server, used to
+     * partition on-disk caches so one account can never read another's data.
+     *
+     * A hash rather than the raw username/server so the value is safe to embed
+     * in cache keys and filenames without leaking either. Returns
+     * [NO_ACCOUNT_SCOPE] when nothing is configured yet, which keeps pre-login
+     * requests from colliding with a real account's scope.
+     */
+    fun getAccountScope(): String {
+        val username = getUsername() ?: return NO_ACCOUNT_SCOPE
+        val serverUrl = getServerUrl() ?: return NO_ACCOUNT_SCOPE
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest("$serverUrl|$username".toByteArray(Charsets.UTF_8))
+        return digest.take(SCOPE_HASH_BYTES).joinToString("") { "%02x".format(it) }
+    }
+
     // -------------------------
     // URL HELPERS (Refactorizadas para usar la caché)
     // -------------------------
@@ -158,22 +192,18 @@ class CredentialsManager @Inject constructor(
                 "&v=${NavidromeApi.API_VERSION}&c=${NavidromeApi.CLIENT_NAME}"
     }
 
-    fun getCoverArtUrl(coverArtId: String?, size: Int): String? {
-        val baseUrl = getCoverArtBaseUrl(coverArtId, size) ?: return null
-        val auth = getValidAuthParams() ?: return null
-        val (username, token, salt) = auth
-
-        return "$baseUrl&u=$username&t=$token&s=$salt"
-    }
-
-    fun getStreamUrl(trackId: String): String { // Eliminamos maxBitRate del argumento
+    /**
+     * Stream URL WITHOUT auth params.
+     *
+     * The URI of a MediaItem is readable by any controller that connects to the
+     * session, including untrusted watch companions, so credentials must never
+     * be embedded here. [AuthInterceptor] appends `u`/`t`/`s` at request time.
+     */
+    fun getStreamUrl(trackId: String): String {
         val serverUrl = getServerUrl() ?: return ""
-        val auth = getValidAuthParams() ?: return ""
-        val (username, token, salt) = auth
 
         return "${serverUrl.trimEnd('/')}/rest/stream.view" +
                 "?id=$trackId" +
-                "&u=$username&t=$token&s=$salt" +
                 "&v=${NavidromeApi.API_VERSION}&c=${NavidromeApi.CLIENT_NAME}" +
                 "&maxBitRate=$STREAMING_BITRATE_ORIGINAL" // Fuerza calidad original
     }

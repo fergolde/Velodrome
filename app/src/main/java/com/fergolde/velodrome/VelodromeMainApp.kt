@@ -56,8 +56,10 @@ class VelodromeApp : Application(), SingletonImageLoader.Factory, Configuration.
                 // Añadir el interceptor de autenticación para coverart
                 add(navidromeImageInterceptor)
                 // Clave de caché estable: strippea el token/salt rotativo de las URLs
-                // de coverart para que la caché no se invalide cada hora / cold start
-                add(NavidromeCoverArtKeyer())
+                // de coverart para que la caché no se invalide cada hora / cold start,
+                // y la scopea por cuenta para que dos usuarios del mismo server no
+                // compartan arte en caché.
+                add(NavidromeCoverArtKeyer { credentialsManager.getAccountScope() })
                 // Añadir el fetcher de red con OkHttp
                 add(
                     OkHttpNetworkFetcherFactory(

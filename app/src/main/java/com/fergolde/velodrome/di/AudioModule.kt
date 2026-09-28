@@ -52,13 +52,16 @@ object AudioModule {
     @Singleton
     fun provideCacheDataSourceFactory(
         simpleCache: SimpleCache,
-        okHttpClient: OkHttpClient
+        okHttpClient: OkHttpClient,
+        credentialsManager: CredentialsManager
     ): CacheDataSource.Factory {
         val httpDataSourceFactory = OkHttpDataSource.Factory(okHttpClient)
         return CacheDataSource.Factory()
             .setCache(simpleCache)
             .setUpstreamDataSourceFactory(httpDataSourceFactory)
-            .setCacheKeyFactory(NavidromeCacheKeyFactory())
+            // Resolved per request, not captured once: the account can change
+            // without this singleton being recreated.
+            .setCacheKeyFactory(NavidromeCacheKeyFactory { credentialsManager.getAccountScope() })
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
             .setEventListener(object : CacheDataSource.EventListener {
                 override fun onCachedBytesRead(cacheSizeBytes: Long, cachedBytesRead: Long) = Unit
