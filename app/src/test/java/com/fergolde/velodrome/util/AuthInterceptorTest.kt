@@ -17,6 +17,13 @@ class AuthInterceptorTest {
     private val credentialsManager: CredentialsManager = mockk()
     private val interceptor = AuthInterceptor(credentialsManager)
 
+    @Before
+    fun stubServerUrl() {
+        // The host allowlist needs a configured server; without it no request
+        // is ever considered on-server and no test below would be meaningful.
+        every { credentialsManager.getServerUrl() } returns "https://server.com/"
+    }
+
     private fun chainWithUrl(url: String): Interceptor.Chain {
         val request = Request.Builder().url(url.toHttpUrl()).build()
         val chain = mockk<Interceptor.Chain>()
@@ -158,5 +165,117 @@ class AuthInterceptorTest {
         interceptor.intercept(chain)
 
         verify(exactly = 0) { credentialsManager.invalidateAuth() }
+    }
+
+    // ========= HOST ALLOWLIST =========
+
+    @Test
+    fun foreignHost_doesNotReceiveCredentials() {
+        every { credentialsManager.getValidAuthParams() } returns Triple("user", "token123", "salt123")
+
+        val chain = chainWithUrl("https://evil.example/rest/getCoverArt.view?id=al-1")
+        mockChainProceed(chain)
+
+        interceptor.intercept(chain)
+
+        val capturedRequest = slot<Request>()
+        verify { chain.proceed(capture(capturedRequest)) }
+
+        val url = capturedRequest.captured.url
+        assertNull(url.queryParameter("u"))
+        assertNull(url.queryParameter("t"))
+        assertNull(url.queryParameter("s"))
+    }
+
+    @Test
+    fun foreignHost_doesNotLeakTokenEvenWhenCredentialsExist() {
+        every { credentialsManager.getValidAuthParams() } returns Triple("user", "token123", "salt123")
+
+        val chain = chainWithUrl("https://attacker.test/collect")
+        mockChainProceed(chain)
+
+        interceptor.intercept(chain)
+
+        val capturedRequest = slot<Request>()
+        verify { chain.proceed(capture(capturedRequest)) }
+        val url = capturedRequest.captured.url.toString()
+        assertFalse(url.contains("token123"))
+        assertFalse(url.contains("salt123"))
+    }
+
+    @Test
+    fun foreignHost_doesNotInvalidateAuthOn401() {
+        // A third party answering 401 must not be able to clear the session
+        // token the real server is still using.
+        every { credentialsManager.getValidAuthParams() } returns Triple("user", "token", "salt")
+        every { credentialsManager.invalidateAuth() } just runs
+
+        val chain = chainWithUrl("https://evil.example/rest/ping.view")
+        mockChainProceed(chain, 401)
+
+        interceptor.intercept(chain)
+
+        verify(exactly = 0) { credentialsManager.invalidateAuth() }
+    }
+
+    @Test
+    fun subdomainOfConfiguredServer_isTreatedAsForeign() {
+        every { credentialsManager.getValidAuthParams() } returns Triple("user", "token", "salt")
+
+        val chain = chainWithUrl("https://evil.server.com.attacker.test/rest/ping.view")
+        mockChainProceed(chain)
+
+        interceptor.intercept(chain)
+
+        val capturedRequest = slot<Request>()
+        verify { chain.proceed(capture(capturedRequest)) }
+        assertNull(capturedRequest.captured.url.queryParameter("t"))
+    }
+
+    @Test
+    fun hostMatch_isCaseInsensitive() {
+        every { credentialsManager.getServerUrl() } returns "https://Server.COM/"
+        every { credentialsManager.getValidAuthParams() } returns Triple("user", "token", "salt")
+
+        val chain = chainWithUrl("https://server.com/rest/ping.view")
+        mockChainProceed(chain)
+
+        interceptor.intercept(chain)
+
+        val capturedRequest = slot<Request>()
+        verify { chain.proceed(capture(capturedRequest)) }
+        assertEquals("user", capturedRequest.captured.url.queryParameter("u"))
+    }
+
+    @Test
+    fun sameHostOnDifferentPort_receivesCredentials() {
+        // Host+port is a deployment detail behind a proxy: the same host on a
+        // non-default port is still the user's own server.
+        every { credentialsManager.getServerUrl() } returns "https://server.com:4533/"
+        every { credentialsManager.getValidAuthParams() } returns Triple("user", "token", "salt")
+
+        val chain = chainWithUrl("https://server.com:4533/rest/ping.view")
+        mockChainProceed(chain)
+
+        interceptor.intercept(chain)
+
+        val capturedRequest = slot<Request>()
+        verify { chain.proceed(capture(capturedRequest)) }
+        assertEquals("user", capturedRequest.captured.url.queryParameter("u"))
+    }
+
+    @Test
+    fun noConfiguredServer_doesNotAttachCredentials() {
+        every { credentialsManager.getServerUrl() } returns null
+        every { credentialsManager.getValidAuthParams() } returns Triple("user", "token", "salt")
+
+        val chain = chainWithUrl("https://server.com/rest/ping.view")
+        mockChainProceed(chain)
+
+        interceptor.intercept(chain)
+
+        val capturedRequest = slot<Request>()
+        verify { chain.proceed(capture(capturedRequest)) }
+        assertNull(capturedRequest.captured.url.queryParameter("t"))
     }
 }

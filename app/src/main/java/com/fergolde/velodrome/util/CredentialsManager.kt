@@ -42,6 +42,16 @@ class CredentialsManager @Inject constructor(
     // SESSION MANAGEMENT
     // -------------------------
 
+    /**
+     * Returns the (username, token, salt) triple for the current session, or
+     * null when no credentials are available.
+     *
+     * The token/salt pair is memoized for [SESSION_DURATION_MS] to avoid one
+     * MD5 per request. The pair is NOT persisted and is discarded on
+     * [invalidateAuth]. Note that reuse bounds how often the app mints a new
+     * token, not how long a leaked token stays valid: the server accepts a
+     * token until the account password changes.
+     */
     @Synchronized
     fun getValidAuthParams(): Triple<String, String, String>? {
         val username = tempUsername ?: getUsername() ?: return null
@@ -158,22 +168,18 @@ class CredentialsManager @Inject constructor(
                 "&v=${NavidromeApi.API_VERSION}&c=${NavidromeApi.CLIENT_NAME}"
     }
 
-    fun getCoverArtUrl(coverArtId: String?, size: Int): String? {
-        val baseUrl = getCoverArtBaseUrl(coverArtId, size) ?: return null
-        val auth = getValidAuthParams() ?: return null
-        val (username, token, salt) = auth
-
-        return "$baseUrl&u=$username&t=$token&s=$salt"
-    }
-
-    fun getStreamUrl(trackId: String): String { // Eliminamos maxBitRate del argumento
+    /**
+     * Stream URL WITHOUT auth params.
+     *
+     * The URI of a MediaItem is readable by any controller that connects to the
+     * session, including untrusted watch companions, so credentials must never
+     * be embedded here. [AuthInterceptor] appends `u`/`t`/`s` at request time.
+     */
+    fun getStreamUrl(trackId: String): String {
         val serverUrl = getServerUrl() ?: return ""
-        val auth = getValidAuthParams() ?: return ""
-        val (username, token, salt) = auth
 
         return "${serverUrl.trimEnd('/')}/rest/stream.view" +
                 "?id=$trackId" +
-                "&u=$username&t=$token&s=$salt" +
                 "&v=${NavidromeApi.API_VERSION}&c=${NavidromeApi.CLIENT_NAME}" +
                 "&maxBitRate=$STREAMING_BITRATE_ORIGINAL" // Fuerza calidad original
     }

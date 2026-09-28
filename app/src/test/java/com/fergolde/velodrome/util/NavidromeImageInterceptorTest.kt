@@ -39,7 +39,6 @@ class NavidromeImageInterceptorTest {
         )
         assertEquals(transformed.captured.data, transformed.captured.memoryCacheKey)
         assertEquals(transformed.captured.data, transformed.captured.diskCacheKey)
-        verify(exactly = 0) { credentialsManager.getCoverArtUrl(any(), any()) }
     }
 
     @Test
