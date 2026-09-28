@@ -1,5 +1,6 @@
 package com.fergolde.velodrome.presentation.screen.settings
 
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +11,7 @@ import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.util.CacheManager
 import com.fergolde.velodrome.util.CredentialsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -223,9 +225,19 @@ class SettingsViewModel @Inject constructor(
      */
     fun logout() {
         viewModelScope.launch {
-            // Purge BEFORE dropping the credentials: account-scoped cache keys
-            // are derived from them, and the reset notifier stops playback.
-            accountDataRepository.purgeAccountData()
+            // The purge is best-effort cleanup. It touches the Room tables, the
+            // queue DataStore and four settings keys, any of which can throw
+            // (disk full, corrupted DataStore file). Letting that failure
+            // escape would strand the user on this screen with live
+            // credentials and no way to sign out, so the logout itself always
+            // completes.
+            try {
+                accountDataRepository.purgeAccountData()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Account purge failed, signing out anyway", e)
+            }
             credentialsManager.clearCredentials()
             _shouldLogout.value = true
         }
@@ -282,6 +294,10 @@ class SettingsViewModel @Inject constructor(
         AccentColorOption("Blue Grey", "#90A4AE"),
         AccentColorOption("White", "#FFFFFF")
     )
+
+    private companion object {
+        private const val TAG = "SettingsViewModel"
+    }
 }
 
 /**
