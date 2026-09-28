@@ -98,6 +98,9 @@
     <string name="settings_cancel">Cancel</string>
     <string name="settings_clear_cache_dialog_title">Clear cache?</string>
     <string name="settings_clear_cache_dialog_message">All cached data will be deleted. You will need to reload the content next time.</string>
+    <string name="settings_logout">Log Out</string>
+    <string name="settings_logout_dialog_title">Log out?</string>
+    <string name="settings_logout_dialog_message">Your credentials and local library will be deleted. Downloaded music is kept, but only for your account.</string>
 
     <!-- Common -->
     <string name="nav_back">Back</string>

@@ -120,7 +120,13 @@ class SettingsRepositoryImpl @Inject constructor(
         dataStore.edit { it[PreferencesKeys.LAST_SERVER_CHECK_AT] = timestamp }
     }
 
-    override suspend fun setLastServerVersion(version: String) {
-        dataStore.edit { it[PreferencesKeys.LAST_SERVER_VERSION] = version }
+    override suspend fun setLastServerVersion(version: String?) {
+        dataStore.edit { prefs ->
+            if (version == null) {
+                prefs.remove(PreferencesKeys.LAST_SERVER_VERSION)
+            } else {
+                prefs[PreferencesKeys.LAST_SERVER_VERSION] = version
+            }
+        }
     }
 }

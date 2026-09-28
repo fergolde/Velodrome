@@ -2,11 +2,9 @@ package com.fergolde.velodrome.data.repository
 
 import com.fergolde.velodrome.data.local.dao.AlbumDao
 import com.fergolde.velodrome.data.local.dao.ArtistDao
-import com.fergolde.velodrome.data.local.dao.ScrobbleDao
 import com.fergolde.velodrome.data.local.dao.TrackDao
-import com.fergolde.velodrome.data.local.queue.QueueSnapshotStore
+import com.fergolde.velodrome.domain.repository.AccountDataRepository
 import com.fergolde.velodrome.domain.repository.SettingsRepository
-import com.fergolde.velodrome.util.ServerDataResetNotifier
 import io.mockk.*
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -20,18 +18,14 @@ class ServerMigrationRepositoryImplTest {
     private val artistDao: ArtistDao = mockk(relaxed = true)
     private val albumDao: AlbumDao = mockk(relaxed = true)
     private val trackDao: TrackDao = mockk(relaxed = true)
-    private val scrobbleDao: ScrobbleDao = mockk(relaxed = true)
-    private val queueSnapshotStore: QueueSnapshotStore = mockk(relaxed = true)
-    private val resetNotifier: ServerDataResetNotifier = mockk(relaxed = true)
+    private val accountDataRepository: AccountDataRepository = mockk(relaxed = true)
 
     private val repository = ServerMigrationRepositoryImpl(
         settingsRepository = settingsRepository,
         artistDao = artistDao,
         albumDao = albumDao,
         trackDao = trackDao,
-        scrobbleDao = scrobbleDao,
-        queueSnapshotStore = queueSnapshotStore,
-        resetNotifier = resetNotifier
+        accountDataRepository = accountDataRepository
     )
 
     private fun storedVersion(version: String?) {
@@ -52,15 +46,7 @@ class ServerMigrationRepositoryImplTest {
         val reset = repository.checkAndMigrate("0.64.0")
 
         assertTrue(reset)
-        coVerify { artistDao.deleteAll() }
-        coVerify { albumDao.deleteAll() }
-        coVerify { trackDao.deleteAll() }
-        coVerify { scrobbleDao.deleteAll() }
-        coVerify { queueSnapshotStore.clear() }
-        coVerify { settingsRepository.setLastSyncTimestamp(0) }
-        coVerify { settingsRepository.setLastSyncOffset(0) }
-        coVerify { settingsRepository.setLastServerCheckAt(0) }
-        verify { resetNotifier.notifyReset() }
+        coVerify { accountDataRepository.purgeAccountData() }
         coVerify { settingsRepository.setLastServerVersion("0.64.0") }
     }
 
@@ -72,9 +58,7 @@ class ServerMigrationRepositoryImplTest {
         val reset = repository.checkAndMigrate("0.64.1")
 
         assertFalse(reset)
-        coVerify(exactly = 0) { trackDao.deleteAll() }
-        coVerify(exactly = 0) { queueSnapshotStore.clear() }
-        verify(exactly = 0) { resetNotifier.notifyReset() }
+        coVerify(exactly = 0) { accountDataRepository.purgeAccountData() }
         coVerify { settingsRepository.setLastServerVersion("0.64.1") }
     }
 
@@ -86,7 +70,7 @@ class ServerMigrationRepositoryImplTest {
         val reset = repository.checkAndMigrate("0.64.0")
 
         assertTrue(reset)
-        coVerify { trackDao.deleteAll() }
+        coVerify { accountDataRepository.purgeAccountData() }
         coVerify { settingsRepository.setLastServerVersion("0.64.0") }
     }
 
@@ -100,7 +84,7 @@ class ServerMigrationRepositoryImplTest {
         val reset = repository.checkAndMigrate("0.64.0")
 
         assertTrue(reset)
-        coVerify { trackDao.deleteAll() }
+        coVerify { accountDataRepository.purgeAccountData() }
     }
 
     @Test
@@ -111,8 +95,7 @@ class ServerMigrationRepositoryImplTest {
         val reset = repository.checkAndMigrate("0.63.2")
 
         assertFalse(reset)
-        coVerify(exactly = 0) { trackDao.deleteAll() }
-        verify(exactly = 0) { resetNotifier.notifyReset() }
+        coVerify(exactly = 0) { accountDataRepository.purgeAccountData() }
         coVerify { settingsRepository.setLastServerVersion("0.63.2") }
     }
 
@@ -124,7 +107,7 @@ class ServerMigrationRepositoryImplTest {
         val reset = repository.checkAndMigrate(null)
 
         assertFalse(reset)
-        coVerify(exactly = 0) { trackDao.deleteAll() }
+        coVerify(exactly = 0) { accountDataRepository.purgeAccountData() }
         coVerify(exactly = 0) { settingsRepository.setLastServerVersion(any()) }
     }
 }

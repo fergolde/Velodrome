@@ -2,12 +2,10 @@ package com.fergolde.velodrome.data.repository
 
 import com.fergolde.velodrome.data.local.dao.AlbumDao
 import com.fergolde.velodrome.data.local.dao.ArtistDao
-import com.fergolde.velodrome.data.local.dao.ScrobbleDao
 import com.fergolde.velodrome.data.local.dao.TrackDao
-import com.fergolde.velodrome.data.local.queue.QueueSnapshotStore
+import com.fergolde.velodrome.domain.repository.AccountDataRepository
 import com.fergolde.velodrome.domain.repository.ServerMigrationRepository
 import com.fergolde.velodrome.domain.repository.SettingsRepository
-import com.fergolde.velodrome.util.ServerDataResetNotifier
 import com.fergolde.velodrome.util.ServerVersion
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -29,9 +27,7 @@ class ServerMigrationRepositoryImpl @Inject constructor(
     private val artistDao: ArtistDao,
     private val albumDao: AlbumDao,
     private val trackDao: TrackDao,
-    private val scrobbleDao: ScrobbleDao,
-    private val queueSnapshotStore: QueueSnapshotStore,
-    private val resetNotifier: ServerDataResetNotifier
+    private val accountDataRepository: AccountDataRepository
 ) : ServerMigrationRepository {
 
     override suspend fun checkAndMigrate(currentServerVersion: String?): Boolean {
@@ -51,18 +47,8 @@ class ServerMigrationRepositoryImpl @Inject constructor(
         if (shouldReset) {
             // Pending scrobbles carry the same stale IDs: the server cannot
             // resolve them anymore and the worker would retry forever.
-            artistDao.deleteAll()
-            albumDao.deleteAll()
-            trackDao.deleteAll()
-            scrobbleDao.deleteAll()
-            queueSnapshotStore.clear()
-
             // Zeroed stamps force the full-sync path on the next run.
-            settingsRepository.setLastSyncTimestamp(0)
-            settingsRepository.setLastSyncOffset(0)
-            settingsRepository.setLastServerCheckAt(0)
-
-            resetNotifier.notifyReset()
+            accountDataRepository.purgeAccountData()
         }
 
         if (currentServerVersion != null) {

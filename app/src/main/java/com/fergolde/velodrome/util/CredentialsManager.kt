@@ -3,11 +3,18 @@ package com.fergolde.velodrome.util
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.fergolde.velodrome.data.remote.NavidromeApi
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
 
 private const val STREAMING_BITRATE_ORIGINAL = 999
+
+/** Scope used before any account is configured. */
+const val NO_ACCOUNT_SCOPE = "anonymous"
+
+/** 8 bytes of the digest is plenty to separate accounts and keeps keys short. */
+private const val SCOPE_HASH_BYTES = 8
 
 
 @Singleton
@@ -149,6 +156,23 @@ class CredentialsManager @Inject constructor(
     }
 
     fun hasCredentials(): Boolean = !getUsername().isNullOrBlank() && !getPassword().isNullOrBlank() && !getServerUrl().isNullOrBlank()
+
+    /**
+     * Opaque identifier for the currently configured account + server, used to
+     * partition on-disk caches so one account can never read another's data.
+     *
+     * A hash rather than the raw username/server so the value is safe to embed
+     * in cache keys and filenames without leaking either. Returns
+     * [NO_ACCOUNT_SCOPE] when nothing is configured yet, which keeps pre-login
+     * requests from colliding with a real account's scope.
+     */
+    fun getAccountScope(): String {
+        val username = getUsername() ?: return NO_ACCOUNT_SCOPE
+        val serverUrl = getServerUrl() ?: return NO_ACCOUNT_SCOPE
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest("$serverUrl|$username".toByteArray(Charsets.UTF_8))
+        return digest.take(SCOPE_HASH_BYTES).joinToString("") { "%02x".format(it) }
+    }
 
     // -------------------------
     // URL HELPERS (Refactorizadas para usar la caché)

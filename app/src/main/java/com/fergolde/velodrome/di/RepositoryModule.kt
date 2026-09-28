@@ -1,5 +1,6 @@
 package com.fergolde.velodrome.di
 
+import com.fergolde.velodrome.data.repository.AccountDataRepositoryImpl
 import com.fergolde.velodrome.data.repository.AlbumRepositoryImpl
 import com.fergolde.velodrome.data.repository.ArtistRepositoryImpl
 import com.fergolde.velodrome.data.repository.AuthRepositoryImpl
@@ -7,6 +8,7 @@ import com.fergolde.velodrome.data.repository.ScrobbleRepositoryImpl
 import com.fergolde.velodrome.data.repository.ServerMigrationRepositoryImpl
 import com.fergolde.velodrome.data.repository.TrackRepositoryImpl
 import com.fergolde.velodrome.data.repository.PlaylistRepositoryImpl
+import com.fergolde.velodrome.domain.repository.AccountDataRepository
 import com.fergolde.velodrome.domain.repository.AlbumRepository
 import com.fergolde.velodrome.domain.repository.ArtistRepository
 import com.fergolde.velodrome.domain.repository.AuthRepository
@@ -53,4 +55,10 @@ abstract class RepositoryModule {
     abstract fun bindServerMigrationRepository(
         impl: ServerMigrationRepositoryImpl
     ): ServerMigrationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAccountDataRepository(
+        impl: AccountDataRepositoryImpl
+    ): AccountDataRepository
 }

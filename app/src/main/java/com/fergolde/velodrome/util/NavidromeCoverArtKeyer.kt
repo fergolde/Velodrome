@@ -8,15 +8,21 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
  * Stable cache key for Navidrome cover-art URLs.
  *
  * AuthInterceptor appends rotating token/salt values to cover-art requests.
- * Stripping them yields one stable key per (host, coverArt id, size), mirroring
- * what NavidromeCacheKeyFactory does for the audio SimpleCache.
+ * Stripping them yields one stable key per (account, host, coverArt id, size),
+ * mirroring what [NavidromeCacheKeyFactory] does for the audio SimpleCache.
+ *
+ * The account scope is part of the key on purpose: without it, two accounts on
+ * the same server would share artwork cache entries, and one account could be
+ * served the other account's private cover art.
  */
-class NavidromeCoverArtKeyer : Keyer<String> {
+class NavidromeCoverArtKeyer(
+    private val accountScope: () -> String
+) : Keyer<String> {
 
     override fun key(data: String, options: Options): String? {
         // Null = not our model type, fall back to Coil's default keying.
         if (!data.contains(COVER_ART_PATH)) return null
-        return runCatching { normalize(data) }.getOrNull()
+        return runCatching { normalize(data, accountScope()) }.getOrNull()
     }
 
     companion object {
@@ -26,15 +32,21 @@ class NavidromeCoverArtKeyer : Keyer<String> {
         /**
          * Removes the rotating auth params (u/t/s) while keeping the rest of the
          * URL (host, id, size, v, c) intact and in original order, so the result
-         * is deterministic across token rotations.
+         * is deterministic across token rotations, then prefixes the account
+         * scope so keys never collide across accounts.
          */
-        fun normalize(url: String): String {
-            val parsed = url.toHttpUrlOrNull() ?: return url
+        fun normalize(url: String, accountScope: String): String {
+            val parsed = url.toHttpUrlOrNull()
+                ?: return "$accountScope|$url"
             val hasRotatingParams = parsed.queryParameterNames.any { it in ROTATING_PARAMS }
-            if (!hasRotatingParams) return url
-            return parsed.newBuilder().apply {
-                ROTATING_PARAMS.forEach { removeAllQueryParameters(it) }
-            }.build().toString()
+            val sanitized = if (!hasRotatingParams) {
+                parsed
+            } else {
+                parsed.newBuilder().apply {
+                    ROTATING_PARAMS.forEach { removeAllQueryParameters(it) }
+                }.build()
+            }
+            return "$accountScope|$sanitized"
         }
     }
 }

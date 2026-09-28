@@ -97,5 +97,6 @@ interface SettingsRepository {
 
     suspend fun setLastServerCheckAt(timestamp: Long)
 
-    suspend fun setLastServerVersion(version: String)
+    /** Passing null clears the stored version, e.g. when the account is discarded on logout. */
+    suspend fun setLastServerVersion(version: String?)
 }

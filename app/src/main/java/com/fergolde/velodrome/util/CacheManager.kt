@@ -35,6 +35,7 @@ class CacheManager @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val simpleCache: androidx.media3.datasource.cache.SimpleCache,
     private val musicCacheEvictor: ConfigurableLruCacheEvictor,
+    private val credentialsManager: CredentialsManager,
     private val settingsRepository: SettingsRepository,
     @Named("app_scope") private val appScope: CoroutineScope,
     @Named("cache_prefs") private val cachePrefs: SharedPreferences
@@ -154,7 +155,10 @@ class CacheManager @Inject constructor(
      * Valida si un track está completamente cacheado.
      */
     fun isTrackFullyCached(trackId: String, expectedSizeBytes: Long): Boolean {
-        val key = "navidrome_track_$trackId"
+        // Built through the factory's key function, never re-derived here: a
+        // hand-rolled copy of this string is how the account scope silently
+        // drifted out of sync with the writer side.
+        val key = NavidromeCacheKeyFactory.trackCacheKey(credentialsManager.getAccountScope(), trackId)
         val spans = simpleCache.getCachedSpans(key)
 
         // 1. Si no hay nada en disco, no hay canción offline.
