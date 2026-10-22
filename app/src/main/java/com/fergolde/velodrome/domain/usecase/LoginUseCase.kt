@@ -1,16 +1,14 @@
 package com.fergolde.velodrome.domain.usecase
 
-import android.content.Context
-import android.content.pm.ApplicationInfo
-import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.AuthResult
 import com.fergolde.velodrome.domain.repository.AuthRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import javax.inject.Named
 
 class LoginUseCase @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val repository: AuthRepository
+    private val repository: AuthRepository,
+    @Named("isDebuggable") private val isDebug: Boolean,
+    @Named("cleartextNotAllowedMessage") private val cleartextNotAllowedMessage: String
 ) {
     suspend operator fun invoke(username: String, password: String, serverUrl: String): Result<AuthResult> {
         if (username.isBlank()) {
@@ -34,11 +32,8 @@ class LoginUseCase @Inject constructor(
 
         // En release no permitimos tráfico en claro: el manifest desactiva
         // usesCleartextTraffic y la NetworkSecurityConfig fuerza HTTPS.
-        val isDebug = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (!isDebug && cleanUrl.startsWith("http://")) {
-            return Result.failure(
-                IllegalArgumentException(context.getString(R.string.error_cleartext_not_allowed))
-            )
+            return Result.failure(IllegalArgumentException(cleartextNotAllowedMessage))
         }
 
         return repository.login(username, password, cleanUrl)

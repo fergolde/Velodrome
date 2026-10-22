@@ -20,12 +20,12 @@ import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.fergolde.velodrome.MainActivity
-import com.fergolde.velodrome.data.local.dao.TrackDao
 import com.fergolde.velodrome.data.local.queue.QueueSnapshot
 import com.fergolde.velodrome.data.local.queue.QueueSnapshotStore
 import com.fergolde.velodrome.data.local.queue.toDomain
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.SettingsRepository
+import com.fergolde.velodrome.domain.repository.TrackRepository
 import com.fergolde.velodrome.util.CacheManager
 import com.fergolde.velodrome.util.CredentialsManager
 import com.google.common.util.concurrent.ListenableFuture
@@ -60,7 +60,7 @@ class AudioPlayerService : MediaSessionService() {
     lateinit var scrobbleManager: ScrobbleManager
 
     @Inject
-    lateinit var trackDao: TrackDao
+    lateinit var trackRepository: TrackRepository
 
     @Inject
     lateinit var settingsRepository: SettingsRepository
@@ -191,7 +191,7 @@ class AudioPlayerService : MediaSessionService() {
     }
 
     private suspend fun genreForTrack(trackId: String): String? =
-        trackDao.findGenreByTrackId(trackId)
+        trackRepository.getGenreForTrack(trackId)
 
     // El sistema llama a este método cuando un MediaController (como el de AudioPlayerManager) intenta conectarse
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
@@ -432,7 +432,7 @@ class AudioPlayerService : MediaSessionService() {
             try {
                 // Skip tracks that are already fully cached: CacheWriter would
                 // resolve spans and download nothing, pure churn per event.
-                val expectedSize = trackDao.getTrackById(trackId)?.sizeBytes ?: 0L
+                val expectedSize = trackRepository.getTrackSizeBytes(trackId)
                 if (cacheManager.isTrackFullyCached(trackId, expectedSize)) return@launch
                 // Near the quota a new download would only evict other tracks'
                 // LRU spans for marginal benefit.

@@ -118,6 +118,12 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
         return trackDao.getAllTracksOnce().map { it.toDomain() }
     }
 
+    override suspend fun getTrackSizeBytes(trackId: String): Long =
+        trackDao.getTrackById(trackId)?.sizeBytes ?: 0L
+
+    override suspend fun getGenreForTrack(trackId: String): String? =
+        trackDao.findGenreByTrackId(trackId)
+
     override suspend fun getTracksForAlbumIds(albumIds: List<String>): List<Track> {
         if (albumIds.isEmpty()) return emptyList()
         return trackDao.getTracksForAlbumIds(albumIds).map { it.toDomain() }

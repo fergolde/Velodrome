@@ -26,7 +26,7 @@ Branch: `perf/app-optimization` | Delivery: local only until explicit permission
 | T7 | Paging invalidation for albums/artists | inline | pending |
 | T8 | Compose performance: Home/Explore state slicing, PlayerScreen stability, duration/border memoization | inline | pending |
 | T9 | Audio main-thread work: MediaItem construction off main, EQ settings read | inline | pending |
-| T10 | Architecture: remove DAO from AudioPlayerService, purify LoginUseCase, presentation/data decoupling | inline | pending |
+| T10 | Architecture: remove DAO from AudioPlayerService, purify LoginUseCase, presentation/data decoupling | inline | done (commit 7, partial: COD-10 pending) |
 | T11 | SettingsViewModel single UiState + one-shot logout event + typed state | inline | pending |
 | T12 | Tests for uncovered high-risk ViewModels and engines | inline | pending |
 | T13 | Final verification: full unit suite, assembleRelease, lint | inline | pending |

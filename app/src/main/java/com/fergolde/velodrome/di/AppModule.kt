@@ -3,6 +3,7 @@ package com.fergolde.velodrome.di
 import android.content.Context
 import android.content.SharedPreferences
 import com.fergolde.velodrome.BuildConfig
+import com.fergolde.velodrome.R
 import com.fergolde.velodrome.data.remote.NavidromeApi
 import com.fergolde.velodrome.util.AuthInterceptor
 import com.fergolde.velodrome.util.CredentialsManager
@@ -59,6 +60,17 @@ object AppModule {
     @Singleton
     @Named("appVersion")
     fun provideAppVersion(): String = BuildConfig.VERSION_NAME
+
+    @Provides
+    @Singleton
+    @Named("isDebuggable")
+    fun provideIsDebuggable(): Boolean = BuildConfig.DEBUG
+
+    @Provides
+    @Singleton
+    @Named("cleartextNotAllowedMessage")
+    fun provideCleartextNotAllowedMessage(@ApplicationContext context: Context): String =
+        context.getString(R.string.error_cleartext_not_allowed)
 
     // -------------------------
     // MOSHI
