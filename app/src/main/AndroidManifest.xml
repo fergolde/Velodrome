@@ -20,7 +20,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Velodrome"
         android:usesCleartextTraffic="${usesCleartextTraffic}">
-        <profileable android:shell="true" />
 
         <provider
             android:name="androidx.startup.InitializationProvider"

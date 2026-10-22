@@ -275,4 +275,24 @@ class CredentialsManagerTest {
     fun getStreamUrl_nullServerUrl_returnsEmpty() {
         assertEquals("", newManager().getStreamUrl("track-1"))
     }
+
+    @Test
+    fun getStreamUrl_encodesTrackIdAsSingleQueryValue() {
+        seedFull()
+
+        val url = newManager().getStreamUrl("a&b=c")
+
+        assertTrue(url.contains("id=a%26b%3Dc"))
+        assertFalse(url.contains("id=a&b=c"))
+    }
+
+    @Test
+    fun getCoverArtBaseUrl_encodesCoverArtIdAsSingleQueryValue() {
+        seedFull()
+
+        val url = newManager().getCoverArtBaseUrl("a&b=c", 300)
+
+        assertTrue(url!!.contains("id=a%26b%3Dc"))
+        assertFalse(url.contains("id=a&b=c"))
+    }
 }
