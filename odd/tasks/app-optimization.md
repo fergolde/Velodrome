@@ -23,13 +23,13 @@ Branch: `perf/app-optimization` | Delivery: local only until explicit permission
 | T4 | Performance quick wins: runBlocking, durations, border strokes, dispatcher scopes, prefs preload, accent default, queue index map | inline | done (commit 3) |
 | T5 | Cancellation safety: runCatchingWithCancellation in CacheManager/HomeViewModel/SmartRadioEngine | inline | done (commit 4) |
 | T6 | DI/build cleanup: Settings @Binds, BuildConfig injection, gradle.properties, CI lint | inline | done (commit 5) |
-| T7 | Paging invalidation for albums/artists | inline | done (commit 8) |
+| T7 | Paging invalidation for albums/artists | inline | done (commit 9) |
 | T8 | Compose performance: Home/Explore state slicing, PlayerScreen stability, duration/border memoization | inline | partial (immutable states + memoization; slicing pending measurement) |
 | T9 | Audio main-thread work: MediaItem construction off main, EQ settings read | inline | pending |
 | T10 | Architecture: remove DAO from AudioPlayerService, purify LoginUseCase, presentation/data decoupling | inline | done (commit 7, partial: COD-10 pending) |
 | T11 | SettingsViewModel single UiState + one-shot logout event + typed state | inline | partial (typed combine done; logout event pending) |
 | T12 | Tests for uncovered high-risk ViewModels and engines | inline | partial (repository contract tests added) |
-| T13 | Final verification: full unit suite, assembleRelease, lint | inline | done (commit 8) |
+| T13 | Final verification: full unit suite, assembleRelease, lint | inline | done (commit 9) |
 
 ## Log
 
@@ -82,7 +82,7 @@ Replaced plain `runCatching` around suspend work with `runCatchingWithCancellati
 - Removed stale `gradle.properties` flags.
 - Evidence: `./gradlew :app:testDebugUnitTest :app:lintDebug` → BUILD SUCCESSFUL, 304 tests, 0 failures, lint green.
 
-### L10 — Paging invalidation (commit 8)
+### L10 — Paging invalidation (commit 9)
 
 Added `AlbumDao.observeAlbumCount()` / `ArtistDao.observeArtistCount()` Room `Flow` queries, exposed through `LocalMusicDataSource` and the repository interfaces. `AlbumsViewModel`/`ArtistsViewModel` hold the current `PagingSource`, drop the initial count emission, debounce 500 ms and call `invalidate()` so a completed `SyncLibraryWorker` becomes visible without a process restart. Evidence: unit suite green; end-to-end refresh needs a device with a server sync.
 
