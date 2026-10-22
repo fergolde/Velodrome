@@ -105,3 +105,13 @@ Added `AlbumDao.observeAlbumCount()` / `ArtistDao.observeArtistCount()` Room `Fl
 - `./gradlew :app:assembleRelease` → BUILD SUCCESSFUL with R8 minify + resource shrinking.
 - Receipt-driven review is globally disabled (`gentle-ai review mode status` → off); no review transaction started.
 - Nothing pushed, no PR, no tag. Branch `perf/app-optimization` is local only.
+
+### L14 — Decisions applied (2026-10-22)
+
+User decisions, verbatim: "1. siempre se va a usar https, tanto en local como en remoto. 2. no hace falta hacer backup de la app. 3. no hay problema si se pierden los datos. hazlo si es necesario 4. lo que tu ves mejor."
+
+- **HTTPS always**: removed the dead `usesCleartextTraffic` placeholder; the manifest now declares `usesCleartextTraffic="false"` for debug and release, and `LoginUseCase` rejects `http://` in every build. Removed the now-unused `@Named("isDebuggable")` provider and collapsed the two HTTP tests into one.
+- **No backup**: `allowBackup="false"`; removed `fullBackupContent`/`dataExtractionRules` references and deleted the two XML rule files.
+- **Artist index**: `ArtistEntity` now declares `Index("name")`; database version 2 with `MIGRATION_1_2` creating `index_artists_name`; `DatabaseModule` registers it.
+- **Error copy**: intentionally unchanged. Mapping raw messages would only churn user-visible text with no performance or security gain; left as a separate UX decision.
+- Evidence: 306 tests, 0 failures; lint green; merged debug/release manifests verified (`allowBackup=false`, `usesCleartextTraffic=false`, profileable debug-only); `assembleRelease` successful.
