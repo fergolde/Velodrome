@@ -21,7 +21,7 @@ Branch: `perf/app-optimization` | Delivery: local only until explicit permission
 | T2 | Security hardening: profileable debug-only, URL encoding | inline | done (commit 2) |
 | T3 | Dead code: unused use cases, repository overloads, room-paging, datastore core, stale comment | inline | done (commit 1) |
 | T4 | Performance quick wins: runBlocking, durations, border strokes, dispatcher scopes, prefs preload, accent default, queue index map | inline | done (commit 3) |
-| T5 | Cancellation safety: runCatchingWithCancellation in CacheManager/HomeViewModel/SmartRadioEngine | inline | in progress |
+| T5 | Cancellation safety: runCatchingWithCancellation in CacheManager/HomeViewModel/SmartRadioEngine | inline | done (commit 4) |
 | T6 | DI/build cleanup: Settings @Binds, BuildConfig injection, gradle.properties, CI lint | inline | pending |
 | T7 | Paging invalidation for albums/artists | inline | pending |
 | T8 | Compose performance: Home/Explore state slicing, PlayerScreen stability, duration/border memoization | inline | pending |
@@ -68,3 +68,7 @@ Removed `SyncAlbumsUseCase`, the no-arg `AlbumRepository.syncAlbumsFromServer()`
 - Accent default unified in `DEFAULT_ACCENT_COLOR` in the domain layer, removing the cold-start color flash.
 - `VelodromeApp.onCreate` warms the cache-preferences file read by `newImageLoader`.
 - Evidence: `./gradlew :app:testDebugUnitTest` → 304 tests, 0 failures.
+
+### L8 — Cancellation safety (commit 4)
+
+Replaced plain `runCatching` around suspend work with `runCatchingWithCancellation` in `CacheManager` (init limit read), `HomeViewModel.loadPlaylists`, and `SmartRadioEngine.loadTasteProfile` (commit 3 file). This keeps `CancellationException` propagating instead of turning it into a failed `Result`. Evidence: full unit suite green.

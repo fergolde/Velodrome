@@ -3,6 +3,7 @@ package com.fergolde.velodrome.presentation.screen.home
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
 import com.fergolde.velodrome.data.worker.SyncLibraryWorker
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.PlaylistUseCases
@@ -129,7 +130,7 @@ class HomeViewModel @Inject constructor(
 
     private fun loadPlaylists() {
         viewModelScope.launch {
-            runCatching {
+            runCatchingWithCancellation {
                 playlistUseCases.getPlaylists().getOrDefault(emptyList())
             }.onSuccess { list ->
                 _uiState.update { it.copy(playlists = list.take(10), isLoading = false) }

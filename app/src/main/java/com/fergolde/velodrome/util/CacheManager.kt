@@ -6,6 +6,7 @@ import androidx.media3.common.util.UnstableApi
 import coil3.ImageLoader
 import coil3.annotation.ExperimentalCoilApi
 import coil3.imageLoader
+import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
@@ -57,7 +58,7 @@ class CacheManager @Inject constructor(
         // Se reconcilia el evictor al arranque para que nunca quede con un límite stale
         // (SharedPreferences) que pudiera evictar la cache a 2 GB por defecto.
         appScope.launch {
-            val limitGb = runCatching { settingsRepository.musicCacheSizeGb.first() }
+            val limitGb = runCatchingWithCancellation { settingsRepository.musicCacheSizeGb.first() }
                 .getOrElse { cachePrefs.getInt("music_cache_size_gb", DEFAULT_MUSIC_LIMIT_GB) }
             setMusicCacheLimitGb(limitGb)
         }
