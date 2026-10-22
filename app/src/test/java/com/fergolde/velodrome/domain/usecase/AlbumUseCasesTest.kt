@@ -19,7 +19,6 @@ class AlbumUseCasesTest {
     private val getRandom = GetRandomAlbumsUseCase(repository)
     private val getAlbum = GetAlbumUseCase(repository)
     private val searchLocal = SearchLocalAlbumsUseCase(repository)
-    private val syncAlbums = SyncAlbumsUseCase(repository)
     private val getMinYear = GetMinYearUseCase(repository)
 
     private val sampleAlbum = Album(id = "1", artistId = "a1", artistName = "Artist", title = "Album", year = 2020, genre = "Rock", coverUrl = "cov-1")
@@ -114,14 +113,6 @@ class AlbumUseCasesTest {
     fun searchLocal_emptyQuery() = runTest {
         coEvery { repository.searchLocal("") } returns emptyList()
         assertTrue(searchLocal("").isEmpty())
-    }
-
-    @Test
-    fun syncAlbums_success() = runTest {
-        coEvery { repository.syncAlbumsFromServer() } returns Result.success(42)
-        val result = syncAlbums()
-        assertTrue(result.isSuccess)
-        assertEquals(42, result.getOrNull())
     }
 
     @Test

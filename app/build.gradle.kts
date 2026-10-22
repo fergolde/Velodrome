@@ -118,13 +118,11 @@ dependencies {
     ksp(libs.moshi.kotlin.codegen)
 
     // DataStore
-    implementation(libs.datastore)
     implementation(libs.datastore.preferences)
 
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    implementation(libs.room.paging)
     ksp(libs.room.compiler)
 
     // Security - encrypted-shared-preferences fork (post-deprecation)

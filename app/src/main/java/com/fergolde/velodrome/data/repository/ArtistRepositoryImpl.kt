@@ -148,9 +148,6 @@ class ArtistRepositoryImpl @Inject constructor(
         return localMusicDataSource.searchArtists(query).map { it.toDomain() }
     }
 
-    override suspend fun artistCount(): Int {
-        return localMusicDataSource.getArtistCount()
-    }
 }
 
 class ArtistPagingSource(

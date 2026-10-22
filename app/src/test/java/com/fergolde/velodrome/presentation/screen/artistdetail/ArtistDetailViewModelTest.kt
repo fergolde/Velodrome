@@ -47,8 +47,7 @@ class ArtistDetailViewModelTest {
         getArtist = getArtistUseCase,
         searchLocal = mockk(),
         syncArtists = mockk(),
-        observeArtists = mockk(),
-        artistCount = mockk()
+        observeArtists = mockk()
     )
 
     private val trackUseCases = TrackUseCases(

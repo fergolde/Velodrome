@@ -28,10 +28,7 @@ interface AlbumRepository {
     /**
      * Sincroniza albums desde el servidor y los guarda en la base de datos local.
      * El repositorio decide si usar caché o red.
-     */
-    suspend fun syncAlbumsFromServer(): Result<Int>
-
-    /**
+     *
      * Sync with pagination support for resume capability.
      */
     suspend fun syncAlbumsFromServer(

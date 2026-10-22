@@ -40,7 +40,6 @@ class HomeViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         coEvery { albumUseCases.albumCount() } returns 10
-        coEvery { albumUseCases.syncAlbums() } returns Result.success(0)
         coEvery { albumUseCases.getLatestAlbums(any()) } returns Result.success(emptyList())
         coEvery { albumUseCases.getTopAlbums(any()) } returns Result.success(emptyList())
         coEvery { albumUseCases.getRecentlyPlayedAlbums(any()) } returns Result.success(emptyList())

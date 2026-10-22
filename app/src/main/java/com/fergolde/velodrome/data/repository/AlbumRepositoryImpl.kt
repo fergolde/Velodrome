@@ -110,10 +110,6 @@ class AlbumRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun syncAlbumsFromServer(): Result<Int> {
-        return syncAlbumsFromServer(startOffset = 0) { }
-    }
-
     override suspend fun syncAlbumsFromServer(
         startOffset: Int,
         onPageProcessed: suspend (newOffset: Int) -> Unit

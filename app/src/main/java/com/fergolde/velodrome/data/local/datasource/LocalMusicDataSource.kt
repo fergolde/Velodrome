@@ -20,8 +20,6 @@ class LocalMusicDataSource @Inject constructor(
 
     suspend fun searchArtists(query: String): List<ArtistEntity> = artistDao.searchArtists(query)
 
-    suspend fun getArtistCount(): Int = artistDao.getArtistCount()
-
     suspend fun insertArtists(artists: List<ArtistEntity>) = artistDao.insertArtists(artists)
 
     // Albums
