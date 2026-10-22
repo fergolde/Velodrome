@@ -2,6 +2,7 @@ package com.fergolde.velodrome.domain.repository
 
 import androidx.paging.PagingSource
 import com.fergolde.velodrome.domain.model.Album
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Repository interface for album operations.
@@ -11,6 +12,9 @@ interface AlbumRepository {
      * Paging source for efficient loading of albums.
      */
     fun getAlbumsPaged(): PagingSource<Int, Album>
+
+    /** Emits when the local albums table changes so paging can refresh. */
+    fun observeAlbumsChanged(): Flow<Unit>
 
     suspend fun getAlbum(albumId: String): Result<Album>
     suspend fun getLatestAlbums(size: Int = 20): Result<List<Album>>

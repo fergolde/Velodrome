@@ -23,13 +23,13 @@ Branch: `perf/app-optimization` | Delivery: local only until explicit permission
 | T4 | Performance quick wins: runBlocking, durations, border strokes, dispatcher scopes, prefs preload, accent default, queue index map | inline | done (commit 3) |
 | T5 | Cancellation safety: runCatchingWithCancellation in CacheManager/HomeViewModel/SmartRadioEngine | inline | done (commit 4) |
 | T6 | DI/build cleanup: Settings @Binds, BuildConfig injection, gradle.properties, CI lint | inline | done (commit 5) |
-| T7 | Paging invalidation for albums/artists | inline | pending |
+| T7 | Paging invalidation for albums/artists | inline | done (commit 8) |
 | T8 | Compose performance: Home/Explore state slicing, PlayerScreen stability, duration/border memoization | inline | partial (immutable states + memoization; slicing pending measurement) |
 | T9 | Audio main-thread work: MediaItem construction off main, EQ settings read | inline | pending |
 | T10 | Architecture: remove DAO from AudioPlayerService, purify LoginUseCase, presentation/data decoupling | inline | done (commit 7, partial: COD-10 pending) |
 | T11 | SettingsViewModel single UiState + one-shot logout event + typed state | inline | partial (typed combine done; logout event pending) |
 | T12 | Tests for uncovered high-risk ViewModels and engines | inline | partial (repository contract tests added) |
-| T13 | Final verification: full unit suite, assembleRelease, lint | inline | pending |
+| T13 | Final verification: full unit suite, assembleRelease, lint | inline | done (commit 8) |
 
 ## Log
 
@@ -81,3 +81,27 @@ Replaced plain `runCatching` around suspend work with `runCatchingWithCancellati
 - Explicit `lint { abortOnError = true; checkReleaseBuilds = true }` policy and a `:app:lintDebug` CI step.
 - Removed stale `gradle.properties` flags.
 - Evidence: `./gradlew :app:testDebugUnitTest :app:lintDebug` → BUILD SUCCESSFUL, 304 tests, 0 failures, lint green.
+
+### L10 — Paging invalidation (commit 8)
+
+Added `AlbumDao.observeAlbumCount()` / `ArtistDao.observeArtistCount()` Room `Flow` queries, exposed through `LocalMusicDataSource` and the repository interfaces. `AlbumsViewModel`/`ArtistsViewModel` hold the current `PagingSource`, drop the initial count emission, debounce 500 ms and call `invalidate()` so a completed `SyncLibraryWorker` becomes visible without a process restart. Evidence: unit suite green; end-to-end refresh needs a device with a server sync.
+
+### L11 — Architecture (commit 7)
+
+- `AudioPlayerService` no longer injects `TrackDao`. It calls `TrackRepository.getGenreForTrack()` and `getTrackSizeBytes()`, keeping presentation behind the domain contract.
+- `LoginUseCase` no longer imports `android.*`. `AppModule` provides `@Named("isDebuggable")` and `@Named("cleartextNotAllowedMessage")`; the use case stays pure and the login tests construct it without a mocked `Context`.
+- Evidence: unit suite green.
+
+### L12 — Compose stability + typed settings state (commit 8)
+
+- Annotated every presentation `*UiState` with `@Immutable` (domain models are `val`-only) so Compose can skip unchanged sections.
+- `SettingsViewModel` replaced the 12-flow `combine` + positional `values[N] as T` casts with two typed intermediate flows (`PersistedSettings`, `LocalSettingsState`) combined into `SettingsUiState`.
+- Added three contract tests for the new `TrackRepository` methods.
+- Evidence: 307 tests, 0 failures; lint green.
+
+### L13 — Final verification
+
+- `./gradlew :app:testDebugUnitTest :app:lintDebug` → BUILD SUCCESSFUL, 307 tests, 0 failures, lint green (only dependency-update warnings).
+- `./gradlew :app:assembleRelease` → BUILD SUCCESSFUL with R8 minify + resource shrinking.
+- Receipt-driven review is globally disabled (`gentle-ai review mode status` → off); no review transaction started.
+- Nothing pushed, no PR, no tag. Branch `perf/app-optimization` is local only.

@@ -20,6 +20,8 @@ class LocalMusicDataSource @Inject constructor(
 
     suspend fun searchArtists(query: String): List<ArtistEntity> = artistDao.searchArtists(query)
 
+    fun observeArtistCount(): Flow<Int> = artistDao.observeArtistCount()
+
     suspend fun insertArtists(artists: List<ArtistEntity>) = artistDao.insertArtists(artists)
 
     // Albums
@@ -30,6 +32,8 @@ class LocalMusicDataSource @Inject constructor(
     suspend fun searchAlbums(query: String): List<AlbumEntity> = albumDao.searchAlbums(query)
 
     suspend fun getAlbumCount(): Int = albumDao.getAlbumCount()
+
+    fun observeAlbumCount(): Flow<Int> = albumDao.observeAlbumCount()
 
     suspend fun getMinYear(): Int? = albumDao.getMinYear()
 

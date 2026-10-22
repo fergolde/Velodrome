@@ -23,6 +23,10 @@ interface AlbumDao {
     @Query("SELECT COUNT(*) FROM albums")
     suspend fun getAlbumCount(): Int
 
+    /** Emits whenever the albums table changes, used to invalidate paging. */
+    @Query("SELECT COUNT(*) FROM albums")
+    fun observeAlbumCount(): Flow<Int>
+
     @Query("SELECT MIN(year) FROM albums WHERE year IS NOT NULL AND year > 1950")
     suspend fun getMinYear(): Int?
 

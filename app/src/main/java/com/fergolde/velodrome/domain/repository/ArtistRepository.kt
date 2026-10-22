@@ -20,6 +20,9 @@ interface ArtistRepository {
      */
     fun getArtistsPaged(): PagingSource<Int, Artist>
 
+    /** Emits when the local artists table changes so paging can refresh. */
+    fun observeArtistsChanged(): Flow<Unit>
+
     suspend fun getArtist(artistId: String): Result<ArtistWithAlbums>
 
     /**
