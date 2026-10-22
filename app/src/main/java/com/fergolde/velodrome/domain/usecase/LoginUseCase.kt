@@ -7,7 +7,6 @@ import javax.inject.Named
 
 class LoginUseCase @Inject constructor(
     private val repository: AuthRepository,
-    @Named("isDebuggable") private val isDebug: Boolean,
     @Named("cleartextNotAllowedMessage") private val cleartextNotAllowedMessage: String
 ) {
     suspend operator fun invoke(username: String, password: String, serverUrl: String): Result<AuthResult> {
@@ -30,9 +29,9 @@ class LoginUseCase @Inject constructor(
             cleanUrl = "$cleanUrl/"
         }
 
-        // En release no permitimos tráfico en claro: el manifest desactiva
+        // HTTPS es obligatorio en todos los builds: el manifest desactiva
         // usesCleartextTraffic y la NetworkSecurityConfig fuerza HTTPS.
-        if (!isDebug && cleanUrl.startsWith("http://")) {
+        if (cleanUrl.startsWith("http://")) {
             return Result.failure(IllegalArgumentException(cleartextNotAllowedMessage))
         }
 

@@ -15,7 +15,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `blank username returns failure`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = false, cleartextNotAllowedMessage = "HTTPS required")
+        val useCase = LoginUseCase(repository, cleartextNotAllowedMessage = "HTTPS required")
         val result = useCase("", "pass", "http://server.com")
         assertTrue(result.isFailure)
         assertEquals("Username cannot be empty", result.exceptionOrNull()?.message)
@@ -24,7 +24,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `blank password returns failure`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = false, cleartextNotAllowedMessage = "HTTPS required")
+        val useCase = LoginUseCase(repository, cleartextNotAllowedMessage = "HTTPS required")
         val result = useCase("user", "", "http://server.com")
         assertTrue(result.isFailure)
         assertEquals("Password cannot be empty", result.exceptionOrNull()?.message)
@@ -33,7 +33,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `blank serverUrl returns failure`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = false, cleartextNotAllowedMessage = "HTTPS required")
+        val useCase = LoginUseCase(repository, cleartextNotAllowedMessage = "HTTPS required")
         val result = useCase("user", "pass", "")
         assertTrue(result.isFailure)
         assertEquals("Server URL cannot be empty", result.exceptionOrNull()?.message)
@@ -42,7 +42,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `adds https prefix when missing`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = false, cleartextNotAllowedMessage = "HTTPS required")
+        val useCase = LoginUseCase(repository, cleartextNotAllowedMessage = "HTTPS required")
         coEvery { repository.login("user", "pass", "https://server.com/") } returns
                 Result.success(AuthResult(success = true))
 
@@ -51,18 +51,8 @@ class LoginUseCaseTest {
     }
 
     @Test
-    fun `preserves http prefix in debug builds`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = true, cleartextNotAllowedMessage = "HTTPS required")
-        coEvery { repository.login("user", "pass", "http://server.com/") } returns
-                Result.success(AuthResult(success = true))
-
-        val result = useCase("user", "pass", "http://server.com")
-        assertTrue(result.isSuccess)
-    }
-
-    @Test
-    fun `rejects http prefix in release builds`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = false, cleartextNotAllowedMessage = "HTTPS required")
+    fun `rejects http prefix in every build`() = runTest {
+        val useCase = LoginUseCase(repository, cleartextNotAllowedMessage = "HTTPS required")
         val result = useCase("user", "pass", "http://server.com")
         assertTrue(result.isFailure)
         assertEquals("HTTPS required", result.exceptionOrNull()?.message)
@@ -71,7 +61,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `preserves https prefix`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = false, cleartextNotAllowedMessage = "HTTPS required")
+        val useCase = LoginUseCase(repository, cleartextNotAllowedMessage = "HTTPS required")
         coEvery { repository.login("user", "pass", "https://server.com/") } returns
                 Result.success(AuthResult(success = true))
 
@@ -81,7 +71,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `adds trailing slash`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = false, cleartextNotAllowedMessage = "HTTPS required")
+        val useCase = LoginUseCase(repository, cleartextNotAllowedMessage = "HTTPS required")
         coEvery { repository.login("user", "pass", "https://server.com/") } returns
                 Result.success(AuthResult(success = true))
 
@@ -91,7 +81,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `trims whitespace`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = false, cleartextNotAllowedMessage = "HTTPS required")
+        val useCase = LoginUseCase(repository, cleartextNotAllowedMessage = "HTTPS required")
         coEvery { repository.login("user", "pass", "https://server.com/") } returns
                 Result.success(AuthResult(success = true))
 
@@ -101,7 +91,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `successful login delegates to repository`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = false, cleartextNotAllowedMessage = "HTTPS required")
+        val useCase = LoginUseCase(repository, cleartextNotAllowedMessage = "HTTPS required")
         val authResult = AuthResult(success = true)
         coEvery { repository.login("user", "pass", "https://server.com/") } returns
                 Result.success(authResult)
@@ -114,7 +104,7 @@ class LoginUseCaseTest {
 
     @Test
     fun `failed login propagates error`() = runTest {
-        val useCase = LoginUseCase(repository, isDebug = false, cleartextNotAllowedMessage = "HTTPS required")
+        val useCase = LoginUseCase(repository, cleartextNotAllowedMessage = "HTTPS required")
         coEvery { repository.login("user", "pass", "https://server.com/") } returns
                 Result.failure(Exception("Network error"))
 

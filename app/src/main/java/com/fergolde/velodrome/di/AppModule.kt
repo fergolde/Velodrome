@@ -63,11 +63,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    @Named("isDebuggable")
-    fun provideIsDebuggable(): Boolean = BuildConfig.DEBUG
-
-    @Provides
-    @Singleton
     @Named("cleartextNotAllowedMessage")
     fun provideCleartextNotAllowedMessage(@ApplicationContext context: Context): String =
         context.getString(R.string.error_cleartext_not_allowed)

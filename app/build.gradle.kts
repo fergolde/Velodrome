@@ -43,13 +43,9 @@ android {
     }
 
     buildTypes {
-        debug {
-            manifestPlaceholders["usesCleartextTraffic"] = "true"
-        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            manifestPlaceholders["usesCleartextTraffic"] = "false"
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
