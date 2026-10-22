@@ -1,5 +1,7 @@
 package com.fergolde.velodrome.presentation.screen.albumdetail
 
+import androidx.compose.runtime.Immutable
+
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Immutable
 data class AlbumDetailUiState(
     val album: Album? = null,
     val tracks: List<Track> = emptyList(),

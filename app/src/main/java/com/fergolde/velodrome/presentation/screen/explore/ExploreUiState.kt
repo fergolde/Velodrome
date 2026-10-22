@@ -1,5 +1,7 @@
 package com.fergolde.velodrome.presentation.screen.explore
 
+import androidx.compose.runtime.Immutable
+
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Artist
 import com.fergolde.velodrome.domain.model.Track
@@ -8,6 +10,7 @@ import java.util.Calendar
 /**
  * UI State for Explore Screen
  */
+@Immutable
 data class ExploreUiState(
     val isLoading: Boolean = true,
     val randomArtists: List<Artist> = emptyList(),
@@ -22,6 +25,7 @@ data class ExploreUiState(
     val selectedYearRange: IntRange? = null
 )
 
+@Immutable
 data class SearchResults(
     val artists: List<Artist> = emptyList(),
     val albums: List<Album> = emptyList(),

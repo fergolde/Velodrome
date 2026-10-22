@@ -1,5 +1,7 @@
 package com.fergolde.velodrome.presentation.screen.settings
 
+import androidx.compose.runtime.Immutable
+
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.lifecycle.ViewModel
@@ -12,6 +14,7 @@ import com.fergolde.velodrome.util.CredentialsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +28,7 @@ import javax.inject.Named
 /**
  * UI State for the Settings screen.
  */
+@Immutable
 data class SettingsUiState(
     val imageCacheSizeMb: Int = 200,
     val musicCacheSizeGb: Int = 2,
@@ -67,39 +71,82 @@ class SettingsViewModel @Inject constructor(
 
     private val _shouldLogout = MutableStateFlow(false)
 
-    /**
-     * UI State as a StateFlow.
-     */
-    val uiState: StateFlow<SettingsUiState> = combine(
+    private data class PersistedSettings(
+        val imageCacheSizeMb: Int,
+        val musicCacheSizeGb: Int,
+        val accentColor: String,
+        val scrobbleEnabled: Boolean,
+        val eqEnabled: Boolean,
+        val bassBoostEnabled: Boolean
+    )
+
+    private data class LocalSettingsState(
+        val currentImageCacheSize: String,
+        val currentMusicCacheSize: String,
+        val isClearingCache: Boolean,
+        val pendingImageCacheMb: Int,
+        val pendingMusicCacheGb: Int,
+        val hasPendingChanges: Boolean
+    )
+
+    private val persistedCore: Flow<PersistedSettings> = combine(
         settingsRepository.imageCacheSizeMb,
         settingsRepository.musicCacheSizeGb,
         settingsRepository.accentColor,
         settingsRepository.scrobbleEnabled,
-        settingsRepository.eqEnabled,
-        settingsRepository.bassBoostEnabled,
+        settingsRepository.eqEnabled
+    ) { image, music, accent, scrobble, eqEnabled ->
+        PersistedSettings(image, music, accent, scrobble, eqEnabled, bassBoostEnabled = false)
+    }
+
+    private val persistedSettings: Flow<PersistedSettings> = combine(
+        persistedCore,
+        settingsRepository.bassBoostEnabled
+    ) { settings, bassBoostEnabled ->
+        settings.copy(bassBoostEnabled = bassBoostEnabled)
+    }
+
+    private val localState: Flow<LocalSettingsState> = combine(
         _currentCacheSizes,
         _isClearingCache,
         _pendingImageCacheMb,
         _pendingMusicCacheGb,
-        _hasPendingChanges,
+        _hasPendingChanges
+    ) { sizes, clearing, pendingImage, pendingMusic, hasPending ->
+        LocalSettingsState(
+            currentImageCacheSize = sizes.first,
+            currentMusicCacheSize = sizes.second,
+            isClearingCache = clearing,
+            pendingImageCacheMb = pendingImage,
+            pendingMusicCacheGb = pendingMusic,
+            hasPendingChanges = hasPending
+        )
+    }
+
+    /**
+     * UI State as a StateFlow. Each source keeps its own typed shape, so no
+     * positional casts are needed when combining them.
+     */
+    val uiState: StateFlow<SettingsUiState> = combine(
+        persistedSettings,
+        localState,
         _shouldLogout
-    ) { values ->
-        @Suppress("UNCHECKED_CAST")
+    ) { settings, local, shouldLogout ->
         SettingsUiState(
-            imageCacheSizeMb = values[0] as Int,
-            musicCacheSizeGb = (values[1] as? Int) ?: 2,
-            accentColor = values[2] as String,
-            scrobbleEnabled = values[3] as Boolean,
-            eqEnabled = values[4] as Boolean,
-            bassBoostEnabled = values[5] as Boolean,
-            currentImageCacheSize = (values[6] as Pair<*, *>).first as String,
-            currentMusicCacheSize = (values[6] as Pair<*, *>).second as String,
-            isClearingCache = values[7] as Boolean,
-            pendingImageCacheMb = values[8] as Int,
-            pendingMusicCacheGb = values[9] as Int,
-            hasPendingChanges = values[10] as Boolean,
+            imageCacheSizeMb = settings.imageCacheSizeMb,
+            musicCacheSizeGb = settings.musicCacheSizeGb,
+            accentColor = settings.accentColor,
+            scrobbleEnabled = settings.scrobbleEnabled,
+            eqEnabled = settings.eqEnabled,
+            bassBoostEnabled = settings.bassBoostEnabled,
+            currentImageCacheSize = local.currentImageCacheSize,
+            currentMusicCacheSize = local.currentMusicCacheSize,
+            isClearingCache = local.isClearingCache,
+            pendingImageCacheMb = local.pendingImageCacheMb,
+            pendingMusicCacheGb = local.pendingMusicCacheGb,
+            hasPendingChanges = local.hasPendingChanges,
             appVersion = appVersion,
-            shouldLogout = values[11] as Boolean
+            shouldLogout = shouldLogout
         )
     }.stateIn(
         scope = viewModelScope,

@@ -1,5 +1,7 @@
 package com.fergolde.velodrome.presentation.screen.artistdetail
 
+import androidx.compose.runtime.Immutable
+
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,6 +30,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
+@Immutable
 data class ArtistDetailUiState(
     val artist: Artist? = null,
     val albums: List<Album> = emptyList(),
