@@ -1,5 +1,7 @@
 package com.fergolde.velodrome.presentation.screen.login
 
+import androidx.compose.runtime.Immutable
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fergolde.velodrome.domain.usecase.LoginUseCase
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Immutable
 data class LoginUiState(
     val username: String = "",
     val password: String = "",

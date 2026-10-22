@@ -35,6 +35,9 @@ class ArtistRepositoryImpl @Inject constructor(
         return ArtistPagingSource(localMusicDataSource)
     }
 
+    override fun observeArtistsChanged(): Flow<Unit> =
+        localMusicDataSource.observeArtistCount().map { }
+
     private suspend fun getArtists(offset: Int, size: Int): Result<List<Artist>> {
         return runCatchingWithCancellation {
             val response = api.getArtists(size, offset)
@@ -148,9 +151,6 @@ class ArtistRepositoryImpl @Inject constructor(
         return localMusicDataSource.searchArtists(query).map { it.toDomain() }
     }
 
-    override suspend fun artistCount(): Int {
-        return localMusicDataSource.getArtistCount()
-    }
 }
 
 class ArtistPagingSource(

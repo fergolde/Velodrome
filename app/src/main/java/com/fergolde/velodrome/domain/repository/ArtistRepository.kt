@@ -20,6 +20,9 @@ interface ArtistRepository {
      */
     fun getArtistsPaged(): PagingSource<Int, Artist>
 
+    /** Emits when the local artists table changes so paging can refresh. */
+    fun observeArtistsChanged(): Flow<Unit>
+
     suspend fun getArtist(artistId: String): Result<ArtistWithAlbums>
 
     /**
@@ -41,9 +44,4 @@ interface ArtistRepository {
      * Uso: búsqueda reactiva con flatMapLatest en el ViewModel.
      */
     suspend fun searchLocal(query: String): List<Artist>
-
-    /**
-     * Cheap emptiness probe: COUNT(*) instead of materializing the table.
-     */
-    suspend fun artistCount(): Int
 }

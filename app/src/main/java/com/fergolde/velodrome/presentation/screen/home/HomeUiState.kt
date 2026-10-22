@@ -1,5 +1,7 @@
 package com.fergolde.velodrome.presentation.screen.home
 
+import androidx.compose.runtime.Immutable
+
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Playlist
 
@@ -7,6 +9,7 @@ import com.fergolde.velodrome.domain.model.Playlist
  * UI State for the Home screen.
  * Represents the complete state of the HomeScreen UI.
  */
+@Immutable
 data class HomeUiState(
     // True until at least one section has loaded.
     val isLoading: Boolean = true,

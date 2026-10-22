@@ -58,12 +58,6 @@ class SearchLocalAlbumsUseCase @Inject constructor(
     }
 }
 
-class SyncAlbumsUseCase @Inject constructor(
-    private val repository: AlbumRepository
-) {
-    suspend operator fun invoke(): Result<Int> = repository.syncAlbumsFromServer()
-}
-
 class GetMinYearUseCase @Inject constructor(
     private val repository: AlbumRepository
 ) {
@@ -91,7 +85,6 @@ class AlbumUseCases @Inject constructor(
     val getRandomAlbums: GetRandomAlbumsUseCase,
     val getAlbum: GetAlbumUseCase,
     val searchLocal: SearchLocalAlbumsUseCase,
-    val syncAlbums: SyncAlbumsUseCase,
     val getMinYear: GetMinYearUseCase,
     val albumCount: GetAlbumCountUseCase,
     val getLocalAlbums: GetLocalAlbumsUseCase

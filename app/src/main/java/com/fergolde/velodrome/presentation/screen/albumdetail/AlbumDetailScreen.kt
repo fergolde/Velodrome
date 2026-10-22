@@ -527,10 +527,6 @@ private fun TrackItem(
     }
 }
 
-private fun durationDisk(tracks: List<Track>): Int {
-    var duration = 0
-    for (track in tracks) {
-        duration += track.durationSec
-    }
-    return duration / 60
-}
+@Composable
+private fun durationDisk(tracks: List<Track>): Int =
+    remember(tracks) { tracks.sumOf { it.durationSec } / 60 }

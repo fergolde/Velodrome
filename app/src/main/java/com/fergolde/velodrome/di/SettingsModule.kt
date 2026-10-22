@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.fergolde.velodrome.data.repository.SettingsRepositoryImpl
 import com.fergolde.velodrome.domain.repository.SettingsRepository
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,17 +18,17 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 
 @Module
 @InstallIn(SingletonComponent::class)
-object SettingsModule {
+abstract class SettingsModule {
 
-    @Provides
+    @Binds
     @Singleton
-    fun provideSettingsRepository(
-        impl: SettingsRepositoryImpl
-    ): SettingsRepository = impl
+    abstract fun bindSettingsRepository(impl: SettingsRepositoryImpl): SettingsRepository
 
-    @Provides
-    @Singleton
-    fun provideSettingsDataStore(
-        @ApplicationContext context: Context
-    ): DataStore<Preferences> = context.settingsDataStore
+    companion object {
+        @Provides
+        @Singleton
+        fun provideSettingsDataStore(
+            @ApplicationContext context: Context
+        ): DataStore<Preferences> = context.settingsDataStore
+    }
 }

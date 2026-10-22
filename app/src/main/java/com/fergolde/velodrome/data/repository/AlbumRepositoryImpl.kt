@@ -12,7 +12,9 @@ import com.fergolde.velodrome.data.remote.dto.AlbumDetailDto
 import com.fergolde.velodrome.data.remote.dto.AlbumDto
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.repository.AlbumRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,6 +27,9 @@ class AlbumRepositoryImpl @Inject constructor(
     override fun getAlbumsPaged(): PagingSource<Int, Album> {
         return AlbumPagingSource(localMusicDataSource)
     }
+
+    override fun observeAlbumsChanged(): Flow<Unit> =
+        localMusicDataSource.observeAlbumCount().map { }
 
     override suspend fun getAlbum(albumId: String): Result<Album> {
         return runCatchingWithCancellation {
@@ -108,10 +113,6 @@ class AlbumRepositoryImpl @Inject constructor(
             val genres = response.response.genres?.genres ?: emptyList()
             genres.mapNotNull { it.value ?: it.name }
         }
-    }
-
-    override suspend fun syncAlbumsFromServer(): Result<Int> {
-        return syncAlbumsFromServer(startOffset = 0) { }
     }
 
     override suspend fun syncAlbumsFromServer(

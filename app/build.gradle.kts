@@ -43,13 +43,9 @@ android {
     }
 
     buildTypes {
-        debug {
-            manifestPlaceholders["usesCleartextTraffic"] = "true"
-        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            manifestPlaceholders["usesCleartextTraffic"] = "false"
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -72,6 +68,12 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    lint {
+        // Fail the build on lint errors so CI and local runs share one policy.
+        abortOnError = true
+        checkReleaseBuilds = true
     }
 
     packaging {
@@ -118,13 +120,11 @@ dependencies {
     ksp(libs.moshi.kotlin.codegen)
 
     // DataStore
-    implementation(libs.datastore)
     implementation(libs.datastore.preferences)
 
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    implementation(libs.room.paging)
     ksp(libs.room.compiler)
 
     // Security - encrypted-shared-preferences fork (post-deprecation)

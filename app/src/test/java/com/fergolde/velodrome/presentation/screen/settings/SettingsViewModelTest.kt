@@ -60,7 +60,8 @@ class SettingsViewModelTest {
             settingsRepository = settingsRepository,
             cacheManager = cacheManager,
             credentialsManager = credentialsManager,
-            accountDataRepository = accountDataRepository
+            accountDataRepository = accountDataRepository,
+            appVersion = "test"
         )
     }
 

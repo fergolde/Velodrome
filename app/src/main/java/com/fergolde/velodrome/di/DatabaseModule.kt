@@ -27,7 +27,7 @@ object DatabaseModule {
             context,
             VelodromeDatabase::class.java,
             VelodromeDatabase.DATABASE_NAME
-        ).build()
+        ).addMigrations(VelodromeDatabase.MIGRATION_1_2).build()
     }
 
     @Provides

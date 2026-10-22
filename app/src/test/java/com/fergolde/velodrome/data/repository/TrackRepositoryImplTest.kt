@@ -153,4 +153,30 @@ class TrackRepositoryImplTest {
         assertTrue(result.isEmpty())
         coVerify(exactly = 0) { trackDao.getTracksForAlbumIds(any()) }
     }
+
+    @Test
+    fun getTrackSizeBytes_returnsCachedSize() = runTest {
+        val entity = TrackEntity(
+            id = "t1", albumId = "a1", artistName = "A", albumName = "B",
+            title = "T", durationSec = 180, trackNumber = 1, coverArtId = null,
+            sizeBytes = 1234L
+        )
+        coEvery { trackDao.getTrackById("t1") } returns entity
+
+        assertEquals(1234L, repository.getTrackSizeBytes("t1"))
+    }
+
+    @Test
+    fun getTrackSizeBytes_missingTrackReturnsZero() = runTest {
+        coEvery { trackDao.getTrackById("missing") } returns null
+
+        assertEquals(0L, repository.getTrackSizeBytes("missing"))
+    }
+
+    @Test
+    fun getGenreForTrack_delegatesToDao() = runTest {
+        coEvery { trackDao.findGenreByTrackId("t1") } returns "Rock"
+
+        assertEquals("Rock", repository.getGenreForTrack("t1"))
+    }
 }

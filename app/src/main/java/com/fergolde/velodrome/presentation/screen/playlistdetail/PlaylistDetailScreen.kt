@@ -374,13 +374,9 @@ private inline fun androidx.compose.foundation.lazy.LazyListScope.playlistTracks
 private fun playlistHeaderMeta(tracks: List<Track>): String =
     "${tracks.size} canciones · ${durationMinutes(tracks)} min"
 
-private fun durationMinutes(tracks: List<Track>): Int {
-    var duration = 0
-    for (track in tracks) {
-        duration += track.durationSec
-    }
-    return duration / 60
-}
+@Composable
+private fun durationMinutes(tracks: List<Track>): Int =
+    remember(tracks) { tracks.sumOf { it.durationSec } / 60 }
 
 @Composable
 private fun PlaylistHeader(

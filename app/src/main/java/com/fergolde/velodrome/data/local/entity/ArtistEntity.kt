@@ -1,9 +1,10 @@
 package com.fergolde.velodrome.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "artists")
+@Entity(tableName = "artists", indices = [Index("name")])
 data class ArtistEntity(
     @PrimaryKey
     val id: String,

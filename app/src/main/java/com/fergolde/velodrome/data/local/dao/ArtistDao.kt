@@ -23,6 +23,10 @@ interface ArtistDao {
     @Query("SELECT COUNT(*) FROM artists")
     suspend fun getArtistCount(): Int
 
+    /** Emits whenever the artists table changes, used to invalidate paging. */
+    @Query("SELECT COUNT(*) FROM artists")
+    fun observeArtistCount(): Flow<Int>
+
     @Query("DELETE FROM artists")
     suspend fun deleteAll()
 }

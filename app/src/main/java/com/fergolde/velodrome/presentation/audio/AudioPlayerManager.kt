@@ -79,6 +79,9 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     private val _playlist = MutableStateFlow<List<Track>>(emptyList())
     val playlist: StateFlow<List<Track>> = _playlist.asStateFlow()
 
+    /** First index for each track id, kept in sync with [playlist] to avoid O(n) scans. */
+    private var indexById: Map<String, Int> = emptyMap()
+
     private val _currentIndex = MutableStateFlow(0)
     val currentIndex: StateFlow<Int> = _currentIndex.asStateFlow()
 
@@ -141,7 +144,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     private fun clearQueueAfterServerReset() {
         pendingRestore = null
-        _playlist.value = emptyList()
+        updatePlaylist(emptyList())
         _currentIndex.value = 0
         _currentTrack.value = null
         _currentTrackId.value = null
@@ -163,6 +166,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                 when (playbackState) {
                     Player.STATE_READY -> { checkIfNeedMoreSongs() }
                     Player.STATE_ENDED -> { _isPlaying.value = false; handlePlaybackEnded() }
+                    Player.STATE_IDLE, Player.STATE_BUFFERING -> Unit
                 }
             }
 
@@ -245,14 +249,21 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         }
     }
 
+    private fun updatePlaylist(tracks: List<Track>) {
+        _playlist.value = tracks
+        indexById = buildMap {
+            tracks.forEachIndexed { index, track ->
+                if (track.id !in this) put(track.id, index)
+            }
+        }
+    }
+
     private fun updateCurrentTrackFromMediaItem(mediaItem: MediaItem) {
         val playlist = _playlist.value
-        val index = playlist.indexOfFirst { it.id == mediaItem.mediaId }
-        if (index in playlist.indices) {
-            _currentIndex.value = index
-            _currentTrack.value = playlist[index]
-            _currentTrackId.value = playlist[index].id
-        }
+        val index = indexById[mediaItem.mediaId] ?: return
+        _currentIndex.value = index
+        _currentTrack.value = playlist[index]
+        _currentTrackId.value = playlist[index].id
     }
 
     // ─── Queue persistence (local, event-driven, debounced) ─────────────────
@@ -303,7 +314,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
             if (snapshot.tracks.isEmpty()) return@launch
             pendingRestore = snapshot
             val index = snapshot.currentIndex.coerceIn(0, snapshot.tracks.lastIndex)
-            _playlist.value = snapshot.tracks.map { it.toDomain() }
+            updatePlaylist(snapshot.tracks.map { it.toDomain() })
             _currentIndex.value = index
             _currentTrack.value = snapshot.tracks.getOrNull(index)?.toDomain()
             _currentTrackId.value = _currentTrack.value?.id
@@ -335,7 +346,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     fun playTrack(track: Track, playlist: List<Track>, startIndex: Int = 0) {
         pendingRestore = null
-        _playlist.value = playlist
+        updatePlaylist(playlist)
         // No actualizamos currentIndex/currentTrack aquí - el listener onMediaItemTransition 
         // del MediaController es la única fuente de verdad
 
@@ -457,7 +468,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         consumePendingRestore()
         val currentPlaylist = _playlist.value.toMutableList()
         currentPlaylist.addAll(index, tracks)
-        _playlist.value = currentPlaylist
+        updatePlaylist(currentPlaylist)
 
         val mediaItems = tracks.map { buildMediaItem(it) }
         persistQueue()
@@ -474,7 +485,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     fun addToPlaylist(tracks: List<Track>) {
         if (tracks.isEmpty()) return
         consumePendingRestore()
-        _playlist.value += tracks
+        updatePlaylist(_playlist.value + tracks)
 
         val mediaItems = tracks.map { buildMediaItem(it) }
         persistQueue()
@@ -487,7 +498,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
     fun appendToPlaylist(tracks: List<Track>) {
         if (tracks.isEmpty()) return
         consumePendingRestore()
-        _playlist.value += tracks
+        updatePlaylist(_playlist.value + tracks)
         val mediaItems = tracks.map { buildMediaItem(it) }
         persistQueue()
 
@@ -593,7 +604,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
         if (index !in currentList.indices) return
 
         currentList.removeAt(index)
-        _playlist.value = currentList
+        updatePlaylist(currentList)
 
         // If playlist is empty, stop playback and forget the persisted queue
         if (currentList.isEmpty()) {
@@ -626,7 +637,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
     fun setPlaylist(playlist: List<Track>) {
         pendingRestore = null
-        _playlist.value = playlist
+        updatePlaylist(playlist)
     }
 
     /**
@@ -642,7 +653,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
 
         val moved = currentList.removeAt(from)
         currentList.add(to, moved)
-        _playlist.value = currentList
+        updatePlaylist(currentList)
 
         _currentIndex.value = adjustedCurrentIndex(_currentIndex.value, from, to)
 

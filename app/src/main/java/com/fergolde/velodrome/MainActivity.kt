@@ -3,7 +3,6 @@ package com.fergolde.velodrome
 import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.fergolde.velodrome.data.worker.SyncLibraryWorker
+import com.fergolde.velodrome.domain.repository.DEFAULT_ACCENT_COLOR
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.presentation.VelodromeMainApp
 import com.fergolde.velodrome.presentation.player.SharedPlayerViewModel
@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Leer accent color del repositorio en tiempo real
             val accentColorHex by settingsRepository.accentColor
-                .collectAsStateWithLifecycle(initialValue = "#C8FF00")
+                .collectAsStateWithLifecycle(initialValue = DEFAULT_ACCENT_COLOR)
             val accentColor = parseHexColor(accentColorHex)
 
             VelodromeTheme(accentColor = accentColor) {
@@ -72,7 +72,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
         if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
         ) return

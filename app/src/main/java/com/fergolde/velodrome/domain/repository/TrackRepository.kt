@@ -17,4 +17,10 @@ interface TrackRepository {
     suspend fun getOfflineTracks(): List<Track>
     suspend fun getTopGlobalTracks(size: Int = 100): Result<List<Track>>
     suspend fun getTracksForAlbumIds(albumIds: List<String>): List<Track>
+
+    /** Cached size of a track in bytes, or 0 when unknown. */
+    suspend fun getTrackSizeBytes(trackId: String): Long
+
+    /** Album genre for a track, used to pick an equalizer preset. */
+    suspend fun getGenreForTrack(trackId: String): String?
 }

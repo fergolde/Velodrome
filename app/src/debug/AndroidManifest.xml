@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!-- Shell profiling is a development aid and must never ship in release. -->
+        <profileable android:shell="true" />
+    </application>
+
+</manifest>

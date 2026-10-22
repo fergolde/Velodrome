@@ -3,6 +3,7 @@ package com.fergolde.velodrome.util
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.fergolde.velodrome.data.remote.NavidromeApi
+import java.net.URLEncoder
 import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -188,7 +189,7 @@ class CredentialsManager @Inject constructor(
         val serverUrl = getServerUrl() ?: return null
 
         return "${serverUrl.trimEnd('/')}/rest/getCoverArt.view" +
-                "?id=$coverArtId&size=$size" +
+                "?id=${URLEncoder.encode(coverArtId, Charsets.UTF_8)}&size=$size" +
                 "&v=${NavidromeApi.API_VERSION}&c=${NavidromeApi.CLIENT_NAME}"
     }
 
@@ -203,7 +204,7 @@ class CredentialsManager @Inject constructor(
         val serverUrl = getServerUrl() ?: return ""
 
         return "${serverUrl.trimEnd('/')}/rest/stream.view" +
-                "?id=$trackId" +
+                "?id=${URLEncoder.encode(trackId, Charsets.UTF_8)}" +
                 "&v=${NavidromeApi.API_VERSION}&c=${NavidromeApi.CLIENT_NAME}" +
                 "&maxBitRate=$STREAMING_BITRATE_ORIGINAL" // Fuerza calidad original
     }

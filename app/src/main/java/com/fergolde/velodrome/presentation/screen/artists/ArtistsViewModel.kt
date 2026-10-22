@@ -1,5 +1,7 @@
 package com.fergolde.velodrome.presentation.screen.artists
 
+import androidx.compose.runtime.Immutable
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
@@ -35,6 +38,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@Immutable
 data class ArtistsUiState(
     val searchQuery: String = "",
     val searchResults: List<Artist> = emptyList(),
@@ -55,13 +59,32 @@ class ArtistsViewModel @Inject constructor(
 
     private val searchQuery = MutableStateFlow("")
 
+    private var pagingSource: androidx.paging.PagingSource<Int, Artist>? = null
+
     val pagedArtists: Flow<PagingData<Artist>> = Pager(
         config = PagingConfig(pageSize = 20, prefetchDistance = 5, enablePlaceholders = false),
-        pagingSourceFactory = { artistRepository.getArtistsPaged() }
+        pagingSourceFactory = {
+            artistRepository.getArtistsPaged().also { pagingSource = it }
+        }
     ).flow.cachedIn(viewModelScope)
 
     init {
         observeSearch()
+        observeLibraryChanges()
+    }
+
+    /**
+     * The custom PagingSource bypasses Room's automatic invalidation, so a
+     * library sync would otherwise stay invisible until process restart.
+     */
+    @OptIn(FlowPreview::class)
+    private fun observeLibraryChanges() {
+        viewModelScope.launch {
+            artistRepository.observeArtistsChanged()
+                .drop(1) // Skip the initial count snapshot.
+                .debounce(500L.milliseconds)
+                .collect { pagingSource?.invalidate() }
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
