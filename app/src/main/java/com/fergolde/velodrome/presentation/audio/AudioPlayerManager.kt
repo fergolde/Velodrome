@@ -166,6 +166,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                 when (playbackState) {
                     Player.STATE_READY -> { checkIfNeedMoreSongs() }
                     Player.STATE_ENDED -> { _isPlaying.value = false; handlePlaybackEnded() }
+                    Player.STATE_IDLE, Player.STATE_BUFFERING -> Unit
                 }
             }
 

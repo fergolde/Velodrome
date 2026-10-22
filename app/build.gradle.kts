@@ -74,6 +74,12 @@ android {
         buildConfig = true
     }
 
+    lint {
+        // Fail the build on lint errors so CI and local runs share one policy.
+        abortOnError = true
+        checkReleaseBuilds = true
+    }
+
     packaging {
         resources {
             // Optimización: Elimina archivos innecesarios de las librerías que engordan el APK

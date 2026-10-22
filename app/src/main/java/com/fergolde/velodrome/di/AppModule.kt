@@ -55,6 +55,11 @@ object AppModule {
         return CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 
+    @Provides
+    @Singleton
+    @Named("appVersion")
+    fun provideAppVersion(): String = BuildConfig.VERSION_NAME
+
     // -------------------------
     // MOSHI
     // -------------------------

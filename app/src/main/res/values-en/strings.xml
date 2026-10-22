@@ -145,4 +145,14 @@
     <string name="snackbar_added_to_queue">Added to queue</string>
     <string name="snackbar_album_added_to_queue">Album added to queue</string>
     <string name="snackbar_playlist_added_to_queue">Playlist added to queue</string>
+
+    <!-- Common -->
+    <string name="retry">Retry</string>
+    <string name="artists_empty">No saved artists</string>
+    <string name="albums_empty">No saved albums</string>
+    <string name="home_empty">No content yet. Sync your library to get started.</string>
+    <string name="explore_empty">Nothing to explore yet.</string>
+
+    <!-- Settings -->
+    <string name="settings_account">Account</string>
 </resources>

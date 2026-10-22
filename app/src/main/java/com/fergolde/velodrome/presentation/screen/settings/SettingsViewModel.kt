@@ -5,7 +5,6 @@ import androidx.annotation.OptIn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
-import com.fergolde.velodrome.BuildConfig
 import com.fergolde.velodrome.domain.repository.AccountDataRepository
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.util.CacheManager
@@ -21,6 +20,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Named
 
 /**
  * UI State for the Settings screen.
@@ -38,7 +38,7 @@ data class SettingsUiState(
     val pendingImageCacheMb: Int = 200,
     val pendingMusicCacheGb: Int = 2,
     val hasPendingChanges: Boolean = false,
-    val appVersion: String = BuildConfig.VERSION_NAME,
+    val appVersion: String = "",
     val shouldLogout: Boolean = false
 )
 
@@ -52,7 +52,8 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val cacheManager: CacheManager,
     private val credentialsManager: CredentialsManager,
-    private val accountDataRepository: AccountDataRepository
+    private val accountDataRepository: AccountDataRepository,
+    @Named("appVersion") private val appVersion: String
 ) : ViewModel() {
 
     private val _currentCacheSizes = MutableStateFlow(Pair("0 MB", "0 GB"))
@@ -97,7 +98,7 @@ class SettingsViewModel @Inject constructor(
             pendingImageCacheMb = values[8] as Int,
             pendingMusicCacheGb = values[9] as Int,
             hasPendingChanges = values[10] as Boolean,
-            appVersion = BuildConfig.VERSION_NAME,
+            appVersion = appVersion,
             shouldLogout = values[11] as Boolean
         )
     }.stateIn(

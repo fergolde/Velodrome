@@ -22,7 +22,7 @@ Branch: `perf/app-optimization` | Delivery: local only until explicit permission
 | T3 | Dead code: unused use cases, repository overloads, room-paging, datastore core, stale comment | inline | done (commit 1) |
 | T4 | Performance quick wins: runBlocking, durations, border strokes, dispatcher scopes, prefs preload, accent default, queue index map | inline | done (commit 3) |
 | T5 | Cancellation safety: runCatchingWithCancellation in CacheManager/HomeViewModel/SmartRadioEngine | inline | done (commit 4) |
-| T6 | DI/build cleanup: Settings @Binds, BuildConfig injection, gradle.properties, CI lint | inline | pending |
+| T6 | DI/build cleanup: Settings @Binds, BuildConfig injection, gradle.properties, CI lint | inline | done (commit 5) |
 | T7 | Paging invalidation for albums/artists | inline | pending |
 | T8 | Compose performance: Home/Explore state slicing, PlayerScreen stability, duration/border memoization | inline | pending |
 | T9 | Audio main-thread work: MediaItem construction off main, EQ settings read | inline | pending |
@@ -72,3 +72,12 @@ Removed `SyncAlbumsUseCase`, the no-arg `AlbumRepository.syncAlbumsFromServer()`
 ### L8 — Cancellation safety (commit 4)
 
 Replaced plain `runCatching` around suspend work with `runCatchingWithCancellation` in `CacheManager` (init limit read), `HomeViewModel.loadPlaylists`, and `SmartRadioEngine.loadTasteProfile` (commit 3 file). This keeps `CancellationException` propagating instead of turning it into a failed `Result`. Evidence: full unit suite green.
+
+### L9 — DI/build/CI cleanup (commit 5)
+
+- `SettingsModule` now uses `@Binds @Singleton` like the other repositories; the DataStore provider stays in its companion object.
+- `BuildConfig.VERSION_NAME` no longer leaks into presentation: `AppModule` exposes `@Named("appVersion")` and `SettingsViewModel` receives it.
+- Lint is green: added the 6 missing English translations and fixed `ModifierParameter` (PlayerScreen), `SwitchIntDef` (AudioPlayerManager) and `ObsoleteSdkInt` (MainActivity). Only dependency-update warnings remain.
+- Explicit `lint { abortOnError = true; checkReleaseBuilds = true }` policy and a `:app:lintDebug` CI step.
+- Removed stale `gradle.properties` flags.
+- Evidence: `./gradlew :app:testDebugUnitTest :app:lintDebug` → BUILD SUCCESSFUL, 304 tests, 0 failures, lint green.
