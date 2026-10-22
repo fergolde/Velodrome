@@ -36,6 +36,14 @@ class VelodromeApp : Application(), SingletonImageLoader.Factory, Configuration.
     @Inject
     lateinit var workerFactory: androidx.hilt.work.HiltWorkerFactory
 
+    override fun onCreate() {
+        super.onCreate()
+        // Warm the cache-preferences file before the first image request, which
+        // reads the image cache limit synchronously inside newImageLoader().
+        getSharedPreferences("velodrome_cache_prefs", MODE_PRIVATE)
+            .getInt("image_cache_size_mb", 200)
+    }
+
     override val workManagerConfiguration: Configuration
         get() {
             check(::workerFactory.isInitialized) {

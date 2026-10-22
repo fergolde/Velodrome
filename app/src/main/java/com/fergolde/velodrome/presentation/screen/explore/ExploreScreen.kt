@@ -1,5 +1,6 @@
 package com.fergolde.velodrome.presentation.screen.explore
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -716,6 +717,9 @@ fun VeloTrackRow(
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
 ) {
+    val rowBorder = remember {
+        BorderStroke(1.dp, androidx.compose.ui.graphics.SolidColor(VeloPalette.Border))
+    }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -723,9 +727,7 @@ fun VeloTrackRow(
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = RoundedCornerShape(14.dp),
         color = VeloPalette.Bg3,
-        border = ButtonDefaults.outlinedButtonBorder(true).copy(
-            brush = androidx.compose.ui.graphics.SolidColor(VeloPalette.Border),
-        ),
+        border = rowBorder,
     ) {
         Row(
             modifier = Modifier.padding(10.dp),

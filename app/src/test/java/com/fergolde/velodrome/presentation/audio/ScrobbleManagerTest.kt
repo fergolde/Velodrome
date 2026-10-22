@@ -12,6 +12,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -31,7 +32,7 @@ class ScrobbleManagerTest {
         mockkStatic(WorkManagerImpl::class)
         every { WorkManagerImpl.getInstance(any()) } returns workManager
         every { settingsRepository.scrobbleEnabled } returns flowOf(true)
-        manager = ScrobbleManager(scrobbleRepository, settingsRepository, context)
+        manager = ScrobbleManager(scrobbleRepository, settingsRepository, context, Dispatchers.IO)
     }
 
     @Test

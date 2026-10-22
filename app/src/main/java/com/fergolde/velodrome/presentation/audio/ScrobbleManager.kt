@@ -7,12 +7,13 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.fergolde.velodrome.data.worker.ScrobbleWorker
+import com.fergolde.velodrome.di.IoDispatcher
 import com.fergolde.velodrome.domain.repository.ScrobbleRepository
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -27,9 +28,10 @@ import javax.inject.Singleton
 class ScrobbleManager @Inject constructor(
     private val scrobbleRepository: ScrobbleRepository,
     private val settingsRepository: SettingsRepository,
-    @param:ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
+    @IoDispatcher ioDispatcher: CoroutineDispatcher
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
     private val workManager by lazy { WorkManager.getInstance(context) }
 
     // Track the current track being played to avoid duplicate submissions

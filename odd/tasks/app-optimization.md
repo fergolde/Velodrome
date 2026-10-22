@@ -20,8 +20,8 @@ Branch: `perf/app-optimization` | Delivery: local only until explicit permission
 | T1 | Baseline: unit tests, lint, release build | inline | pending |
 | T2 | Security hardening: profileable debug-only, URL encoding | inline | done (commit 2) |
 | T3 | Dead code: unused use cases, repository overloads, room-paging, datastore core, stale comment | inline | done (commit 1) |
-| T4 | Performance quick wins: runBlocking, durations, border strokes, dispatcher scopes, prefs preload, accent default, queue index map | inline | pending |
-| T5 | Cancellation safety: runCatchingWithCancellation in CacheManager/HomeViewModel/SmartRadioEngine | inline | pending |
+| T4 | Performance quick wins: runBlocking, durations, border strokes, dispatcher scopes, prefs preload, accent default, queue index map | inline | done (commit 3) |
+| T5 | Cancellation safety: runCatchingWithCancellation in CacheManager/HomeViewModel/SmartRadioEngine | inline | in progress |
 | T6 | DI/build cleanup: Settings @Binds, BuildConfig injection, gradle.properties, CI lint | inline | pending |
 | T7 | Paging invalidation for albums/artists | inline | pending |
 | T8 | Compose performance: Home/Explore state slicing, PlayerScreen stability, duration/border memoization | inline | pending |
@@ -58,3 +58,13 @@ Removed `SyncAlbumsUseCase`, the no-arg `AlbumRepository.syncAlbumsFromServer()`
 ### L6 — Security hardening (commit 2)
 
 `profileable` moved from the main manifest to `app/src/debug/AndroidManifest.xml`; merged debug manifest contains it and merged release manifest does not (verified). Stream and cover-art IDs are URL-encoded with `URLEncoder` (pure JVM, testable). Added two regression tests proving `a&b=c` cannot inject extra query params. `./gradlew :app:processDebugMainManifest :app:testDebugUnitTest` → 304 tests, 0 failures.
+
+### L7 — Performance quick wins (commit 3)
+
+- `AudioPlayerService.setupEqualizer`: removed `runBlocking`; the bass-boost preference is read on `serviceScope` and guarded against a replaced engine.
+- `AudioPlayerManager`: playlist mirrored into an id→index map (first occurrence), removing the O(n) `indexOfFirst` on every transition; all playlist mutations keep it in sync.
+- Derived values memoized: album/playlist durations, Explore row border, Settings dialog borders (no `@Composable` call inside `remember`).
+- `SmartRadioEngine` and `ScrobbleManager` take `@IoDispatcher` from the existing `DispatcherModule`.
+- Accent default unified in `DEFAULT_ACCENT_COLOR` in the domain layer, removing the cold-start color flash.
+- `VelodromeApp.onCreate` warms the cache-preferences file read by `newImageLoader`.
+- Evidence: `./gradlew :app:testDebugUnitTest` → 304 tests, 0 failures.

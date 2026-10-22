@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -325,9 +326,7 @@ fun SettingsScreen(
                             OutlinedButton(
                                 onClick = { showClearCacheDialog = false },
                                 shape = RoundedCornerShape(12.dp),
-                                border = ButtonDefaults.outlinedButtonBorder(true).copy(
-                                    brush = SolidColor(VeloPalette.Border),
-                                ),
+                                border = neutralOutlinedBorder(),
                             ) {
                                 Text(
                                     text = stringResource(R.string.settings_cancel),
@@ -348,9 +347,7 @@ fun SettingsScreen(
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     contentColor = VeloPalette.Destructive,
                                 ),
-                                border = ButtonDefaults.outlinedButtonBorder(true).copy(
-                                    brush = SolidColor(VeloPalette.Destructive.copy(alpha = .5f)),
-                                ),
+                                border = destructiveOutlinedBorder(),
                             ) {
                                 Text(
                                     text = stringResource(R.string.settings_clear_cache),
@@ -371,9 +368,7 @@ fun SettingsScreen(
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = VeloPalette.Destructive,
                     ),
-                    border = ButtonDefaults.outlinedButtonBorder(true).copy(
-                        brush = SolidColor(VeloPalette.Destructive.copy(alpha = .5f)),
-                    ),
+                    border = destructiveOutlinedBorder(),
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     if (uiState.isClearingCache) {
@@ -405,9 +400,7 @@ fun SettingsScreen(
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = VeloPalette.Destructive,
                     ),
-                    border = ButtonDefaults.outlinedButtonBorder(true).copy(
-                        brush = SolidColor(VeloPalette.Destructive.copy(alpha = .5f)),
-                    ),
+                    border = destructiveOutlinedBorder(),
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Logout, null, Modifier.size(18.dp))
@@ -456,9 +449,7 @@ fun SettingsScreen(
                         OutlinedButton(
                             onClick = { showLogoutDialog = false },
                             shape = RoundedCornerShape(12.dp),
-                            border = ButtonDefaults.outlinedButtonBorder(true).copy(
-                                brush = SolidColor(VeloPalette.Border),
-                            ),
+                            border = neutralOutlinedBorder(),
                         ) {
                             Text(
                                 text = stringResource(R.string.settings_cancel),
@@ -479,9 +470,7 @@ fun SettingsScreen(
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = VeloPalette.Destructive,
                             ),
-                            border = ButtonDefaults.outlinedButtonBorder(true).copy(
-                                brush = SolidColor(VeloPalette.Destructive.copy(alpha = .5f)),
-                            ),
+                            border = destructiveOutlinedBorder(),
                         ) {
                             Text(
                                 text = stringResource(R.string.settings_logout),
@@ -531,9 +520,7 @@ fun VeloSettingsSection(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
             color = VeloPalette.Bg3,
-            border = ButtonDefaults.outlinedButtonBorder(true).copy(
-                brush = SolidColor(VeloPalette.Border),
-            ),
+            border = neutralOutlinedBorder(),
         ) {
             Column(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -859,6 +846,16 @@ fun ColorPickerPanel(
 }
 
 // ─── UTIL ─────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun neutralOutlinedBorder(): BorderStroke = remember {
+    BorderStroke(1.dp, SolidColor(VeloPalette.Border))
+}
+
+@Composable
+private fun destructiveOutlinedBorder(): BorderStroke = remember {
+    BorderStroke(1.dp, SolidColor(VeloPalette.Destructive.copy(alpha = .5f)))
+}
 
 fun parseHexColor(hex: String): Color = try {
     val clean = hex.removePrefix("#")

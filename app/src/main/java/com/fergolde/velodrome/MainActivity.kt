@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.fergolde.velodrome.data.worker.SyncLibraryWorker
+import com.fergolde.velodrome.domain.repository.DEFAULT_ACCENT_COLOR
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import com.fergolde.velodrome.presentation.VelodromeMainApp
 import com.fergolde.velodrome.presentation.player.SharedPlayerViewModel
@@ -56,7 +57,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Leer accent color del repositorio en tiempo real
             val accentColorHex by settingsRepository.accentColor
-                .collectAsStateWithLifecycle(initialValue = "#C8FF00")
+                .collectAsStateWithLifecycle(initialValue = DEFAULT_ACCENT_COLOR)
             val accentColor = parseHexColor(accentColorHex)
 
             VelodromeTheme(accentColor = accentColor) {

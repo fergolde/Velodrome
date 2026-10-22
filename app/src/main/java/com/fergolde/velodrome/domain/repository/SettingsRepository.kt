@@ -2,6 +2,9 @@ package com.fergolde.velodrome.domain.repository
 
 import kotlinx.coroutines.flow.Flow
 
+/** Accent color used until the user picks a different one. */
+const val DEFAULT_ACCENT_COLOR = "#B6A0FF"
+
 /**
  * Repository interface for app settings.
  * Defines the contract for managing user preferences and cache configuration.

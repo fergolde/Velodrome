@@ -3,6 +3,7 @@ package com.fergolde.velodrome.data.repository
 import android.content.SharedPreferences
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
+import com.fergolde.velodrome.domain.repository.DEFAULT_ACCENT_COLOR
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -33,7 +34,6 @@ class SettingsRepositoryImpl @Inject constructor(
     companion object {
         const val DEFAULT_IMAGE_CACHE_SIZE_MB = 200
         const val DEFAULT_MUSIC_CACHE_SIZE_GB = 2
-        const val DEFAULT_ACCENT_COLOR = "#B6A0FF"
         const val DEFAULT_SCROBBLE_ENABLED = false
         const val DEFAULT_EQ_ENABLED = false
         const val DEFAULT_BASS_BOOST_ENABLED = false

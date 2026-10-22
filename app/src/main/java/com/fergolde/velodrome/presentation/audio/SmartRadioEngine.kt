@@ -1,6 +1,8 @@
 package com.fergolde.velodrome.presentation.audio
 
 import android.util.Log
+import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
+import com.fergolde.velodrome.di.IoDispatcher
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
@@ -54,9 +56,10 @@ class SmartRadioEngine @Inject constructor(
     private val trackUseCases: TrackUseCases,
     private val playerManager: PlayerManager,
     private val albumUseCases: AlbumUseCases,
-    private val serverDataResetNotifier: ServerDataResetNotifier
+    private val serverDataResetNotifier: ServerDataResetNotifier,
+    @IoDispatcher ioDispatcher: CoroutineDispatcher
 ) {
-    private val engineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val engineScope = CoroutineScope(SupervisorJob() + ioDispatcher)
 
     /**
      * All engine state is confined to this serial dispatcher: mutations can no
@@ -64,7 +67,7 @@ class SmartRadioEngine @Inject constructor(
      * check-then-act in refillPool is safe because a limitedParallelism(1)
      * dispatcher never runs two statements in parallel.
      */
-    private val radioDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private val radioDispatcher = ioDispatcher.limitedParallelism(1)
 
     /** Active session job; cancelled whenever a new radio supersedes or stops it. */
     private var engineJob: Job? = null
@@ -363,7 +366,7 @@ class SmartRadioEngine @Inject constructor(
         tasteProfile?.let {
             if (System.currentTimeMillis() - tasteProfileAt < PROFILE_TTL_MS) return it
         }
-        val fresh = runCatching {
+        val fresh = runCatchingWithCancellation {
             // The two server lists are independent: fetch them concurrently so
             // the profile costs max(latency) instead of their sum.
             coroutineScope {

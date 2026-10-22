@@ -41,7 +41,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -169,7 +168,14 @@ class AudioPlayerService : MediaSessionService() {
         val engine = EqualizerEngine(audioSessionId)
         equalizerEngine = engine
         engine.setEnabled(eqEnabled)
-        engine.setBassBoostEnabled(runBlocking { settingsRepository.bassBoostEnabled.first() })
+        // Read the persisted preference off the main thread: the first DataStore
+        // read can touch disk and this callback runs on the playback looper.
+        serviceScope.launch {
+            val bassBoostEnabled = settingsRepository.bassBoostEnabled.first()
+            if (equalizerEngine === engine) {
+                engine.setBassBoostEnabled(bassBoostEnabled)
+            }
+        }
         if (eqEnabled) {
             applyPresetForCurrentTrack()
         }
