@@ -243,7 +243,8 @@ class AudioPlayerService : MediaSessionService() {
          */
         override fun onPlaybackResumption(
             session: MediaSession,
-            controller: MediaSession.ControllerInfo
+            controller: MediaSession.ControllerInfo,
+            isPreload: Boolean
         ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
             Log.i(TAG, "Playback resumption from=${controller.packageName}")
             val future = SettableFuture.create<MediaSession.MediaItemsWithStartPosition>()
