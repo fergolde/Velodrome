@@ -25,7 +25,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -37,6 +36,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.Album
+import com.fergolde.velodrome.presentation.components.VeloListBottomClearance
+import com.fergolde.velodrome.presentation.components.VeloErrorWithRetry
+import com.fergolde.velodrome.presentation.components.VeloSnackbarHost
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import com.fergolde.velodrome.presentation.screen.home.ArtistAvatar
 import androidx.compose.ui.platform.LocalResources
@@ -50,27 +52,15 @@ fun ArtistDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    // Los textos se resuelven en composición: los callbacks lanzan corrutinas y
+    // no pueden leer recursos por sí mismos.
     val msg_artist_radio = stringResource(R.string.snackbar_artist_radio_started)
+    val msg_playback_started = stringResource(R.string.snackbar_playback_started)
+    val msg_shuffle_started = stringResource(R.string.snackbar_shuffle_started)
+    val msg_albums_added_to_queue = stringResource(R.string.snackbar_albums_added_to_queue)
 
     Scaffold(
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                Snackbar(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = data.visuals.message,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        },
+        snackbarHost = { VeloSnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) {
         Box(
@@ -87,10 +77,10 @@ fun ArtistDetailScreen(
                     )
                 }
                 uiState.error != null -> {
-                    Text(
-                        text = uiState.error ?: stringResource(R.string.error_loading),
-                        modifier = Modifier.align(Alignment.Center),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    VeloErrorWithRetry(
+                        message = uiState.error ?: stringResource(R.string.error_loading),
+                        onRetry = { viewModel.retry() },
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
                 else -> {
@@ -102,13 +92,13 @@ fun ArtistDetailScreen(
                         onPlayAllClick = {
                             viewModel.playAll()
                             scope.launch {
-                                snackbarHostState.showSnackbar("Reproducción iniciada")
+                                snackbarHostState.showSnackbar(msg_playback_started)
                             }
                         },
                         onShuffleAllClick = {
                             viewModel.shuffleAll()
                             scope.launch {
-                                snackbarHostState.showSnackbar("Reproducción aleatoria iniciada")
+                                snackbarHostState.showSnackbar(msg_shuffle_started)
                             }
                         },
                         onRadioClick = {
@@ -120,7 +110,7 @@ fun ArtistDetailScreen(
                         onAddToQueueClick = {
                             viewModel.addToQueue()
                             scope.launch {
-                                snackbarHostState.showSnackbar("Álbumes añadidos a la cola")
+                                snackbarHostState.showSnackbar(msg_albums_added_to_queue)
                             }
                         }
                     )
@@ -134,18 +124,22 @@ fun ArtistDetailScreen(
                     .statusBarsPadding()
                     .padding(8.dp)
             ) {
-                IconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.3f))
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.nav_back),
-                        tint = Color.White
-                    )
+                // El círculo visible sigue en 40dp; el IconButton aporta el área
+                // táctil de 48dp sin cambiar el dibujo.
+                IconButton(onClick = onBackClick) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.nav_back),
+                            tint = Color.White
+                        )
+                    }
                 }
             }
     }
@@ -172,7 +166,7 @@ fun ArtistAlbumsList(
     LazyVerticalGrid(
         columns = gridColumns,
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 100.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = VeloListBottomClearance),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -237,7 +231,7 @@ fun ArtistAlbumsList(
                             Icon(Icons.Default.PlayArrow, contentDescription = null)
                         }
                         Spacer(Modifier.width(8.dp))
-                        Text("Play")
+                        Text(stringResource(R.string.play))
                     }
 
                     Button(
@@ -246,15 +240,22 @@ fun ArtistAlbumsList(
                         enabled = !isPreparingPlayback,
                         modifier = Modifier.height(48.dp)
                     ) {
-                        Icon(Icons.Default.Shuffle, contentDescription = null)
+                        Icon(
+                            Icons.Default.Shuffle,
+                            contentDescription = stringResource(R.string.player_shuffle)
+                        )
                     }
 
                     Button(
                             onClick = onRadioClick,
                             shape = RoundedCornerShape(24.dp),
-                            modifier = Modifier.height(40.dp)
+                            modifier = Modifier.height(48.dp)
                         ) {
-                            Icon(Icons.Default.Radio, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(
+                                Icons.Default.Radio,
+                                contentDescription = stringResource(R.string.action_artist_radio),
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                         Button(
                         onClick = onAddToQueueClick,
@@ -262,7 +263,10 @@ fun ArtistAlbumsList(
                         enabled = !isPreparingPlayback,
                         modifier = Modifier.height(48.dp)
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
+                        Icon(
+                            Icons.AutoMirrored.Filled.PlaylistAdd,
+                            contentDescription = stringResource(R.string.action_add_to_queue)
+                        )
                     }
                 }
 

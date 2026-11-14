@@ -28,6 +28,8 @@
     <string name="home_playlists">Your Playlists</string>
     <string name="home_playlist_songs">songs</string>
     <string name="home_discover">DISCOVER</string>
+    <string name="home_explore_eyebrow">Mixes &amp; Discovery</string>
+    <string name="home_explore_title">Explore</string>
     <string name="home_feature_offline_title">No Data</string>
     <string name="home_feature_offline_subtitle">Offline only</string>
 
@@ -57,6 +59,13 @@
     <string name="explore_search_hint">Artists, albums or tracks</string>
     <string name="explore_range_years">YEAR RANGE</string>
     <string name="explore_years">Years</string>
+    <string name="explore_clear_year_filter">Clear filter</string>
+    <string name="explore_search_empty">No results for &quot;%1$s&quot;</string>
+    <string name="explore_search_tracks">Tracks</string>
+    <string name="explore_play_plain">Play (shuffle)</string>
+    <string name="explore_play_genres" tools:ignore="PluralsCandidate">Play · %1$d genres</string>
+    <string name="explore_play_year_range">Play · %1$d–%2$d</string>
+    <string name="explore_play_genres_and_years" tools:ignore="PluralsCandidate">Play · %1$d genres, %2$d–%3$d</string>
 
     <!-- Artists -->
     <string name="artists_search_hint">Search artists…</string>
@@ -71,6 +80,10 @@
     <string name="artist_detail_albums_count" tools:ignore="PluralsCandidate">%d albums</string>
 
     <!-- Album Detail -->
+    <string name="album_detail_meta" tools:ignore="PluralsCandidate">%1$d tracks · %2$d min</string>
+
+    <!-- Playlist Detail -->
+    <string name="playlist_detail_meta" tools:ignore="PluralsCandidate">%1$d songs · %2$d min</string>
 
     <!-- Track Options -->
 
@@ -118,6 +131,7 @@
 
     <!-- Settings -->
     <string name="settings_color_custom_hex">Custom (HEX)</string>
+    <string name="settings_cache_used">used: %1$s</string>
 
     <!-- Auth errors -->
     <string name="error_no_connection">Cannot reach the server. Check the URL and your connection.</string>
@@ -145,6 +159,17 @@
     <string name="snackbar_added_to_queue">Added to queue</string>
     <string name="snackbar_album_added_to_queue">Album added to queue</string>
     <string name="snackbar_playlist_added_to_queue">Playlist added to queue</string>
+    <string name="snackbar_playback_started">Playback started</string>
+    <string name="snackbar_albums_added_to_queue">Albums added to queue</string>
+
+    <!-- Icon-only actions (screen reader) -->
+    <string name="action_add_to_queue">Add to queue</string>
+    <string name="action_artist_radio">Artist radio</string>
+    <string name="action_clear_search">Clear search</string>
+    <string name="queue_drag_handle">Reorder in queue</string>
+    <string name="queue_remove">Remove from queue</string>
+    <string name="player_position_state">%1$s of %2$s</string>
+    <string name="dot_separator">" · "</string>
 
     <!-- Common -->
     <string name="retry">Retry</string>

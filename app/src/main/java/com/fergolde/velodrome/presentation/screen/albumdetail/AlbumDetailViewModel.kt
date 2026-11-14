@@ -13,6 +13,7 @@ import com.fergolde.velodrome.presentation.audio.RadioContext
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,6 +44,10 @@ class AlbumDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AlbumDetailUiState())
     val uiState: StateFlow<AlbumDetailUiState> = _uiState.asStateFlow()
 
+    // Jobs de la última carga. `retry()` los cancela antes de relanzar el loader
+    // para no dejar dos observadores de tracks vivos a la vez.
+    private var loadJobs: List<Job> = emptyList()
+
     init {
         loadAlbumData()
 
@@ -60,30 +65,42 @@ class AlbumDetailViewModel @Inject constructor(
         }
 
         _uiState.update { it.copy(isLoading = true, error = null) }
+        loadJobs.forEach { it.cancel() }
 
-        viewModelScope.launch {
-            // Load album details
-            albumUseCases.getAlbum(albumId)
-                .onSuccess { album ->
-                    _uiState.update { it.copy(album = album) }
+        loadJobs = listOf(
+            viewModelScope.launch {
+                // Load album details
+                albumUseCases.getAlbum(albumId)
+                    .onSuccess { album ->
+                        _uiState.update { it.copy(album = album) }
+                    }
+                    .onFailure { e ->
+                        _uiState.update { it.copy(error = e.message) }
+                    }
+            },
+            // Observar tracks desde DB local (instantáneo)
+            viewModelScope.launch {
+                trackUseCases.observeTracksByAlbum(albumId).collect { tracks ->
+                    val sortedTracks = tracks.sortedBy { it.trackNumber }
+                    _uiState.update { it.copy(tracks = sortedTracks, isLoading = false) }
                 }
-                .onFailure { e ->
-                    _uiState.update { it.copy(error = e.message) }
-                }
-        }
-
-        // Observar tracks desde DB local (instantáneo)
-        viewModelScope.launch {
-            trackUseCases.observeTracksByAlbum(albumId).collect { tracks ->
-                val sortedTracks = tracks.sortedBy { it.trackNumber }
-                _uiState.update { it.copy(tracks = sortedTracks, isLoading = false) }
+            },
+            // Sincronizar tracks desde API en background
+            viewModelScope.launch {
+                trackUseCases.syncTracksForAlbum(albumId)
             }
-        }
+        )
+    }
 
-        // Sincronizar tracks desde API en background
-        viewModelScope.launch {
-            trackUseCases.syncTracksForAlbum(albumId)
-        }
+    /**
+     * Reintenta la carga tras un fallo.
+     *
+     * Limpia el error y relanza el mismo loader sobre este ViewModel: la pantalla
+     * no se recrea y no queda ningún ViewModel anterior retenido.
+     */
+    fun retry() {
+        _uiState.update { it.copy(error = null) }
+        loadAlbumData()
     }
 
     fun playTrack(track: Track) {

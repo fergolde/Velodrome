@@ -42,6 +42,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.DragIndicator
@@ -89,6 +90,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -101,6 +106,7 @@ import com.fergolde.velodrome.R
 import android.content.res.Configuration
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.presentation.components.SharedBottomNavigationBar
+import com.fergolde.velodrome.presentation.components.VeloSheetShape
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -275,9 +281,10 @@ fun PlayerScreen(
             }
         }
 
-        // Barra de navegación fija en la parte inferior del player
+        // Barra de navegación fija en la parte inferior del player.
+        // El reproductor no es una pestaña: `null` deja la barra sin selección.
         SharedBottomNavigationBar(
-            currentRoute = "player",
+            selectedTab = null,
             onHomeClick = onHomeClick,
             onExploreClick = onExploreClick,
             onSettingsClick = onSettingsClick
@@ -290,6 +297,7 @@ fun PlayerScreen(
             onDismissRequest = { showQueue = false },
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surface,
+            shape = VeloSheetShape,
             dragHandle = {
                 Box(
                     modifier = Modifier
@@ -430,7 +438,7 @@ fun SongInfoSection(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = " · ",
+                text = stringResource(R.string.dot_separator),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 fontSize = 15.sp
             )
@@ -460,6 +468,13 @@ fun SeekBar(
 
     val progress = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
     val shownPosition = if (isDragging) (dragProgress * duration).toInt() else currentPosition
+    // El slider no fija altura propia: recortarlo a 20dp dejaba el área táctil
+    // por debajo del mínimo de 48dp. El estado de posición se anuncia al lector.
+    val positionState = stringResource(
+        R.string.player_position_state,
+        formatTime(shownPosition),
+        formatTime(duration)
+    )
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // Slider interactivo
@@ -477,7 +492,7 @@ fun SeekBar(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(20.dp),
+                .semantics { stateDescription = positionState },
             colors = SliderDefaults.colors(
                 thumbColor = MaterialTheme.colorScheme.primary,
                 activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -598,6 +613,7 @@ fun PlayPauseButton(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
+                role = Role.Button,
                 onClick = onClick
             ),
         contentAlignment = Alignment.Center
@@ -977,14 +993,28 @@ fun QueueTrackItem(
                 )
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(4.dp))
+
+            // Acción alternativa al swipe horizontal: quitar la pista sin gesto,
+            // con área táctil de 48dp y nombre para el lector de pantalla.
+            IconButton(onClick = onRemove) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.queue_remove),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
 
             // Dedicated drag handle: vertical drags here reorder the queue and
             // deliberately block list scrolling; taps/swipes on the rest of the
-            // row keep their jump/delete behavior untouched.
+            // row keep their jump/delete behavior untouched. Crece a 48dp de
+            // área de arrastre y se anuncia con nombre propio.
+            val dragHandleLabel = stringResource(R.string.queue_drag_handle)
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(48.dp)
+                    .semantics { contentDescription = dragHandleLabel }
                     .pointerInput(Unit) {
                         detectVerticalDragGestures(
                             onDragStart = { _ -> currentOnDragStart() },

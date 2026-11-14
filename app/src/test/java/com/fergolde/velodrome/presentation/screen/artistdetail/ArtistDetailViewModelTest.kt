@@ -13,6 +13,7 @@ import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -25,7 +26,10 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
@@ -111,6 +115,26 @@ class ArtistDetailViewModelTest {
         viewModel.addToQueue()
 
         assertFalse(viewModel.uiState.value.isPreparingPlayback)
+    }
+
+    /**
+     * El detalle de artista solo cargaba desde `init`: un fallo dejaba el error
+     * en pantalla sin forma de reintentar.
+     */
+    @Test
+    fun `retry limpia el error y vuelve a pedir el artista`() = runTest {
+        coEvery { getArtistUseCase(any()) } returns Result.failure(RuntimeException("sin red"))
+        val viewModel = createViewModel()
+        assertNotNull(viewModel.uiState.value.error)
+
+        coEvery { getArtistUseCase(any()) } returns Result.success(ArtistWithAlbums(artist, listOf(album)))
+        viewModel.retry()
+
+        assertNull(viewModel.uiState.value.error)
+        assertEquals(artist, viewModel.uiState.value.artist)
+        assertEquals(listOf(album), viewModel.uiState.value.albums)
+        assertFalse(viewModel.uiState.value.isLoading)
+        coVerify(exactly = 2) { getArtistUseCase("a1") }
     }
 
     @Test

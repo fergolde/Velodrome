@@ -35,8 +35,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -66,6 +64,10 @@ import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
+import com.fergolde.velodrome.presentation.components.VeloErrorWithRetry
+import com.fergolde.velodrome.presentation.components.VeloListBottomClearance
+import com.fergolde.velodrome.presentation.components.VeloSnackbarHost
+import com.fergolde.velodrome.presentation.components.VeloSheetShape
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import com.fergolde.velodrome.util.formatDuration
 import kotlinx.coroutines.launch
@@ -89,24 +91,7 @@ fun AlbumDetailScreen(
     val msg_album_added_to_queue = stringResource(R.string.snackbar_album_added_to_queue)
 
     Scaffold(
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState) { data ->
-                Snackbar(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = data.visuals.message,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-        },
+        snackbarHost = { VeloSnackbarHost(hostState = snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
@@ -123,7 +108,10 @@ fun AlbumDetailScreen(
                 }
                 uiState.error != null -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(uiState.error ?: "Error")
+                        VeloErrorWithRetry(
+                            message = uiState.error ?: stringResource(R.string.error_loading),
+                            onRetry = { viewModel.retry() }
+                        )
                     }
                 }
                 else -> {
@@ -160,7 +148,7 @@ fun AlbumDetailScreen(
                 onDismissRequest = { showTrackOptions = false },
                 sheetState = sheetState,
                 containerColor = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+                shape = VeloSheetShape
             ) {
                 UniversalOptionsSheet(
                     title = selectedTrack!!.title,
@@ -236,13 +224,12 @@ private fun AlbumContent(
                     onClick = onBackClick,
                     modifier = Modifier
                         .padding(start = 8.dp, top = 8.dp)
-                        .size(42.dp)
                         .clip(CircleShape)
                         .align(Alignment.Start)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.nav_back),
                         tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                     )
                 }
@@ -295,13 +282,13 @@ private fun AlbumContent(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                             Text(
-                                text = " · ",
+                                text = stringResource(R.string.dot_separator),
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                             )
                         }
                         Text(
-                            text = "${tracks.size} tracks · ${durationDisk(tracks)} min",
+                            text = stringResource(R.string.album_detail_meta, tracks.size, durationDisk(tracks)),
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -314,25 +301,33 @@ private fun AlbumContent(
                         Button(
                             onClick = onPlayAllClick,
                             shape = RoundedCornerShape(24.dp),
-                            modifier = Modifier.height(40.dp)
+                            modifier = Modifier.height(48.dp)
                         ) {
                             Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("Play", fontSize = 13.sp)
+                            Text(stringResource(R.string.play), fontSize = 13.sp)
                         }
                         Button(
                             onClick = onShuffleClick,
                             shape = RoundedCornerShape(24.dp),
-                            modifier = Modifier.height(40.dp)
+                            modifier = Modifier.height(48.dp)
                         ) {
-                            Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(
+                                Icons.Default.Shuffle,
+                                contentDescription = stringResource(R.string.player_shuffle),
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                         Button(
                             onClick = onAddToQueueClick,
                             shape = RoundedCornerShape(24.dp),
-                            modifier = Modifier.height(40.dp)
+                            modifier = Modifier.height(48.dp)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(
+                                Icons.AutoMirrored.Filled.PlaylistAdd,
+                                contentDescription = stringResource(R.string.action_add_to_queue),
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                 }
@@ -359,7 +354,7 @@ private fun AlbumContent(
         }
     } else {
         // ── Portrait: layout actual (sin cambios) ─────────────────────────
-        LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+        LazyColumn(contentPadding = PaddingValues(bottom = VeloListBottomClearance)) {
             item {
                 AlbumHeader(
                     album = album,
@@ -420,13 +415,12 @@ private fun AlbumHeader(
                 onClick = onBackClick,
                 modifier = Modifier
                     .padding(16.dp)
-                    .size(42.dp)
                     .clip(CircleShape)
                     .align(Alignment.TopStart)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.nav_back),
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                 )
             }
@@ -445,7 +439,7 @@ private fun AlbumHeader(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             album?.year?.let { Text(it.toString()) }
-            Text("${tracks.size} tracks · ${durationDisk(tracks)} minutos", fontSize = 14.sp)
+            Text(stringResource(R.string.album_detail_meta, tracks.size, durationDisk(tracks)), fontSize = 14.sp)
             Spacer(Modifier.height(16.dp))
             Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -458,21 +452,27 @@ private fun AlbumHeader(
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Play")
+                    Text(stringResource(R.string.play))
                 }
                 Button(
                     onClick = onShuffleClick,
                     shape = RoundedCornerShape(24.dp),
                     modifier = Modifier.height(48.dp)
                 ) {
-                    Icon(Icons.Default.Shuffle, contentDescription = null)
+                    Icon(
+                        Icons.Default.Shuffle,
+                        contentDescription = stringResource(R.string.player_shuffle)
+                    )
                 }
                 Button(
                     onClick = onAddToQueueClick,
                     shape = RoundedCornerShape(24.dp),
                     modifier = Modifier.height(48.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
+                    Icon(
+                        Icons.AutoMirrored.Filled.PlaylistAdd,
+                        contentDescription = stringResource(R.string.action_add_to_queue)
+                    )
                 }
             }
         }
