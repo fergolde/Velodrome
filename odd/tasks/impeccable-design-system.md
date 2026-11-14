@@ -19,3 +19,4 @@ S6: Autorizado "haz todo lo que veas mas recomendable": implementar todo S5 en e
 L1: Usuario: "hazlo en todo el proyecto. pero trabaja en una rama separada" (tras pedir plan impeccable).
 L2: Rama creada: impeccable/full-project desde master.
 L3: Workers aplicaron S5 completo (a11y, snackbar, strings ES+EN, targets 48dp, consistencia, retry en 3 VMs con tests RED-GREEN); checks verdes según handoffs, pendiente verificación propia y commits.
+L4: Verificación propia: testDebugUnitTest + lintDebug --rerun-tasks en verde. Commits 94fe745 (AGENTS.md), cae95ab (PRODUCT/DESIGN/sidecar/task doc), 768d7c3 (fix UI 20 archivos + 4 tests nuevos). Límite: el slice fix supera ~400 líneas como unidad única porque res y usos no se pueden partir sin romper el build; queda registrado el borde.
