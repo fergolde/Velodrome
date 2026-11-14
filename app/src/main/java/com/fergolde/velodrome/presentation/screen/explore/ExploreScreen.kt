@@ -607,7 +607,7 @@ fun SearchResultsView(
     onPlayTrackNext: (Track) -> Unit = {},
     onAddTrackToQueue: (Track) -> Unit = {},
     onClearSearch: () -> Unit = {},
-    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    snackbarHostState: SnackbarHostState,
 ) {
     var showOptions by remember { mutableStateOf(false) }
     var selectedTrack by remember { mutableStateOf<Track?>(null) }

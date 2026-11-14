@@ -305,7 +305,7 @@ private fun AlbumContent(
                         ) {
                             Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.play), fontSize = 13.sp)
+                            Text(stringResource(R.string.action_play_all), fontSize = 13.sp)
                         }
                         Button(
                             onClick = onShuffleClick,
@@ -452,7 +452,7 @@ private fun AlbumHeader(
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.play))
+                    Text(stringResource(R.string.action_play_all))
                 }
                 Button(
                     onClick = onShuffleClick,

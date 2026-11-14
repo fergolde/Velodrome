@@ -231,7 +231,7 @@ fun ArtistAlbumsList(
                             Icon(Icons.Default.PlayArrow, contentDescription = null)
                         }
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.play))
+                        Text(stringResource(R.string.action_play_all))
                     }
 
                     Button(

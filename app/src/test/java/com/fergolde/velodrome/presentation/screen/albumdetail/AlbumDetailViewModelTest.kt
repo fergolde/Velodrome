@@ -17,6 +17,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -136,5 +137,37 @@ class AlbumDetailViewModelTest {
         viewModel.retry()
 
         assertEquals(1, maxActive)
+    }
+
+    @Test
+    fun `retry x3 no acumula jobs ni deja dos observadores vivos`() = runTest {
+        // Cada reintento cancela el loader anterior antes de relanzarlo. Si esa
+        // cancelación desapareciera, cada reintento dejaría un observador más
+        // escribiendo el mismo estado: `started - ended` mediría los vivos.
+        var started = 0
+        var ended = 0
+        var maxLive = 0
+        every { trackUseCases.observeTracksByAlbum("al1") } returns flow {
+            started++
+            maxLive = maxOf(maxLive, started - ended)
+            try {
+                emit(emptyList())
+                awaitCancellation()
+            } finally {
+                ended++
+            }
+        }
+        coEvery { albumUseCases.getAlbum("al1") } returns Result.success(album)
+
+        val viewModel = createViewModel()
+        assertEquals(1, started)
+
+        repeat(3) { viewModel.retry() }
+        advanceUntilIdle()
+
+        assertEquals(4, started)
+        assertEquals(3, ended)
+        assertEquals(1, started - ended)
+        assertEquals(1, maxLive)
     }
 }

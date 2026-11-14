@@ -12,8 +12,10 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -100,5 +102,36 @@ class PlaylistDetailViewModelTest {
         assertEquals(playlist, viewModel.uiState.value.playlist)
         assertEquals(listOf(track), viewModel.uiState.value.tracks)
         coVerify(exactly = 2) { playlistUseCases.getPlaylist("p1") }
+    }
+
+    /**
+     * `retry()` cancela la carga anterior antes de relanzarla. Sin esa
+     * cancelación, cada reintento dejaría una petición más viva a la vez.
+     */
+    @Test
+    fun `retry x3 no acumula jobs ni deja dos peticiones vivas`() = runTest {
+        var started = 0
+        var ended = 0
+        var maxLive = 0
+        coEvery { playlistUseCases.getPlaylist("p1") } coAnswers {
+            started++
+            maxLive = maxOf(maxLive, started - ended)
+            try {
+                awaitCancellation()
+            } finally {
+                ended++
+            }
+        }
+
+        val viewModel = createViewModel()
+        assertEquals(1, started)
+
+        repeat(3) { viewModel.retry() }
+        advanceUntilIdle()
+
+        assertEquals(4, started)
+        assertEquals(3, ended)
+        assertEquals(1, started - ended)
+        assertEquals(1, maxLive)
     }
 }

@@ -80,7 +80,7 @@
     <string name="artist_detail_albums_count" tools:ignore="PluralsCandidate">%d álbumes</string>
 
     <!-- Album Detail -->
-    <string name="album_detail_meta" tools:ignore="PluralsCandidate">%1$d temas · %2$d min</string>
+    <string name="album_detail_meta" tools:ignore="PluralsCandidate">%1$d tracks · %2$d minutos</string>
 
     <!-- Playlist Detail -->
     <string name="playlist_detail_meta" tools:ignore="PluralsCandidate">%1$d canciones · %2$d min</string>
@@ -120,6 +120,10 @@
     <string name="nav_back">Atrás</string>
     <string name="view_all">Ver Todo</string>
     <string name="play">Reproducir</string>
+    <!-- Etiqueta del botón de reproducir todo en los detalles. El copy previo a
+         la extracción a recursos era "Play" también en español: se mantiene
+         para no cambiar el texto visible (S4). -->
+    <string name="action_play_all">Play</string>
     <string name="error_loading">Error al cargar</string>
     <string name="retry">Reintentar</string>
     <string name="artists_empty">No hay artistas guardados</string>

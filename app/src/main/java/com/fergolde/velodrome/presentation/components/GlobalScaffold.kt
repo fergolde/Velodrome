@@ -36,9 +36,15 @@ import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 /**
  * Pestañas de la barra inferior compartida.
  *
- * Existen para que la barra no compare literales de ruta sueltos: cada pestaña
- * es el destino tipado de `Routes` que representa. `null` significa "ninguna
- * pestaña activa", el caso del reproductor a pantalla completa.
+ * Existen para que la barra no repita comparaciones de ruta en cada
+ * `NavigationBarItem`: cada pestaña guarda los literales `"home"`,
+ * `"explore"` y `"settings"`, que son las cadenas con las que el `NavHost`
+ * identifica esos destinos. No se guarda el destino tipado de `Routes` porque
+ * el llamador (`VelodromeApp`) solo conoce la ruta actual como `String`;
+ * [fromRoute] hace esa traducción, y la sobrecarga de
+ * [SharedBottomNavigationBar] que recibe `currentRoute: String` es el puente
+ * entre ambos mundos. `null` significa "ninguna pestaña activa", el caso del
+ * reproductor a pantalla completa.
  */
 enum class VeloTab(val route: String) {
     Home("home"),

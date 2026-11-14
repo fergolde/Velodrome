@@ -80,7 +80,7 @@
     <string name="artist_detail_albums_count" tools:ignore="PluralsCandidate">%d albums</string>
 
     <!-- Album Detail -->
-    <string name="album_detail_meta" tools:ignore="PluralsCandidate">%1$d tracks · %2$d min</string>
+    <string name="album_detail_meta" tools:ignore="PluralsCandidate">%1$d tracks · %2$d minutos</string>
 
     <!-- Playlist Detail -->
     <string name="playlist_detail_meta" tools:ignore="PluralsCandidate">%1$d songs · %2$d min</string>
@@ -119,6 +119,9 @@
     <string name="nav_back">Back</string>
     <string name="view_all">View All</string>
     <string name="play">Play</string>
+    <!-- Etiqueta del botón de reproducir todo en los detalles, con el mismo
+         copy que tenía antes de extraerse a recursos (S4). -->
+    <string name="action_play_all">Play</string>
     <string name="error_loading">Error loading</string>
 
     <!-- Universal options sheet -->
