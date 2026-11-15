@@ -105,6 +105,8 @@ import com.fergolde.velodrome.R
 import android.content.res.Configuration
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.presentation.components.SharedBottomNavigationBar
+import com.fergolde.velodrome.presentation.components.SharedNavigationRail
+import com.fergolde.velodrome.presentation.components.VeloNavigationLayout
 import com.fergolde.velodrome.presentation.components.VeloSheetShape
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import kotlin.math.abs
@@ -115,6 +117,9 @@ import kotlinx.coroutines.flow.StateFlow
 @Composable
 fun PlayerScreen(
     viewModel: PlayerViewModel = hiltViewModel(),
+    // S1: en tablet la navegación del reproductor pasa a rail lateral. El
+    // llamador decide el layout para no calcular el ancho dos veces.
+    navigationLayout: VeloNavigationLayout = VeloNavigationLayout.BottomBar,
     onMinimizeClick: () -> Unit = {},
     onHomeClick: () -> Unit = {},
     onExploreClick: () -> Unit = {},
@@ -130,164 +135,186 @@ fun PlayerScreen(
         if (isLandscape) showQueue = false
     }
 
-    Column(
+    // En tablet la navegación del reproductor también es lateral: el sheet
+    // ocupa toda la ventana, así que no puede apoyarse en el rail del scaffold.
+    val isSideRail = navigationLayout == VeloNavigationLayout.SideRail
+
+    Row(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Box(
+        if (isSideRail) {
+            SharedNavigationRail(
+                selectedTab = null,
+                onHomeClick = onHomeClick,
+                onExploreClick = onExploreClick,
+                onSettingsClick = onSettingsClick
+            )
+        }
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .weight(1f)
+                .fillMaxHeight()
         ) {
-            if (isLandscape) {
-                // ── Landscape: Row partido ──────────────────────────────────
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .windowInsetsPadding(WindowInsets.statusBars)
-                        .padding(start = 16.dp, end = 12.dp),
-                ) {
-                    // Left: TopBar + Album Art centrado + SongInfo + SeekBar + Controls
-                    Column(
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                if (isLandscape) {
+                    // ── Landscape: Row partido ──────────────────────────────────
+                    Row(
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(0.35f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                            .fillMaxSize()
+                            .windowInsetsPadding(WindowInsets.statusBars)
+                            .padding(start = 16.dp, end = 12.dp),
                     ) {
-                        PlayerTopBar(
-                            onMinimizeClick = onMinimizeClick,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                        // Album art centrado verticalmente
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            AlbumArt(
-                                coverArtId = uiState.currentTrack?.coverArtId,
-                            )
-                        }
-                        Spacer(Modifier.height(12.dp))
-                        // Controls debajo del album art
+                        // Left: TopBar + Album Art centrado + SongInfo + SeekBar + Controls
                         Column(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .weight(0.35f),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            SongInfoSection(
-                                title = uiState.currentTrack?.title ?: stringResource(R.string.player_unknown_track),
-                                artist = uiState.currentTrack?.artistName ?: stringResource(R.string.artists_unknown),
-                                album = uiState.currentTrack?.albumName ?: stringResource(R.string.albums_unknown_title)
+                            PlayerTopBar(
+                                onMinimizeClick = onMinimizeClick,
+                                modifier = Modifier.padding(top = 4.dp)
                             )
-                            Spacer(Modifier.height(10.dp))
-                            PlayerProgress(
-                                positionFlow = viewModel.currentPositionSeconds,
-                                duration = uiState.currentTrack?.durationSec ?: 0,
-                                onSeek = viewModel::onSeek
-                            )
-                            Spacer(Modifier.height(10.dp))
-                            PlaybackControls(
+                            // Album art centrado verticalmente
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                AlbumArt(
+                                    coverArtId = uiState.currentTrack?.coverArtId,
+                                )
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            // Controls debajo del album art
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                SongInfoSection(
+                                    title = uiState.currentTrack?.title ?: stringResource(R.string.player_unknown_track),
+                                    artist = uiState.currentTrack?.artistName ?: stringResource(R.string.artists_unknown),
+                                    album = uiState.currentTrack?.albumName ?: stringResource(R.string.albums_unknown_title)
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                PlayerProgress(
+                                    positionFlow = viewModel.currentPositionSeconds,
+                                    duration = uiState.currentTrack?.durationSec ?: 0,
+                                    onSeek = viewModel::onSeek
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                PlaybackControls(
+                                    isPlaying = uiState.isPlaying,
+                                    onPlayPauseClick = { viewModel.onPlayPauseClick() },
+                                    onPreviousClick = { viewModel.onPreviousClick() },
+                                    onNextClick = { viewModel.onNextClick() },
+                                    isShuffleEnabled = uiState.isShuffleEnabled,
+                                    isRepeatEnabled = uiState.isRepeatEnabled,
+                                    onShuffleClick = { viewModel.toggleShuffle() },
+                                    onRepeatClick = { viewModel.toggleRepeat() }
+                                )
+                            }
+                            Spacer(Modifier.height(24.dp))
+                        }
+                        // Right: solo inline Queue
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .weight(0.60f)
+                                .padding(start = 20.dp, end = 4.dp)
+                        ) {
+                            QueueContent(
+                                playlist = uiState.playlist,
+                                currentIndex = uiState.currentIndex,
                                 isPlaying = uiState.isPlaying,
-                                onPlayPauseClick = { viewModel.onPlayPauseClick() },
-                                onPreviousClick = { viewModel.onPreviousClick() },
-                                onNextClick = { viewModel.onNextClick() },
-                                isShuffleEnabled = uiState.isShuffleEnabled,
-                                isRepeatEnabled = uiState.isRepeatEnabled,
-                                onShuffleClick = { viewModel.toggleShuffle() },
-                                onRepeatClick = { viewModel.toggleRepeat() }
+                                onTrackClick = { index ->
+                                    viewModel.onTrackSelected(index)
+                                },
+                                onRemoveTrack = viewModel::onRemoveTrack,
+                                onQueueReorder = viewModel::onQueueReorder
                             )
                         }
-                        Spacer(Modifier.height(24.dp))
                     }
-                    // Right: solo inline Queue
+                } else {
+                    // ── Portrait: layout actual (sin cambios) ──────────────────
+                    // Gradient overlay
                     Box(
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(0.60f)
-                            .padding(start = 20.dp, end = 4.dp)
-                    ) {
-                        QueueContent(
-                            playlist = uiState.playlist,
-                            currentIndex = uiState.currentIndex,
-                            isPlaying = uiState.isPlaying,
-                            onTrackClick = { index ->
-                                viewModel.onTrackSelected(index)
-                            },
-                            onRemoveTrack = viewModel::onRemoveTrack,
-                            onQueueReorder = viewModel::onQueueReorder
-                        )
-                    }
-                }
-            } else {
-                // ── Portrait: layout actual (sin cambios) ──────────────────
-                // Gradient overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(320.dp)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
-                                    Color.Transparent
+                            .fillMaxWidth()
+                            .height(320.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+                                        Color.Transparent
+                                    )
                                 )
                             )
-                        )
-                )
+                    )
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .windowInsetsPadding(WindowInsets.statusBars)
-                        .padding(horizontal = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    PlayerTopBar(onMinimizeClick = onMinimizeClick)
-                    Spacer(modifier = Modifier.height(20.dp))
-                    AlbumArt(
-                        coverArtId = uiState.currentTrack?.coverArtId,
-                    )
-                    Spacer(modifier = Modifier.height(32.dp))
-                    SongInfoSection(
-                        title = uiState.currentTrack?.title ?: stringResource(R.string.player_unknown_track),
-                        artist = uiState.currentTrack?.artistName ?: stringResource(R.string.artists_unknown),
-                        album = uiState.currentTrack?.albumName ?: stringResource(R.string.albums_unknown_title)
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-                    PlayerProgress(
-                        positionFlow = viewModel.currentPositionSeconds,
-                        duration = uiState.currentTrack?.durationSec ?: 0,
-                        onSeek = viewModel::onSeek
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-                    PlaybackControls(
-                        isPlaying = uiState.isPlaying,
-                        onPlayPauseClick = { viewModel.onPlayPauseClick() },
-                        onPreviousClick = { viewModel.onPreviousClick() },
-                        onNextClick = { viewModel.onNextClick() },
-                        isShuffleEnabled = uiState.isShuffleEnabled,
-                        isRepeatEnabled = uiState.isRepeatEnabled,
-                        onShuffleClick = { viewModel.toggleShuffle() },
-                        onRepeatClick = { viewModel.toggleRepeat() }
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    QueueChip(onClick = { showQueue = true })
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .windowInsetsPadding(WindowInsets.statusBars)
+                            .padding(horizontal = 24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        PlayerTopBar(onMinimizeClick = onMinimizeClick)
+                        Spacer(modifier = Modifier.height(20.dp))
+                        AlbumArt(
+                            coverArtId = uiState.currentTrack?.coverArtId,
+                        )
+                        Spacer(modifier = Modifier.height(32.dp))
+                        SongInfoSection(
+                            title = uiState.currentTrack?.title ?: stringResource(R.string.player_unknown_track),
+                            artist = uiState.currentTrack?.artistName ?: stringResource(R.string.artists_unknown),
+                            album = uiState.currentTrack?.albumName ?: stringResource(R.string.albums_unknown_title)
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        PlayerProgress(
+                            positionFlow = viewModel.currentPositionSeconds,
+                            duration = uiState.currentTrack?.durationSec ?: 0,
+                            onSeek = viewModel::onSeek
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        PlaybackControls(
+                            isPlaying = uiState.isPlaying,
+                            onPlayPauseClick = { viewModel.onPlayPauseClick() },
+                            onPreviousClick = { viewModel.onPreviousClick() },
+                            onNextClick = { viewModel.onNextClick() },
+                            isShuffleEnabled = uiState.isShuffleEnabled,
+                            isRepeatEnabled = uiState.isRepeatEnabled,
+                            onShuffleClick = { viewModel.toggleShuffle() },
+                            onRepeatClick = { viewModel.toggleRepeat() }
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        QueueChip(onClick = { showQueue = true })
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
-        }
 
-        // Barra de navegación fija en la parte inferior del player.
-        // El reproductor no es una pestaña: `null` deja la barra sin selección.
-        SharedBottomNavigationBar(
-            selectedTab = null,
-            onHomeClick = onHomeClick,
-            onExploreClick = onExploreClick,
-            onSettingsClick = onSettingsClick
-        )
+            // Barra de navegación fija en la parte inferior del player.
+            // El reproductor no es una pestaña: `null` deja la barra sin selección.
+            // En tablet la navegación es el rail de arriba, así que aquí solo
+            // se dibuja la barra de teléfono.
+            if (!isSideRail) {
+                SharedBottomNavigationBar(
+                    selectedTab = null,
+                    onHomeClick = onHomeClick,
+                    onExploreClick = onExploreClick,
+                    onSettingsClick = onSettingsClick
+                )
+            }
+        }
     }
 
 

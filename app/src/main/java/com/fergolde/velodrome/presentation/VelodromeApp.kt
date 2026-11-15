@@ -1,10 +1,13 @@
 package com.fergolde.velodrome.presentation
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.BottomSheetScaffold
@@ -15,6 +18,9 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,6 +41,9 @@ import androidx.navigation.compose.rememberNavController
 import com.fergolde.velodrome.di.CredentialsEntryPoint
 import com.fergolde.velodrome.presentation.components.MiniPlayer
 import com.fergolde.velodrome.presentation.components.SharedBottomNavigationBar
+import com.fergolde.velodrome.presentation.components.SharedNavigationRail
+import com.fergolde.velodrome.presentation.components.VeloNavigationLayout
+import com.fergolde.velodrome.presentation.components.navigationLayoutFor
 import com.fergolde.velodrome.presentation.navigation.Routes
 import com.fergolde.velodrome.presentation.player.PlayerScreen
 import com.fergolde.velodrome.presentation.player.SharedPlayerViewModel
@@ -94,7 +103,7 @@ fun VelodromeMainApp(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun MainScaffold(
     navController: NavHostController,
@@ -119,6 +128,53 @@ fun MainScaffold(
     val isArtists = currentDestination?.hasRoute<Routes.Artists>() == true
     val isAlbums = currentDestination?.hasRoute<Routes.Albums>() == true
     val isLogin = currentDestination?.hasRoute<Routes.Login>() == true
+
+    // S1: el ancho de ventana decide entre la bottom bar de teléfono y el rail
+    // de tablet. `LocalActivity` puede faltar en previews, así que sin Activity
+    // se asume teléfono: es el único layout que no cambia lo que había.
+    val activity = LocalActivity.current
+    val widthSizeClass = if (activity != null) {
+        calculateWindowSizeClass(activity).widthSizeClass
+    } else {
+        WindowWidthSizeClass.Compact
+    }
+    val navigationLayout = navigationLayoutFor(widthSizeClass)
+    val useSideRail = navigationLayout == VeloNavigationLayout.SideRail
+
+    // Destino activo de la navegación principal. El reproductor y los detalles
+    // no son pestañas: la cadena vacía deja barra y rail sin selección.
+    val currentRoute = when {
+        isHome -> "home"
+        isExplore || isArtists || isAlbums -> "explore"
+        isSettings -> "settings"
+        else -> ""
+    }
+    // Los destinos raíz se comportan igual desde la barra y desde el rail: se
+    // navega solo si no se está ya ahí, sin apilar copias del mismo destino.
+    val navigateToHomeTab: () -> Unit = {
+        if (!isHome) {
+            navController.navigate(Routes.Home) {
+                launchSingleTop = true
+                popUpTo(Routes.Home) { inclusive = false }
+            }
+        }
+    }
+    val navigateToExploreTab: () -> Unit = {
+        if (!isExplore) {
+            navController.navigate(Routes.Explore) {
+                launchSingleTop = true
+                popUpTo(Routes.Home) { inclusive = false }
+            }
+        }
+    }
+    val navigateToSettingsTab: () -> Unit = {
+        if (!isSettings) {
+            navController.navigate(Routes.Settings) {
+                launchSingleTop = true
+                popUpTo(Routes.Home) { inclusive = false }
+            }
+        }
+    }
 
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
@@ -165,6 +221,7 @@ fun MainScaffold(
         sheetContent = {
             if (isPlayerSheetActive) {
                 PlayerScreen(
+                    navigationLayout = navigationLayout,
                     onMinimizeClick = {
                         scope.launch { sheetState.bottomSheetState.partialExpand() }
                     },
@@ -201,106 +258,112 @@ fun MainScaffold(
                                     onPreviousClick = { sharedPlayerViewModel.previous() }
                                 )
                             }
-                            SharedBottomNavigationBar(
-                                currentRoute = when {
-                                    isHome -> "home"
-                                    isExplore || isArtists || isAlbums -> "explore"
-                                    isSettings -> "settings"
-                                    else -> ""
-                                },
-                                onHomeClick = {
-                                    if (!isHome) {
-                                        navController.navigate(Routes.Home) {
-                                            launchSingleTop = true
-                                            popUpTo(Routes.Home) { inclusive = false }
-                                        }
-                                    }
-                                },
-                                onExploreClick = {
-                                    if (!isExplore) {
-                                        navController.navigate(Routes.Explore) {
-                                            launchSingleTop = true
-                                            popUpTo(Routes.Home) { inclusive = false }
-                                        }
-                                    }
-                                },
-                                onSettingsClick = {
-                                    if (!isSettings) {
-                                        navController.navigate(Routes.Settings) {
-                                            launchSingleTop = true
-                                            popUpTo(Routes.Home) { inclusive = false }
-                                        }
-                                    }
-                                },
-                            )
+                            // En tablet la navegación vive en el rail lateral, así
+                            // que la bottom bar de teléfono solo se dibuja en Compact.
+                            if (!useSideRail) {
+                                SharedBottomNavigationBar(
+                                    currentRoute = currentRoute,
+                                    onHomeClick = navigateToHomeTab,
+                                    onExploreClick = navigateToExploreTab,
+                                    onSettingsClick = navigateToSettingsTab,
+                                )
+                            }
                         }
                     }
                 }
             ) { innerPaddingNavHost ->
-                Box(modifier = Modifier.padding(bottom = innerPaddingNavHost.calculateBottomPadding())) {
-                    NavHost(
-                        navController = navController,
-                        startDestination = startDestination,
-                        // No transitions in either direction: forward nav would
-                        // default to a 700ms crossfade, and back would still show
-                        // the system predictive-back scale during the edge swipe.
-                        // enableOnBackInvokedCallback=false in the manifest kills
-                        // that system animation; these kill any in-app crossfade.
-                        enterTransition = { EnterTransition.None },
-                        exitTransition = { ExitTransition.None },
-                        popEnterTransition = { EnterTransition.None },
-                        popExitTransition = { ExitTransition.None }
-                    ) {
-                        composable<Routes.Login> {
-                            LoginScreen(onLoginSuccess = onLoginSuccess)
-                        }
-                        composable<Routes.Home> {
-                            HomeScreen(
-                                onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) },
-                                onPlaylistClick = { id -> navController.navigate(Routes.PlaylistDetail(id)) }
-                            )
-                        }
-                        composable<Routes.Explore> {
-                            ExploreScreen(
-                                onArtistClick = { id -> navController.navigate(Routes.ArtistDetail(id)) },
-                                onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) },
-                                onArtistsViewAllClick = { navController.navigate(Routes.Artists) },
-                                onAlbumsViewAllClick = { navController.navigate(Routes.Albums) }
-                            )
-                        }
-                        composable<Routes.Artists> {
-                            ArtistsScreen(
-                                onArtistClick = { artist -> navController.navigate(Routes.ArtistDetail(artist.id)) }
-                            )
-                        }
-                        composable<Routes.Albums> {
-                            AlbumsScreen(
-                                onAlbumClick = { album -> navController.navigate(Routes.AlbumDetail(album.id)) }
-                            )
-                        }
-                        composable<Routes.Settings> {
-                            SettingsScreen(
-                                onNavigateBack = { navController.popBackStack() },
-                                onLogout = onLogout
-                            )
-                        }
-                        composable<Routes.ArtistDetail> { backStackEntry ->
-                            ArtistDetailScreen(
-                                onBackClick = { navController.popBackStack() },
-                                onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) }
-                            )
-                        }
-                        composable<Routes.PlaylistDetail> {
-                            PlaylistDetailScreen(
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-                        composable<Routes.AlbumDetail> { backStackEntry ->
-                            AlbumDetailScreen(
-                                onBackClick = { navController.popBackStack() }
-                            )
+                val navHostModifier =
+                    Modifier.padding(bottom = innerPaddingNavHost.calculateBottomPadding())
+                // El grafo de destinos se comparte entre teléfono y tablet: se
+                // envuelve en una lambda para no duplicarlo en las dos ramas.
+                val navHost: @Composable (Modifier) -> Unit = { hostModifier ->
+                    Box(modifier = hostModifier) {
+                        NavHost(
+                            navController = navController,
+                            startDestination = startDestination,
+                            // No transitions in either direction: forward nav would
+                            // default to a 700ms crossfade, and back would still show
+                            // the system predictive-back scale during the edge swipe.
+                            // enableOnBackInvokedCallback=false in the manifest kills
+                            // that system animation; these kill any in-app crossfade.
+                            enterTransition = { EnterTransition.None },
+                            exitTransition = { ExitTransition.None },
+                            popEnterTransition = { EnterTransition.None },
+                            popExitTransition = { ExitTransition.None }
+                        ) {
+                            composable<Routes.Login> {
+                                LoginScreen(onLoginSuccess = onLoginSuccess)
+                            }
+                            composable<Routes.Home> {
+                                HomeScreen(
+                                    onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) },
+                                    onPlaylistClick = { id -> navController.navigate(Routes.PlaylistDetail(id)) }
+                                )
+                            }
+                            composable<Routes.Explore> {
+                                ExploreScreen(
+                                    onArtistClick = { id -> navController.navigate(Routes.ArtistDetail(id)) },
+                                    onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) },
+                                    onArtistsViewAllClick = { navController.navigate(Routes.Artists) },
+                                    onAlbumsViewAllClick = { navController.navigate(Routes.Albums) }
+                                )
+                            }
+                            composable<Routes.Artists> {
+                                ArtistsScreen(
+                                    onArtistClick = { artist -> navController.navigate(Routes.ArtistDetail(artist.id)) }
+                                )
+                            }
+                            composable<Routes.Albums> {
+                                AlbumsScreen(
+                                    onAlbumClick = { album -> navController.navigate(Routes.AlbumDetail(album.id)) }
+                                )
+                            }
+                            composable<Routes.Settings> {
+                                SettingsScreen(
+                                    onNavigateBack = { navController.popBackStack() },
+                                    onLogout = onLogout
+                                )
+                            }
+                            composable<Routes.ArtistDetail> { backStackEntry ->
+                                ArtistDetailScreen(
+                                    onBackClick = { navController.popBackStack() },
+                                    onAlbumClick = { id -> navController.navigate(Routes.AlbumDetail(id)) }
+                                )
+                            }
+                            composable<Routes.PlaylistDetail> {
+                                PlaylistDetailScreen(
+                                    onBackClick = { navController.popBackStack() }
+                                )
+                            }
+                            composable<Routes.AlbumDetail> { backStackEntry ->
+                                AlbumDetailScreen(
+                                    onBackClick = { navController.popBackStack() }
+                                )
+                            }
                         }
                     }
+                }
+                if (useSideRail) {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        // El rail reemplaza a la bottom bar en tablet; el login
+                        // sigue sin navegación principal.
+                        if (!isLogin) {
+                            SharedNavigationRail(
+                                currentRoute = currentRoute,
+                                onHomeClick = navigateToHomeTab,
+                                onExploreClick = navigateToExploreTab,
+                                onSettingsClick = navigateToSettingsTab,
+                            )
+                        }
+                        navHost(
+                            Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .then(navHostModifier)
+                        )
+                    }
+                } else {
+                    navHost(navHostModifier)
                 }
             }
         }
