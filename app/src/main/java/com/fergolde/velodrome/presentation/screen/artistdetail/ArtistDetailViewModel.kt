@@ -15,6 +15,7 @@ import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -53,6 +54,10 @@ class ArtistDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ArtistDetailUiState())
     val uiState: StateFlow<ArtistDetailUiState> = _uiState.asStateFlow()
 
+    // Job de la última carga del artista: `retry()` lo cancela antes de relanzar
+    // el loader para no dejar dos peticiones vivas a la vez.
+    private var loadJob: Job? = null
+
     init {
         loadArtistData()
     }
@@ -64,8 +69,9 @@ class ArtistDetailViewModel @Inject constructor(
         }
 
         _uiState.update { it.copy(isLoading = true, error = null) }
+        loadJob?.cancel()
 
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             artistUseCases.getArtist(artistId)
                 .onSuccess { artistWithAlbums ->
                     // Ordenar álbumes por año ascendente (más viejo a más reciente)
@@ -80,6 +86,17 @@ class ArtistDetailViewModel @Inject constructor(
                     _uiState.update { it.copy(error = e.message, isLoading = false) }
                 }
         }
+    }
+
+    /**
+     * Reintenta la carga tras un fallo.
+     *
+     * Limpia el error y relanza el mismo loader sobre este ViewModel: la pantalla
+     * no se recrea y no queda ningún ViewModel anterior retenido.
+     */
+    fun retry() {
+        _uiState.update { it.copy(error = null) }
+        loadArtistData()
     }
 
     // Lógica para obtener todas las canciones de todos los álbumes

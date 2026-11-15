@@ -13,19 +13,25 @@ import com.fergolde.velodrome.domain.usecase.TrackUseCases
 import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
@@ -113,6 +119,26 @@ class ArtistDetailViewModelTest {
         assertFalse(viewModel.uiState.value.isPreparingPlayback)
     }
 
+    /**
+     * El detalle de artista solo cargaba desde `init`: un fallo dejaba el error
+     * en pantalla sin forma de reintentar.
+     */
+    @Test
+    fun `retry limpia el error y vuelve a pedir el artista`() = runTest {
+        coEvery { getArtistUseCase(any()) } returns Result.failure(RuntimeException("sin red"))
+        val viewModel = createViewModel()
+        assertNotNull(viewModel.uiState.value.error)
+
+        coEvery { getArtistUseCase(any()) } returns Result.success(ArtistWithAlbums(artist, listOf(album)))
+        viewModel.retry()
+
+        assertNull(viewModel.uiState.value.error)
+        assertEquals(artist, viewModel.uiState.value.artist)
+        assertEquals(listOf(album), viewModel.uiState.value.albums)
+        assertFalse(viewModel.uiState.value.isLoading)
+        coVerify(exactly = 2) { getArtistUseCase("a1") }
+    }
+
     @Test
     fun `startArtistRadio does not set isPreparingPlayback`() = runTest {
         val viewModel = createViewModel()
@@ -120,5 +146,36 @@ class ArtistDetailViewModelTest {
 
         assertFalse(viewModel.uiState.value.isPreparingPlayback)
         verify { smartRadioEngine.startRadio(any()) }
+    }
+
+    /**
+     * `retry()` cancela la carga anterior antes de relanzarla. Sin esa
+     * cancelación, cada reintento dejaría una petición más viva a la vez.
+     */
+    @Test
+    fun `retry x3 no acumula jobs ni deja dos peticiones vivas`() = runTest {
+        var started = 0
+        var ended = 0
+        var maxLive = 0
+        coEvery { getArtistUseCase("a1") } coAnswers {
+            started++
+            maxLive = maxOf(maxLive, started - ended)
+            try {
+                awaitCancellation()
+            } finally {
+                ended++
+            }
+        }
+
+        val viewModel = createViewModel()
+        assertEquals(1, started)
+
+        repeat(3) { viewModel.retry() }
+        advanceUntilIdle()
+
+        assertEquals(4, started)
+        assertEquals(3, ended)
+        assertEquals(1, started - ended)
+        assertEquals(1, maxLive)
     }
 }

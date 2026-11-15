@@ -58,6 +58,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Playlist
+import com.fergolde.velodrome.presentation.components.VeloListBottomClearance
 import com.fergolde.velodrome.presentation.components.VeloSectionHeader
 import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 import com.fergolde.velodrome.ui.theme.VeloPalette
@@ -104,7 +105,10 @@ fun HomeScreen(
 
             else -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    // Aire inferior común: sin esto el mini-player tapa el final
+                    // de la lista en cuanto la pantalla no declara su propio hueco.
+                    contentPadding = PaddingValues(bottom = VeloListBottomClearance),
                 ) {
 
         // ── Shuffle button ─────────────────────────────────────────────────
@@ -171,8 +175,8 @@ fun HomeScreen(
         // ── Explora ────────────────────────────────────────────────────────
         item {
             VeloSectionHeader(
-                eyebrow = "Mixes y Descubrimiento",
-                title   = "Explora",
+                eyebrow = stringResource(R.string.home_explore_eyebrow),
+                title   = stringResource(R.string.home_explore_title),
                 modifier = Modifier.padding(horizontal = 20.dp),
                 onViewAll = null
             )
@@ -183,7 +187,7 @@ fun HomeScreen(
                 onTop100Click     = { viewModel.playTop100() },
                 onDiscoveryClick  = { viewModel.playDiscovery() },
             )
-            Spacer(Modifier.height(36.dp)) // mini-player clearance
+            Spacer(Modifier.height(36.dp))
         }
 
         // ── Tus Playlists (servidor Navidrome) ────────────────────────────
@@ -200,7 +204,6 @@ fun HomeScreen(
                     playlists = state.playlists,
                     onPlaylistClick = { onPlaylistClick(it.id) }
                 )
-                Spacer(Modifier.height(100.dp)) // mini-player clearance
             }
         }
                 }

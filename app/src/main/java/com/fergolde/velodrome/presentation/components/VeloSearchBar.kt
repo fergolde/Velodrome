@@ -91,7 +91,7 @@ fun VeloSearchBar(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Clear,
-                        contentDescription = "Borrar búsqueda",
+                        contentDescription = stringResource(R.string.action_clear_search),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp),
                     )

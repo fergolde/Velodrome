@@ -13,6 +13,7 @@ import com.fergolde.velodrome.presentation.audio.SmartRadioEngine
 import com.fergolde.velodrome.presentation.player.PlayerManager
 import com.fergolde.velodrome.util.shuffledWithArtistSpacing
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,6 +43,10 @@ class PlaylistDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(PlaylistDetailUiState())
     val uiState: StateFlow<PlaylistDetailUiState> = _uiState.asStateFlow()
 
+    // Job de la última carga de la playlist: `retry()` lo cancela antes de
+    // relanzar el loader para no dejar dos peticiones vivas a la vez.
+    private var loadJob: Job? = null
+
     init {
         loadPlaylist()
 
@@ -59,8 +64,9 @@ class PlaylistDetailViewModel @Inject constructor(
         }
 
         _uiState.update { it.copy(isLoading = true, error = null) }
+        loadJob?.cancel()
 
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             playlistUseCases.getPlaylist(playlistId)
                 .onSuccess { playlist ->
                     _uiState.update {
@@ -75,6 +81,17 @@ class PlaylistDetailViewModel @Inject constructor(
                     _uiState.update { it.copy(error = e.message, isLoading = false) }
                 }
         }
+    }
+
+    /**
+     * Reintenta la carga tras un fallo.
+     *
+     * Limpia el error y relanza el mismo loader sobre este ViewModel: la pantalla
+     * no se recrea y no queda ningún ViewModel anterior retenido.
+     */
+    fun retry() {
+        _uiState.update { it.copy(error = null) }
+        loadPlaylist()
     }
 
     fun playTrack(track: Track) {

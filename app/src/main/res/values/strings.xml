@@ -28,6 +28,8 @@
     <string name="home_playlists">Tus Playlists</string>
     <string name="home_playlist_songs">canciones</string>
     <string name="home_discover">DESCUBRE</string>
+    <string name="home_explore_eyebrow">Mixes y Descubrimiento</string>
+    <string name="home_explore_title">Explora</string>
     <string name="home_feature_offline_title">Sin datos</string>
     <string name="home_feature_offline_subtitle">Solo offline</string>
 
@@ -57,6 +59,13 @@
     <string name="explore_search_hint">Artistas, álbumes o temas</string>
     <string name="explore_range_years">RANGO DE AÑOS</string>
     <string name="explore_years">Años</string>
+    <string name="explore_clear_year_filter">Quitar filtro</string>
+    <string name="explore_search_empty">Sin resultados para &quot;%1$s&quot;</string>
+    <string name="explore_search_tracks">Canciones</string>
+    <string name="explore_play_plain">Reproducir (aleatorio)</string>
+    <string name="explore_play_genres" tools:ignore="PluralsCandidate">Reproducir · %1$d géneros</string>
+    <string name="explore_play_year_range">Reproducir · %1$d–%2$d</string>
+    <string name="explore_play_genres_and_years" tools:ignore="PluralsCandidate">Reproducir · %1$d géneros, %2$d–%3$d</string>
 
 <!-- Artists -->
     <string name="artists_search_hint">Buscar artistas…</string>
@@ -71,6 +80,10 @@
     <string name="artist_detail_albums_count" tools:ignore="PluralsCandidate">%d álbumes</string>
 
     <!-- Album Detail -->
+    <string name="album_detail_meta" tools:ignore="PluralsCandidate">%1$d tracks · %2$d minutos</string>
+
+    <!-- Playlist Detail -->
+    <string name="playlist_detail_meta" tools:ignore="PluralsCandidate">%1$d canciones · %2$d min</string>
 
     <!-- Track Options -->
 
@@ -107,6 +120,10 @@
     <string name="nav_back">Atrás</string>
     <string name="view_all">Ver Todo</string>
     <string name="play">Reproducir</string>
+    <!-- Etiqueta del botón de reproducir todo en los detalles. El copy previo a
+         la extracción a recursos era "Play" también en español: se mantiene
+         para no cambiar el texto visible (S4). -->
+    <string name="action_play_all">Play</string>
     <string name="error_loading">Error al cargar</string>
     <string name="retry">Reintentar</string>
     <string name="artists_empty">No hay artistas guardados</string>
@@ -124,6 +141,7 @@
 
     <!-- Settings -->
     <string name="settings_color_custom_hex">Personalizado (HEX)</string>
+    <string name="settings_cache_used">usado: %1$s</string>
 
     <!-- Auth errors -->
     <string name="error_no_connection">No se puede conectar al servidor. Comprueba la URL y tu conexión.</string>
@@ -151,4 +169,14 @@
     <string name="snackbar_added_to_queue">Añadido a la cola</string>
     <string name="snackbar_album_added_to_queue">Álbum añadido a la cola</string>
     <string name="snackbar_playlist_added_to_queue">Playlist añadida a la cola</string>
+    <string name="snackbar_playback_started">Reproducción iniciada</string>
+    <string name="snackbar_albums_added_to_queue">Álbumes añadidos a la cola</string>
+
+    <!-- Acciones de icono (lector de pantalla) -->
+    <string name="action_add_to_queue">Añadir a la cola</string>
+    <string name="action_artist_radio">Radio del artista</string>
+    <string name="action_clear_search">Borrar búsqueda</string>
+    <string name="queue_drag_handle">Reordenar en la cola</string>
+    <string name="player_position_state">%1$s de %2$s</string>
+    <string name="dot_separator">" · "</string>
 </resources>

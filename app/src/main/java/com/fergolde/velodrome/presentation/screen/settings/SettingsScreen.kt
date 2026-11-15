@@ -36,6 +36,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import com.fergolde.velodrome.R
+import com.fergolde.velodrome.presentation.components.VeloListBottomClearance
+import com.fergolde.velodrome.presentation.components.VeloSheetShape
 import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 import com.fergolde.velodrome.ui.theme.SyneFontFamily
 import com.fergolde.velodrome.ui.theme.VeloPalette
@@ -158,20 +160,24 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            IconButton(
-                onClick = onNavigateBack,
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(VeloPalette.Bg3)
-                    .border(1.dp, VeloPalette.Border, RoundedCornerShape(12.dp)),
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.settings_back),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp),
-                )
+            // El círculo visible sigue en 38dp; el IconButton aporta el área
+            // táctil de 48dp sin cambiar el dibujo.
+            IconButton(onClick = onNavigateBack) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(VeloPalette.Bg3)
+                        .border(1.dp, VeloPalette.Border, RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.settings_back),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
             Text(
                 text = stringResource(R.string.settings_title),
@@ -494,7 +500,7 @@ fun SettingsScreen(
                 )
             }
 
-            Spacer(Modifier.height(100.dp))
+            Spacer(Modifier.height(VeloListBottomClearance))
         }
     }
 }
@@ -670,7 +676,7 @@ fun CacheConfigRow(
                     color = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "usado: $currentSizeFormatted",
+                    text = stringResource(R.string.settings_cache_used, currentSizeFormatted),
                     fontFamily = DmSansFontFamily,
                     fontSize = 10.sp,
                     color = VeloPalette.TextTertiary,
@@ -698,7 +704,7 @@ fun CacheConfigRow(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(38.dp)
+                        .height(48.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(bgColor)
                         .then(
@@ -743,7 +749,9 @@ fun ColorPickerPanel(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = VeloPalette.Bg3,
+        // Misma superficie que el resto de sheets de la app.
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = VeloSheetShape,
     ) {
         Column(
             modifier = Modifier

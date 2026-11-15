@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.PlayArrow
@@ -25,6 +26,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fergolde.velodrome.R
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
+
+/**
+ * Forma única de los bottom sheets de la app.
+ *
+ * Antes cada llamador repetía su propio `RoundedCornerShape`; centralizarla
+ * mantiene la misma silueta cuando se añade o mueve un sheet.
+ */
+val VeloSheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
 
 @Composable
 fun UniversalOptionsSheet(
