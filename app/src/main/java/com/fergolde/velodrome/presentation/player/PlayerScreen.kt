@@ -42,7 +42,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.DragIndicator
@@ -990,19 +989,6 @@ fun QueueTrackItem(
                         MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
-                )
-            }
-
-            Spacer(modifier = Modifier.width(4.dp))
-
-            // Acción alternativa al swipe horizontal: quitar la pista sin gesto,
-            // con área táctil de 48dp y nombre para el lector de pantalla.
-            IconButton(onClick = onRemove) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(R.string.queue_remove),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.size(18.dp)
                 )
             }
 

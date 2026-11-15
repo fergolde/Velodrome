@@ -170,7 +170,6 @@
     <string name="action_artist_radio">Artist radio</string>
     <string name="action_clear_search">Clear search</string>
     <string name="queue_drag_handle">Reorder in queue</string>
-    <string name="queue_remove">Remove from queue</string>
     <string name="player_position_state">%1$s of %2$s</string>
     <string name="dot_separator">" · "</string>
 

@@ -177,7 +177,6 @@
     <string name="action_artist_radio">Radio del artista</string>
     <string name="action_clear_search">Borrar búsqueda</string>
     <string name="queue_drag_handle">Reordenar en la cola</string>
-    <string name="queue_remove">Quitar de la cola</string>
     <string name="player_position_state">%1$s de %2$s</string>
     <string name="dot_separator">" · "</string>
 </resources>
