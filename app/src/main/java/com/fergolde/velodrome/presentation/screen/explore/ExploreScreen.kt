@@ -1,5 +1,6 @@
 package com.fergolde.velodrome.presentation.screen.explore
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -42,6 +43,9 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -82,7 +86,7 @@ import com.fergolde.velodrome.util.formatDuration
 
 // ─── SCREEN ──────────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun ExploreScreen(
     viewModel: ExploreViewModel = hiltViewModel(),
@@ -92,6 +96,11 @@ fun ExploreScreen(
     onAlbumClick: (String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // S1: la cantidad de chips de género por fila sigue el ancho de ventana.
+    // Sin Activity (previews) se asume teléfono, el layout que no cambia.
+    val widthSizeClass = LocalActivity.current
+        ?.let { calculateWindowSizeClass(it).widthSizeClass }
+        ?: WindowWidthSizeClass.Compact
     // Host hoisteado: el snackbar se dibuja como capa sobre la lista, así no se
     // desplaza con el contenido ni queda debajo del mini-player.
     val snackbarHostState = remember { SnackbarHostState() }
@@ -220,6 +229,7 @@ fun ExploreScreen(
                         genres         = uiState.genres,
                         selectedGenres = uiState.selectedGenres,
                         onGenreToggle  = viewModel::onGenreToggle,
+                        columns        = genreGridColumns(widthSizeClass),
                         modifier       = Modifier.padding(horizontal = 20.dp),
                     )
                     Spacer(Modifier.height(36.dp))
@@ -381,18 +391,46 @@ fun VeloArtistCircle(
 
 // ─── GENRE GRID ──────────────────────────────────────────────────────────────
 
+/**
+ * Chips de género por fila según el ancho de ventana (S1).
+ *
+ * Antes eran tres filas fijas de tres chips: en tablet los chips quedaban
+ * angostos y el texto se recortaba. `Compact` conserva las tres columnas del
+ * teléfono y las clases de tablet suman una o tres más.
+ */
+internal fun genreGridColumns(widthSizeClass: WindowWidthSizeClass): Int =
+    when (widthSizeClass) {
+        WindowWidthSizeClass.Medium -> 4
+        WindowWidthSizeClass.Expanded -> 6
+        else -> 3
+    }
+
+/**
+ * Grilla de chips de género.
+ *
+ * Los chips se dibujan con filas armadas a mano, no con un `LazyVerticalGrid`:
+ * este composable vive dentro del `LazyColumn` de Explore y dos listas
+ * perezosas anidadas en la misma dirección se miden con altura infinita.
+ *
+ * @param columns chips por fila; el llamador lo deriva del ancho de ventana con
+ *   [genreGridColumns]. El valor por defecto mantiene las tres columnas de
+ *   teléfono para cualquier llamador que no piense en el tamaño.
+ */
 @Composable
 fun VeloGenreGrid(
     genres: List<String>,
     modifier: Modifier = Modifier,
     selectedGenres: Set<String> = emptySet(),
     onGenreToggle: (String) -> Unit = {},
+    columns: Int = 3,
 ) {
+    val columnCount = columns.coerceAtLeast(1)
+
     if (genres.isEmpty()) {
         Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             repeat(3) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    repeat(3) {
+                    repeat(columnCount) {
                         Box(
                             Modifier
                                 .weight(1f)
@@ -408,7 +446,7 @@ fun VeloGenreGrid(
     }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        genres.chunked(3).forEach { row ->
+        genres.chunked(columnCount).forEach { row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -422,7 +460,7 @@ fun VeloGenreGrid(
                     )
                 }
                 // fill remaining columns
-                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                repeat(columnCount - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
