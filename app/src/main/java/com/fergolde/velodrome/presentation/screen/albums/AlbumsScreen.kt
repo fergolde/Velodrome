@@ -1,6 +1,6 @@
 package com.fergolde.velodrome.presentation.screen.albums
 
-import android.content.res.Configuration
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +29,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.paging.LoadState
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -57,7 +59,22 @@ import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import com.fergolde.velodrome.presentation.screen.home.ArtworkPrefetcher
 import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Columnas de la grilla de álbumes según el ancho de ventana (S1).
+ *
+ * Reemplaza la mezcla anterior de `smallestScreenWidthDp` y orientación: la
+ * clase de ancho ya distingue teléfono (`Compact`), tablet vertical (`Medium`)
+ * y tablet ancha (`Expanded`). Cualquier clase desconocida cae en el teléfono,
+ * que es el layout con menos superficie de cambio.
+ */
+internal fun albumGridColumns(widthSizeClass: WindowWidthSizeClass): Int =
+    when (widthSizeClass) {
+        WindowWidthSizeClass.Medium -> 4
+        WindowWidthSizeClass.Expanded -> 5
+        else -> 3
+    }
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun AlbumsScreen(
     viewModel: AlbumsViewModel = hiltViewModel(),
@@ -69,14 +86,13 @@ fun AlbumsScreen(
     var showOptions by remember { mutableStateOf(false) }
     var selectedAlbum by remember { mutableStateOf<Album?>(null) }
     val sheetState = rememberModalBottomSheetState()
-    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val isTablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
+    // S1: las columnas salen del ancho de ventana. Sin Activity (previews) se
+    // asume teléfono, el único layout que no cambia.
+    val widthSizeClass = LocalActivity.current
+        ?.let { calculateWindowSizeClass(it).widthSizeClass }
+        ?: WindowWidthSizeClass.Compact
     val gridState = rememberLazyGridState()
-    val gridColumns = when {
-        isLandscape -> GridCells.Adaptive(180.dp)
-        isTablet -> GridCells.Fixed(4)
-        else -> GridCells.Fixed(3)
-    }
+    val gridColumns = GridCells.Fixed(albumGridColumns(widthSizeClass))
 
     Box(
         modifier = Modifier

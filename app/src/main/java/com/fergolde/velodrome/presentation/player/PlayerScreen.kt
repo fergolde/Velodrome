@@ -130,6 +130,8 @@ fun PlayerScreen(
         if (isLandscape) showQueue = false
     }
 
+    // La navegación del reproductor es la misma bottom bar que en el resto de
+    // la app, también en tablet: el sheet ocupa toda la ventana.
     Column(
         modifier = Modifier
             .fillMaxSize()

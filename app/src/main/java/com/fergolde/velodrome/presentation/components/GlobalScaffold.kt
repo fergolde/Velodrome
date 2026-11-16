@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,6 +57,40 @@ enum class VeloTab(val route: String) {
         fun fromRoute(route: String?): VeloTab? = entries.firstOrNull { it.route == route }
     }
 }
+
+/**
+ * Pestañas visibles, en el orden en el que se dibujan.
+ *
+ * Las pestañas se ocultan desde la propia barra, así que la lista filtrada
+ * tiene que preservar el orden declarado en [VeloTab].
+ */
+internal fun visibleVeloTabs(
+    showHome: Boolean = true,
+    showExplore: Boolean = true,
+    showSettings: Boolean = true,
+): List<VeloTab> = VeloTab.entries.filter { tab ->
+    when (tab) {
+        VeloTab.Home -> showHome
+        VeloTab.Explore -> showExplore
+        VeloTab.Settings -> showSettings
+    }
+}
+
+/** Icono de cada pestaña de la barra inferior. */
+private val VeloTab.icon: ImageVector
+    get() = when (this) {
+        VeloTab.Home -> Icons.Default.Home
+        VeloTab.Explore -> Icons.Default.Explore
+        VeloTab.Settings -> Icons.Default.Settings
+    }
+
+/** Etiqueta de cada pestaña de la barra inferior. */
+private val VeloTab.labelRes: Int
+    get() = when (this) {
+        VeloTab.Home -> R.string.nav_home
+        VeloTab.Explore -> R.string.nav_explore_label
+        VeloTab.Settings -> R.string.nav_settings
+    }
 
 /**
  * Aire inferior común de las listas que viven detrás del mini-player.
@@ -156,46 +191,17 @@ fun SharedBottomNavigationBar(
         containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
         tonalElevation = 0.dp
     ) {
-        // Home
-        if (showHome) {
+        visibleVeloTabs(showHome, showExplore, showSettings).forEach { tab ->
             NavigationBarItem(
-                icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                label = { Text(stringResource(R.string.nav_home)) },
-                selected = selectedTab == VeloTab.Home,
+                icon = { Icon(tab.icon, contentDescription = null) },
+                label = { Text(stringResource(tab.labelRes)) },
+                selected = selectedTab == tab,
                 onClick = {
-                    onHomeClick() 
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
-        }
-        // Explore
-        if (showExplore) {
-            NavigationBarItem(
-                icon = { Icon(Icons.Default.Explore, contentDescription = null) },
-                label = { Text(stringResource(R.string.nav_explore_label)) },
-                selected = selectedTab == VeloTab.Explore,
-                onClick = {
-                    onExploreClick() 
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
-        }
-        // Settings
-        if (showSettings) {
-            NavigationBarItem(
-                icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-                label = { Text(stringResource(R.string.nav_settings)) },
-                selected = selectedTab == VeloTab.Settings,
-                onClick = {
-                    onSettingsClick() 
+                    when (tab) {
+                        VeloTab.Home -> onHomeClick()
+                        VeloTab.Explore -> onExploreClick()
+                        VeloTab.Settings -> onSettingsClick()
+                    }
                 },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.primary,

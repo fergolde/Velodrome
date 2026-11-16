@@ -1,6 +1,7 @@
 package com.fergolde.velodrome.presentation.screen.albumdetail
 
 import android.content.res.Configuration
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -38,6 +40,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
@@ -57,6 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -193,6 +199,23 @@ fun AlbumDetailScreen(
     }
 }
 
+/**
+ * Ancho máximo de la columna central del detalle de álbum en tablet (S1).
+ *
+ * Mismo tope que los otros detalles. Está por encima de los 840dp de la clase
+ * `Medium`, así que solo recorta de verdad en `Expanded`.
+ */
+internal val AlbumDetailContentMaxWidth: Dp = 880.dp
+
+/**
+ * Ancho máximo del contenido del detalle de álbum (S1).
+ *
+ * `Dp.Infinity` significa "sin tope": el teléfono conserva el ancho completo.
+ */
+internal fun albumDetailContentMaxWidth(widthSizeClass: WindowWidthSizeClass): Dp =
+    if (widthSizeClass == WindowWidthSizeClass.Compact) Dp.Infinity else AlbumDetailContentMaxWidth
+
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 private fun AlbumContent(
     album: Album?,
@@ -206,6 +229,12 @@ private fun AlbumContent(
     currentTrackId: String? = null
 ) {
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    // S1: en tablet la columna del detalle se acota y se centra; el header deja
+    // de estirarse de borde a borde. En teléfono el tope es infinito.
+    val widthSizeClass = LocalActivity.current
+        ?.let { calculateWindowSizeClass(it).widthSizeClass }
+        ?: WindowWidthSizeClass.Compact
+    val contentMaxWidth = albumDetailContentMaxWidth(widthSizeClass)
 
     if (isLandscape) {
         // ── Landscape: todo izq (cover+info+btns), solo tracks der ───────
@@ -353,25 +382,30 @@ private fun AlbumContent(
             }
         }
     } else {
-        // ── Portrait: layout actual (sin cambios) ─────────────────────────
-        LazyColumn(contentPadding = PaddingValues(bottom = VeloListBottomClearance)) {
-            item {
-                AlbumHeader(
-                    album = album,
-                    tracks = tracks,
-                    onPlayAllClick = onPlayAllClick,
-                    onShuffleClick = onShuffleClick,
-                    onAddToQueueClick = onAddToQueueClick,
-                    onBackClick = onBackClick
-                )
-            }
-            items(tracks, key = { it.id }) { track ->
-                TrackItem(
-                    track = track,
-                    isPlaying = track.id == currentTrackId,
-                    onClick = { onTrackClick(track) },
-                    onLongClick = { onTrackLongClick(track) }
-                )
+        // ── Portrait: columna centrada a ancho contenido en tablet (S1) ──
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            LazyColumn(
+                modifier = Modifier.widthIn(max = contentMaxWidth),
+                contentPadding = PaddingValues(bottom = VeloListBottomClearance)
+            ) {
+                item {
+                    AlbumHeader(
+                        album = album,
+                        tracks = tracks,
+                        onPlayAllClick = onPlayAllClick,
+                        onShuffleClick = onShuffleClick,
+                        onAddToQueueClick = onAddToQueueClick,
+                        onBackClick = onBackClick
+                    )
+                }
+                items(tracks, key = { it.id }) { track ->
+                    TrackItem(
+                        track = track,
+                        isPlaying = track.id == currentTrackId,
+                        onClick = { onTrackClick(track) },
+                        onLongClick = { onTrackLongClick(track) }
+                    )
+                }
             }
         }
     }
