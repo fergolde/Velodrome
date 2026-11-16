@@ -1,7 +1,7 @@
 # Feature: artist-sort
 
 ## Specs
-S1: Orden y filtros en artista/álbum (por año, más tocadas, aleatorio). No tocar el orden de tracks del detalle de álbum.
+S1: Orden y filtros en artista/álbum (año ↑↓, nombre, aleatorio, más tocadas por historial local de scrobbles). No tocar el orden de tracks del detalle de álbum.
 S2 (fuera de alcance, follow-up): Historial y sugerencias en búsqueda.
 S3 (fuera de alcance, follow-up): Radio multi-semilla + exclusiones.
 
@@ -14,3 +14,9 @@ S3 (fuera de alcance, follow-up): Radio multi-semilla + exclusiones.
 
 ## Log
 L1: Usuario elige el punto 2 del roadmap tras cerrar tablet (rama feature/tablet-polish pendiente de push).
+L4: Usuario reporta que en artist en horizontal los álbumes no ocupan todo el ancho (tope 880dp también en apaisado). Worker extrae artistAlbumsContentMaxWidth pura (horizontal sin tope, vertical con tope) + 3 tests RED-GREEN; suite 358 verdes, lint limpio.
+L2: Mapa listo: álbumes vienen de getArtist sin playCount (solo SongDto lo trae); default actual año asc con nulls a 0; patrón Settings/DataStore identificado. Usuario decide más-tocadas por historial local.
+L3: Worker implementó orden (año ↑↓, nombre, aleatorio con semilla, más tocadas por playCount local de Room) + filtro por año + preferencia persistida (clave artist_album_sort_order); 16+5+3 tests nuevos RED-GREEN; suite 355 verdes, lint limpio. Gap documentado en KDoc: sin log durable de scrobbles en device.
+L5: Usuario: segundo tap sobre el año seleccionado vuelve a Todos. Implementado como toggle en el chip (sin test JVM posible, verificado con suite + lint en verde). Capturas en tablet del sort + filtro.
+L6: Usuario: el chip seleccionado debe llevar el color de acento, no gris. Aplicado selectedContainerColor=primary + selectedLabelColor=onPrimary en los chips de año.
+L7: Concepto en prueba (usuario): header sin avatar de 180dp, portada a sangre completa difuminada (blur + scrim) reutilizando el cargador existente, degradado a fondo plano sin portada. Captura en tablet verifica bleed completo y legibilidad. Usuario fija blur en 10dp.

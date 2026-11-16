@@ -78,6 +78,13 @@
     <!-- Artist Detail -->
     <string name="artist_detail_albums">Álbumes</string>
     <string name="artist_detail_albums_count" tools:ignore="PluralsCandidate">%d álbumes</string>
+    <!-- Orden y filtro de álbumes (S1) -->
+    <string name="artist_sort_year_asc">Año ↑</string>
+    <string name="artist_sort_year_desc">Año ↓</string>
+    <string name="artist_sort_title">Nombre A-Z</string>
+    <string name="artist_sort_most_played">Más tocadas</string>
+    <string name="artist_sort_random">Aleatorio</string>
+    <string name="artist_filter_all_years">Todos</string>
 
     <!-- Album Detail -->
     <string name="album_detail_meta" tools:ignore="PluralsCandidate">%1$d tracks · %2$d minutos</string>
