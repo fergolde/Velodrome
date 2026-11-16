@@ -1,5 +1,6 @@
 package com.fergolde.velodrome.presentation.screen.explore
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -61,12 +62,19 @@ import androidx.compose.ui.Alignment
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -77,6 +85,7 @@ import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
 import com.fergolde.velodrome.presentation.components.VeloListBottomClearance
 import com.fergolde.velodrome.presentation.components.VeloSheetShape
 import com.fergolde.velodrome.presentation.components.VeloSearchBar
+import com.fergolde.velodrome.presentation.components.VeloSearchDropdown
 import com.fergolde.velodrome.presentation.components.VeloSectionHeader
 import com.fergolde.velodrome.presentation.components.VeloSnackbarHost
 import com.fergolde.velodrome.presentation.components.adaptiveGridColumns
@@ -89,6 +98,7 @@ import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 import com.fergolde.velodrome.ui.theme.SyneFontFamily
 import com.fergolde.velodrome.ui.theme.VeloPalette
 import com.fergolde.velodrome.util.formatDuration
+import kotlin.math.roundToInt
 
 // ─── SCREEN ──────────────────────────────────────────────────────────────────
 
@@ -109,7 +119,24 @@ fun ExploreScreen(
     // desplaza con el contenido ni queda debajo del mini-player.
     val snackbarHostState = remember { SnackbarHostState() }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // ── Estado del desplegable de búsqueda ─────────────────────────────────
+    // El foco vive en el campo de texto, así que se observa desde aquí. La
+    // posición de la barra se mide para anclar el desplegable a su borde
+    // inferior, y sigue a la barra si el contenido se desplaza.
+    val focusManager = LocalFocusManager.current
+    var searchFieldFocused by remember { mutableStateOf(false) }
+    var searchBarBounds by remember { mutableStateOf<Rect?>(null) }
+    var rootOrigin by remember { mutableStateOf(Offset.Zero) }
+    val closeSearchOverlay: () -> Unit = {
+        searchFieldFocused = false
+        focusManager.clearFocus()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { rootOrigin = it.boundsInWindow().topLeft },
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -124,39 +151,19 @@ fun ExploreScreen(
                         query = uiState.searchQuery,
                         onQueryChange = viewModel::onSearchQueryChange,
                         onClearClick = viewModel::clearSearch,
+                        onFocusChanged = { searchFieldFocused = it },
+                        modifier = Modifier.onGloballyPositioned {
+                            searchBarBounds = it.boundsInWindow()
+                        },
                     )
                     Spacer(Modifier.height(36.dp))
                 }
             }
 
-            // ── Historial de búsquedas ─────────────────────────────────────────
-            // Query vacía: se ofrecen las últimas búsquedas de la cuenta. Van
-            // arriba para no tapar el contenido de explorar, que sigue abajo.
-            if (uiState.searchQuery.isBlank() && !uiState.isLoading && uiState.searchHistory.isNotEmpty()) {
-                item {
-                    SearchHistorySection(
-                        history      = uiState.searchHistory,
-                        onQueryClick = viewModel::onHistoryEntryClick,
-                        onRemove     = viewModel::onRemoveHistoryEntry,
-                        onClearAll   = viewModel::onClearSearchHistory,
-                    )
-                }
-            }
-
             // ── Search results vs browse ───────────────────────────────────────
+            // El historial y las sugerencias ya no son bloques fijos de la lista:
+            // se pintan en el desplegable anclado a la barra (más abajo).
             if (uiState.searchQuery.isNotBlank()) {
-                // Sugerencias locales por prefijo: aparecen antes que los
-                // resultados remotos porque no dependen de la red.
-                if (!uiState.suggestions.isEmpty) {
-                    item {
-                        SearchSuggestionsView(
-                            suggestions  = uiState.suggestions,
-                            onArtistClick = onArtistClick,
-                            onAlbumClick  = onAlbumClick,
-                            onTrackClick  = viewModel::playSearchedTrack,
-                        )
-                    }
-                }
                 item {
                     SearchResultsView(
                         searchQuery     = uiState.searchQuery,
@@ -326,20 +333,112 @@ fun ExploreScreen(
             }
         }
 
+        // ── Desplegable anclado a la barra de búsqueda ─────────────────────────
+        // Foco con query vacía -> búsquedas recientes; al escribir -> sugerencias
+        // locales; elegir, tocar fuera, atrás o perder el foco lo cierra. La
+        // query y el historial siguen en el ViewModel: aquí solo se decide qué
+        // panel se pinta.
+        val dropdownPanel = searchDropdownPanel(
+            isFocused   = searchFieldFocused,
+            query       = uiState.searchQuery,
+            history     = uiState.searchHistory,
+            suggestions = uiState.suggestions,
+        )
+        if (dropdownPanel != null) {
+            // La posición se lee solo con el desplegable abierto: cerrado,
+            // nadie observa la barra y desplazar la lista no recompone nada.
+            val anchorBounds = searchBarBounds
+            if (anchorBounds != null) {
+                BackHandler { closeSearchOverlay() }
+
+                VeloSearchDropdown(
+                    anchorOffset = IntOffset(
+                        x = (anchorBounds.left - rootOrigin.x).roundToInt(),
+                        y = (anchorBounds.bottom - rootOrigin.y).roundToInt(),
+                    ),
+                    width = with(LocalDensity.current) { anchorBounds.width.toDp() },
+                    onDismiss = closeSearchOverlay,
+                ) {
+                    when (dropdownPanel) {
+                        is SearchDropdownPanel.RecentSearches -> SearchHistoryDropdownContent(
+                            history      = dropdownPanel.queries,
+                            onQueryClick = { query ->
+                                closeSearchOverlay()
+                                viewModel.onHistoryEntryClick(query)
+                            },
+                            onRemove   = viewModel::onRemoveHistoryEntry,
+                            onClearAll = viewModel::onClearSearchHistory,
+                        )
+
+                        is SearchDropdownPanel.Suggestions -> SearchSuggestionsDropdownContent(
+                            suggestions   = dropdownPanel.results,
+                            onArtistClick = { artistId ->
+                                closeSearchOverlay()
+                                onArtistClick(artistId)
+                            },
+                            onAlbumClick = { albumId ->
+                                closeSearchOverlay()
+                                onAlbumClick(albumId)
+                            },
+                            onTrackClick = { track ->
+                                closeSearchOverlay()
+                                viewModel.playSearchedTrack(track)
+                            },
+                        )
+                    }
+                }
+            }
+        }
+
         VeloSnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
-// ─── HISTORIAL DE BÚSQUEDAS ─────────────────────────────────────────────────
+// ─── DESPLEGABLE DE BÚSQUEDA ────────────────────────────────────────────────
 
 /**
- * Últimas búsquedas de la cuenta activa. Tocar una la repite; se puede borrar
- * una a una o vaciar la lista entera. Todo local: no hay ninguna llamada de red.
+ * Qué pinta el desplegable anclado a la barra de búsqueda.
+ *
+ * Es un tipo plano a propósito: la decisión vive en [searchDropdownPanel], una
+ * función pura que los tests de JVM pueden ejercitar sin Compose.
+ */
+internal sealed interface SearchDropdownPanel {
+    /** Query en blanco y con foco: las últimas búsquedas de la cuenta. */
+    data class RecentSearches(val queries: List<String>) : SearchDropdownPanel
+
+    /** Query con texto: sugerencias por prefijo de la biblioteca local. */
+    data class Suggestions(val results: SearchResults) : SearchDropdownPanel
+}
+
+/**
+ * Decide el contenido del desplegable.
+ *
+ * Reglas: sin foco no se muestra nada (así se cierra al elegir una entrada o
+ * al salir del campo); con foco y query en blanco, las búsquedas recientes;
+ * con texto, las sugerencias locales. Devuelve `null` cuando no hay nada que
+ * ofrecer, para no abrir un desplegable vacío.
+ */
+internal fun searchDropdownPanel(
+    isFocused: Boolean,
+    query: String,
+    history: List<String>,
+    suggestions: SearchResults,
+): SearchDropdownPanel? = when {
+    !isFocused -> null
+    query.isBlank() -> history.takeIf { it.isNotEmpty() }?.let(SearchDropdownPanel::RecentSearches)
+    suggestions.isEmpty -> null
+    else -> SearchDropdownPanel.Suggestions(suggestions)
+}
+
+/**
+ * Contenido del desplegable con la query vacía: las últimas búsquedas de la
+ * cuenta activa. Tocar una la repite; se puede borrar una a una o vaciar la
+ * lista entera. Todo local: no hay ninguna llamada de red.
  */
 @Composable
-private fun SearchHistorySection(
+private fun SearchHistoryDropdownContent(
     history: List<String>,
     onQueryClick: (String) -> Unit,
     onRemove: (String) -> Unit,
@@ -348,7 +447,7 @@ private fun SearchHistorySection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -415,20 +514,18 @@ private fun SearchHistorySection(
                 }
             }
         }
-
-        Spacer(Modifier.height(28.dp))
     }
 }
 
 // ─── SUGERENCIAS LOCALES ──────────────────────────────────────────────────
 
 /**
- * Sugerencias por prefijo de la biblioteca local. Se pintan antes que los
- * resultados remotos: no dependen de la red y aparecen mientras el usuario
- * sigue escribiendo.
+ * Contenido del desplegable mientras se escribe: sugerencias por prefijo de la
+ * biblioteca local. No dependen de la red, así que aparecen antes que los
+ * resultados remotos, que siguen pintándose en la lista de debajo.
  */
 @Composable
-private fun SearchSuggestionsView(
+private fun SearchSuggestionsDropdownContent(
     suggestions: SearchResults,
     onArtistClick: (String) -> Unit,
     onAlbumClick: (String) -> Unit,
@@ -437,7 +534,7 @@ private fun SearchSuggestionsView(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 8.dp),
     ) {
         SearchResultLabel(stringResource(R.string.explore_search_suggestions))
         Spacer(Modifier.height(8.dp))
@@ -466,8 +563,6 @@ private fun SearchSuggestionsView(
                 onClick = { onTrackClick(track) },
             )
         }
-
-        Spacer(Modifier.height(28.dp))
     }
 }
 
