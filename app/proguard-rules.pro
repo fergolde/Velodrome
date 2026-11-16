@@ -22,8 +22,11 @@
     <fields>;
     <methods>;
 }
--keep class com.squareup.moshi.** { *; }
--keep class com.squareup.moshi.internal.Util { *; }
+# Moshi: reglas sugeridas por la propia librería (ver META-INF/proguard en moshi.jar).
+# Los adapters generados por KSP viven en dto.** y los cubren los keeps de abajo.
+-keepclasseswithmembers class * {
+    @com.squareup.moshi.* <methods>;
+}
 -keepclassmembers @com.squareup.moshi.JsonClass class * {
     <fields>;
 }
@@ -46,7 +49,7 @@
 -keep class com.fergolde.velodrome.data.local.**Converter { *; }
 
 # ---------- Hilt / Dagger ----------
--keep class dagger.hilt.** { *; }
+# hilt-android trae su propio proguard.txt: el paraguas sobra.
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$ViewFragmentContextWrapper { *; }
 -keep class * extends dagger.hilt.android.internal.earlyentrypoint.** { *; }
@@ -67,11 +70,16 @@
 -keepclassmembers class * {
     @kotlinx.serialization.Transient <fields>;
 }
--keep class kotlinx.serialization.json.** { *; }
+# La librería la achica R8 por traza estática (solo el código propio lleva keeps).
 -keep class kotlinx.serialization.KSerializer { *; }
 
 # ---------- Retrofit / OkHttp ----------
--keep class retrofit2.** { *; }
+# Atributos que pide la propia librería (ver META-INF/proguard en retrofit.jar).
+# Las clases de retrofit2.** las achica R8 por traza estática; los servicios se
+# cubren con las reglas de interfaz de abajo.
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
+-keepattributes AnnotationDefault
 -keepclassmembers,allowshrinking,allowobfuscation interface * {
     @retrofit2.http.* <methods>;
 }
@@ -88,11 +96,12 @@
 -keep class * extends androidx.datastore.core.Serializer { *; }
 
 # ---------- Coil ----------
--keep class coil3.** { *; }
+# Coil 3 no usa ServiceLoader (componentes programáticos) ni trae consumer rules:
+# R8 lo achica por traza estática desde SingletonImageLoader/AsyncImage.
 -dontwarn coil3.**
 
 # ---------- ExoPlayer / Media3 ----------
--keep class androidx.media3.** { *; }
+# Los AARs de media3 traen su propio proguard.txt: el paraguas sobra.
 -dontwarn androidx.media3.**
 
 # ---------- WorkManager ----------
