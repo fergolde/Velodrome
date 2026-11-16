@@ -26,7 +26,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -41,6 +46,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
@@ -56,6 +62,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -122,8 +129,34 @@ fun ExploreScreen(
                 }
             }
 
+            // ── Historial de búsquedas ─────────────────────────────────────────
+            // Query vacía: se ofrecen las últimas búsquedas de la cuenta. Van
+            // arriba para no tapar el contenido de explorar, que sigue abajo.
+            if (uiState.searchQuery.isBlank() && !uiState.isLoading && uiState.searchHistory.isNotEmpty()) {
+                item {
+                    SearchHistorySection(
+                        history      = uiState.searchHistory,
+                        onQueryClick = viewModel::onHistoryEntryClick,
+                        onRemove     = viewModel::onRemoveHistoryEntry,
+                        onClearAll   = viewModel::onClearSearchHistory,
+                    )
+                }
+            }
+
             // ── Search results vs browse ───────────────────────────────────────
             if (uiState.searchQuery.isNotBlank()) {
+                // Sugerencias locales por prefijo: aparecen antes que los
+                // resultados remotos porque no dependen de la red.
+                if (!uiState.suggestions.isEmpty) {
+                    item {
+                        SearchSuggestionsView(
+                            suggestions  = uiState.suggestions,
+                            onArtistClick = onArtistClick,
+                            onAlbumClick  = onAlbumClick,
+                            onTrackClick  = viewModel::playSearchedTrack,
+                        )
+                    }
+                }
                 item {
                     SearchResultsView(
                         searchQuery     = uiState.searchQuery,
@@ -299,6 +332,192 @@ fun ExploreScreen(
         )
     }
 }
+// ─── HISTORIAL DE BÚSQUEDAS ─────────────────────────────────────────────────
+
+/**
+ * Últimas búsquedas de la cuenta activa. Tocar una la repite; se puede borrar
+ * una a una o vaciar la lista entera. Todo local: no hay ninguna llamada de red.
+ */
+@Composable
+private fun SearchHistorySection(
+    history: List<String>,
+    onQueryClick: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onClearAll: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.explore_search_history_title),
+                fontFamily = DmSansFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                letterSpacing = 1.sp,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onClearAll) {
+                Text(
+                    text = stringResource(R.string.explore_search_history_clear_all),
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        history.forEach { entry ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onQueryClick(entry) }
+                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.History,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = entry,
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(
+                    onClick = { onRemove(entry) },
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.explore_search_history_remove),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(28.dp))
+    }
+}
+
+// ─── SUGERENCIAS LOCALES ──────────────────────────────────────────────────
+
+/**
+ * Sugerencias por prefijo de la biblioteca local. Se pintan antes que los
+ * resultados remotos: no dependen de la red y aparecen mientras el usuario
+ * sigue escribiendo.
+ */
+@Composable
+private fun SearchSuggestionsView(
+    suggestions: SearchResults,
+    onArtistClick: (String) -> Unit,
+    onAlbumClick: (String) -> Unit,
+    onTrackClick: (Track) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+    ) {
+        SearchResultLabel(stringResource(R.string.explore_search_suggestions))
+        Spacer(Modifier.height(8.dp))
+
+        suggestions.artists.forEach { artist ->
+            SuggestionRow(
+                icon = Icons.Default.Person,
+                title = artist.name,
+                subtitle = null,
+                onClick = { onArtistClick(artist.id) },
+            )
+        }
+        suggestions.albums.forEach { album ->
+            SuggestionRow(
+                icon = Icons.Default.Album,
+                title = album.title,
+                subtitle = album.artistName.takeIf { it.isNotBlank() },
+                onClick = { onAlbumClick(album.id) },
+            )
+        }
+        suggestions.tracks.forEach { track ->
+            SuggestionRow(
+                icon = Icons.Default.MusicNote,
+                title = track.title,
+                subtitle = track.artistName.takeIf { it.isNotBlank() },
+                onClick = { onTrackClick(track) },
+            )
+        }
+
+        Spacer(Modifier.height(28.dp))
+    }
+}
+
+@Composable
+private fun SuggestionRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String?,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = DmSansFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
 // ─── ARTISTS CAROUSEL ────────────────────────────────────────────────────────
 
 @Composable

@@ -17,6 +17,16 @@ interface AlbumDao {
     @Query("SELECT * FROM albums WHERE title LIKE '%' || :query || '%' OR artistName LIKE '%' || :query || '%' ORDER BY title ASC")
     suspend fun searchAlbums(query: String): List<AlbumEntity>
 
+    /**
+     * Sugerencias por prefijo sobre título o artista del álbum. El prefijo va
+     * como parámetro bound.
+     */
+    @Query(
+        "SELECT * FROM albums WHERE title LIKE :prefix || '%' OR artistName LIKE :prefix || '%' " +
+            "ORDER BY title ASC LIMIT :limit"
+    )
+    suspend fun searchAlbumsByPrefix(prefix: String, limit: Int): List<AlbumEntity>
+
     @Upsert
     suspend fun insertAlbums(albums: List<AlbumEntity>)
 

@@ -17,6 +17,16 @@ interface ArtistDao {
     @Query("SELECT * FROM artists WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
     suspend fun searchArtists(query: String): List<ArtistEntity>
 
+    /**
+     * Sugerencias por prefijo: `name` empieza por [prefix]. El prefijo va como
+     * parámetro bound; el `%` se concatena en SQL, no en Kotlin.
+     */
+    @Query(
+        "SELECT * FROM artists WHERE name LIKE :prefix || '%' " +
+            "ORDER BY name ASC LIMIT :limit"
+    )
+    suspend fun searchArtistsByPrefix(prefix: String, limit: Int): List<ArtistEntity>
+
     @Upsert
     suspend fun insertArtists(artists: List<ArtistEntity>)
 

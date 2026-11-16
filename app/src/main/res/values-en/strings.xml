@@ -62,6 +62,10 @@
     <string name="explore_clear_year_filter">Clear filter</string>
     <string name="explore_search_empty">No results for &quot;%1$s&quot;</string>
     <string name="explore_search_tracks">Tracks</string>
+    <string name="explore_search_history_title">RECENT SEARCHES</string>
+    <string name="explore_search_history_clear_all">Clear all</string>
+    <string name="explore_search_history_remove">Remove from history</string>
+    <string name="explore_search_suggestions">SUGGESTIONS</string>
     <string name="explore_play_plain">Play (shuffle)</string>
     <string name="explore_play_genres" tools:ignore="PluralsCandidate">Play · %1$d genres</string>
     <string name="explore_play_year_range">Play · %1$d–%2$d</string>

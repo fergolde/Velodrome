@@ -3,6 +3,8 @@ package com.fergolde.velodrome.presentation.screen.explore
 import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.domain.model.Artist
 import com.fergolde.velodrome.domain.model.Track
+import com.fergolde.velodrome.domain.repository.SearchHistoryRepository
+import com.fergolde.velodrome.domain.repository.SearchSuggestionRepository
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.ArtistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
@@ -30,6 +32,8 @@ class ExploreViewModelTest {
     private val trackUseCases: TrackUseCases = mockk()
     private val playerManager: PlayerManager = mockk(relaxed = true)
     private val smartRadioEngine: SmartRadioEngine = mockk(relaxed = true)
+    private val searchHistoryRepository: SearchHistoryRepository = mockk(relaxed = true)
+    private val searchSuggestionRepository: SearchSuggestionRepository = mockk(relaxed = true)
     private val testDispatcher = StandardTestDispatcher()
 
     private val sampleAlbum = Album(id = "a1", artistId = "art1", artistName = "Artist", title = "Album", year = 2020, genre = "Rock", coverUrl = "cov-1")
@@ -44,6 +48,12 @@ class ExploreViewModelTest {
         coEvery { albumUseCases.getRandomAlbums(20) } returns Result.success(emptyList())
         coEvery { albumUseCases.getRandomAlbums(10) } returns Result.success(emptyList())
         coEvery { albumUseCases.getGenres() } returns Result.success(emptyList())
+        coEvery { artistUseCases.searchLocal(any()) } returns emptyList()
+        coEvery { albumUseCases.searchLocal(any()) } returns emptyList()
+        every { searchHistoryRepository.observeHistory() } returns flowOf(emptyList())
+        coEvery { searchSuggestionRepository.suggestArtists(any(), any()) } returns emptyList()
+        coEvery { searchSuggestionRepository.suggestAlbums(any(), any()) } returns emptyList()
+        coEvery { searchSuggestionRepository.suggestTracks(any(), any()) } returns emptyList()
     }
 
     @After
@@ -52,7 +62,15 @@ class ExploreViewModelTest {
     }
 
     private fun createViewModel(): ExploreViewModel {
-        return ExploreViewModel(albumUseCases, artistUseCases, trackUseCases, playerManager, smartRadioEngine)
+        return ExploreViewModel(
+            albumUseCases,
+            artistUseCases,
+            trackUseCases,
+            playerManager,
+            smartRadioEngine,
+            searchHistoryRepository,
+            searchSuggestionRepository
+        )
     }
 
     @Test
@@ -201,5 +219,119 @@ class ExploreViewModelTest {
         advanceUntilIdle()
 
         assertEquals(listOf("Rock", "Pop"), vm.uiState.value.genres)
+    }
+
+    // ── Historial de búsquedas (S1) ──────────────────────────────────────
+
+    @Test
+    fun storedHistory_isExposedInState() = runTest {
+        every { searchHistoryRepository.observeHistory() } returns flowOf(listOf("daft punk", "air"))
+
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals(listOf("daft punk", "air"), vm.uiState.value.searchHistory)
+    }
+
+    @Test
+    fun successfulRemoteSearch_recordsTheQueryInHistory() = runTest {
+        coEvery { trackUseCases.searchRemoteTracks("daft") } returns Result.success(listOf(sampleTrack))
+
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        vm.onSearchQueryChange("daft")
+        advanceUntilIdle()
+
+        coVerify { searchHistoryRepository.recordQuery("daft") }
+    }
+
+    @Test
+    fun failedRemoteSearch_doesNotRecordTheQuery() = runTest {
+        coEvery { trackUseCases.searchRemoteTracks("daft") } returns
+            Result.failure(IllegalStateException("sin red"))
+
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        vm.onSearchQueryChange("daft")
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { searchHistoryRepository.recordQuery(any()) }
+    }
+
+    @Test
+    fun blankQuery_isNeverRecorded() = runTest {
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        vm.onSearchQueryChange("   ")
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { searchHistoryRepository.recordQuery(any()) }
+    }
+
+    @Test
+    fun historyEntriesCanBeRemovedAndCleared() = runTest {
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        vm.onRemoveHistoryEntry("air")
+        vm.onClearSearchHistory()
+        advanceUntilIdle()
+
+        coVerify { searchHistoryRepository.removeQuery("air") }
+        coVerify { searchHistoryRepository.clearHistory() }
+    }
+
+    @Test
+    fun tappingAHistoryEntry_runsThatSearchAgain() = runTest {
+        coEvery { trackUseCases.searchRemoteTracks("air") } returns Result.success(emptyList())
+
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        vm.onHistoryEntryClick("air")
+        advanceUntilIdle()
+
+        assertEquals("air", vm.uiState.value.searchQuery)
+        coVerify { trackUseCases.searchRemoteTracks("air") }
+    }
+
+    // ── Sugerencias locales (S3) ──────────────────────────────────────────
+
+    @Test
+    fun typing_exposesLocalPrefixSuggestions() = runTest {
+        coEvery { trackUseCases.searchRemoteTracks("art") } returns Result.success(emptyList())
+        coEvery { searchSuggestionRepository.suggestArtists("art") } returns listOf(sampleArtist)
+        coEvery { searchSuggestionRepository.suggestAlbums("art") } returns listOf(sampleAlbum)
+        coEvery { searchSuggestionRepository.suggestTracks("art") } returns listOf(sampleTrack)
+
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        vm.onSearchQueryChange("art")
+        advanceUntilIdle()
+
+        val suggestions = vm.uiState.value.suggestions
+        assertEquals(listOf(sampleArtist), suggestions.artists)
+        assertEquals(listOf(sampleAlbum), suggestions.albums)
+        assertEquals(listOf(sampleTrack), suggestions.tracks)
+    }
+
+    @Test
+    fun clearingTheSearch_dropsTheSuggestions() = runTest {
+        coEvery { trackUseCases.searchRemoteTracks("art") } returns Result.success(emptyList())
+        coEvery { searchSuggestionRepository.suggestArtists("art") } returns listOf(sampleArtist)
+
+        val vm = createViewModel()
+        advanceUntilIdle()
+        vm.onSearchQueryChange("art")
+        advanceUntilIdle()
+
+        vm.clearSearch()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.suggestions.isEmpty)
     }
 }

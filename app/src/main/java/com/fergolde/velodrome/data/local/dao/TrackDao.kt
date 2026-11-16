@@ -24,6 +24,17 @@ interface TrackDao {
     @Query("SELECT * FROM tracks WHERE albumId = :albumId ORDER BY trackNumber ASC")
     fun observeTracksByAlbum(albumId: String): Flow<List<TrackEntity>>
 
+    /**
+     * Sugerencias por prefijo sobre el título o el artista del track. Antes no
+     * existía ninguna búsqueda de tracks sobre la biblioteca local. El prefijo
+     * va como parámetro bound.
+     */
+    @Query(
+        "SELECT * FROM tracks WHERE title LIKE :prefix || '%' OR artistName LIKE :prefix || '%' " +
+            "ORDER BY title ASC LIMIT :limit"
+    )
+    suspend fun searchTracksByPrefix(prefix: String, limit: Int): List<TrackEntity>
+
     @Query("SELECT COUNT(*) FROM tracks")
     suspend fun getTrackCount(): Int
 
