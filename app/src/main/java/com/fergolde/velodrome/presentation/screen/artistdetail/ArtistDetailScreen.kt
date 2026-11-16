@@ -443,7 +443,9 @@ private fun ArtistYearFilterRow(
         availableYears.forEach { year ->
             FilterChip(
                 selected = selectedYear == year,
-                onClick = { onYearSelected(year) },
+                // Segundo tap sobre el año ya seleccionado deselecciona
+                // y vuelve a mostrar todos, igual que pulsar Todos.
+                onClick = { onYearSelected(if (selectedYear == year) null else year) },
                 label = { Text(year.toString()) }
             )
         }
