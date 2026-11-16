@@ -84,8 +84,8 @@
     @retrofit2.http.* <methods>;
 }
 -keep,allowobfuscation,allowshrinking class retrofit2.Response
--keep,allowobfuscation,allowshrinking class * implements retrofit2.Converter.Factory
--keep,allowobfuscation,allowshrinking class * implements retrofit2.CallAdapter.Factory
+-keep,allowobfuscation,allowshrinking class * implements retrofit2.Converter$Factory
+-keep,allowobfuscation,allowshrinking class * implements retrofit2.CallAdapter$Factory
 -keep,allowobfuscation,allowshrinking class * implements okhttp3.Interceptor
 -dontwarn okhttp3.internal.platform.**
 -dontwarn org.conscrypt.**
