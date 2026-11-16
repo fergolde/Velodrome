@@ -176,10 +176,20 @@ fun ArtistDetailScreen(
  * Columnas de la grilla de álbumes del detalle de artista (S1).
  *
  * La cuenta por clase la resuelve [adaptiveGridColumns]: el teléfono queda en
- * las dos columnas de siempre.
+ * las dos columnas de siempre. La orientación entra en la cuenta porque en
+ * horizontal la grilla ocupa todo el ancho (ver
+ * [artistAlbumsContentMaxWidth]) y conservar las columnas verticales estiraba
+ * cada tarjeta a lo ancho del dispositivo; con más columnas la tarjeta mide
+ * ~180-200dp, lo mismo que en vertical.
  */
-internal fun artistAlbumGridColumns(widthSizeClass: WindowWidthSizeClass): Int =
+internal fun artistAlbumGridColumns(
+    widthSizeClass: WindowWidthSizeClass,
+    isLandscape: Boolean,
+): Int = if (isLandscape) {
+    adaptiveGridColumns(widthSizeClass, compact = 3, medium = 4, expanded = 6)
+} else {
     adaptiveGridColumns(widthSizeClass, compact = 2, medium = 4, expanded = 5)
+}
 
 /**
  * Ancho máximo de la grilla de álbumes del detalle de artista.
@@ -272,7 +282,7 @@ fun ArtistAlbumsList(
     val widthSizeClass = currentWindowWidthSizeClass()
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     LazyVerticalGrid(
-        columns = GridCells.Fixed(artistAlbumGridColumns(widthSizeClass)),
+        columns = GridCells.Fixed(artistAlbumGridColumns(widthSizeClass, isLandscape)),
         modifier = Modifier
             .fillMaxHeight()
             .widthIn(max = artistAlbumsContentMaxWidth(widthSizeClass, isLandscape)),

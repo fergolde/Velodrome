@@ -29,7 +29,7 @@ class AdaptiveGridLayoutTest {
     fun `el telefono conserva las columnas de siempre`() {
         assertEquals(3, albumGridColumns(WindowWidthSizeClass.Compact))
         assertEquals(2, artistGridColumns(WindowWidthSizeClass.Compact))
-        assertEquals(2, artistAlbumGridColumns(WindowWidthSizeClass.Compact))
+        assertEquals(2, artistAlbumGridColumns(WindowWidthSizeClass.Compact, isLandscape = false))
         assertEquals(3, genreGridColumns(WindowWidthSizeClass.Compact))
     }
 
@@ -39,8 +39,8 @@ class AdaptiveGridLayoutTest {
         assertEquals(5, albumGridColumns(WindowWidthSizeClass.Expanded))
         assertEquals(4, artistGridColumns(WindowWidthSizeClass.Medium))
         assertEquals(6, artistGridColumns(WindowWidthSizeClass.Expanded))
-        assertEquals(4, artistAlbumGridColumns(WindowWidthSizeClass.Medium))
-        assertEquals(5, artistAlbumGridColumns(WindowWidthSizeClass.Expanded))
+        assertEquals(4, artistAlbumGridColumns(WindowWidthSizeClass.Medium, isLandscape = false))
+        assertEquals(5, artistAlbumGridColumns(WindowWidthSizeClass.Expanded, isLandscape = false))
         assertEquals(4, genreGridColumns(WindowWidthSizeClass.Medium))
         assertEquals(6, genreGridColumns(WindowWidthSizeClass.Expanded))
 
@@ -49,7 +49,9 @@ class AdaptiveGridLayoutTest {
         val grillas: List<Pair<String, (WindowWidthSizeClass) -> Int>> = listOf(
             "albumes" to ::albumGridColumns,
             "artistas" to ::artistGridColumns,
-            "albumes de artista" to ::artistAlbumGridColumns,
+            "albumes de artista" to { clase: WindowWidthSizeClass ->
+                artistAlbumGridColumns(clase, isLandscape = false)
+            },
             "generos" to ::genreGridColumns,
         )
         grillas.forEach { (nombre, columnas) ->
@@ -61,6 +63,41 @@ class AdaptiveGridLayoutTest {
                 compact < medium && medium < expanded,
             )
         }
+    }
+
+    /**
+     * En vertical la tarjeta de álbum mide lo mismo que siempre. Es el caso de
+     * referencia: la orientación apaisada debe igualar ese tamaño, no estirarlo.
+     */
+    @Test
+    fun `en vertical el detalle de artista conserva sus columnas`() {
+        assertEquals(2, artistAlbumGridColumns(WindowWidthSizeClass.Compact, isLandscape = false))
+        assertEquals(4, artistAlbumGridColumns(WindowWidthSizeClass.Medium, isLandscape = false))
+        assertEquals(5, artistAlbumGridColumns(WindowWidthSizeClass.Expanded, isLandscape = false))
+    }
+
+    /**
+     * En apaisado la grilla no tiene tope de ancho, así que mantener las columnas
+     * verticales estiraba cada tarjeta. Se suman columnas para que mida ~200dp,
+     * como en vertical, y para que más ancho nunca dé menos columnas.
+     */
+    @Test
+    fun `en horizontal el detalle de artista suma columnas por clase`() {
+        val compact = artistAlbumGridColumns(WindowWidthSizeClass.Compact, isLandscape = true)
+        val medium = artistAlbumGridColumns(WindowWidthSizeClass.Medium, isLandscape = true)
+        val expanded = artistAlbumGridColumns(WindowWidthSizeClass.Expanded, isLandscape = true)
+
+        assertEquals(3, compact)
+        assertEquals(4, medium)
+        assertEquals(6, expanded)
+
+        assertTrue(
+            "se esperaba compact < medium < expanded, fue $compact / $medium / $expanded",
+            compact < medium && medium < expanded,
+        )
+        // La orientación apaisada nunca deja la tarjeta más grande que en vertical.
+        assertTrue(compact > artistAlbumGridColumns(WindowWidthSizeClass.Compact, isLandscape = false))
+        assertTrue(expanded > artistAlbumGridColumns(WindowWidthSizeClass.Expanded, isLandscape = false))
     }
 
     @Test

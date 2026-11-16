@@ -14,7 +14,8 @@ S3 (fuera de alcance, follow-up): Radio multi-semilla + exclusiones.
 
 ## Log
 L1: Usuario elige el punto 2 del roadmap tras cerrar tablet (rama feature/tablet-polish pendiente de push).
-L4: Usuario reporta que en artist en horizontal los álbumes no ocupan todo el ancho (tope 880dp también en apaisado). Worker extrae artistAlbumsContentMaxWidth pura (horizontal sin tope, vertical con tope) + 3 tests RED-GREEN; suite 358 verdes, lint limpio.
+L4: Usuario: en artist horizontal los álbumes no ocupan todo el ancho. Fix: artistAlbumsContentMaxWidth (horizontal sin tope) + columnas horizontales 3/4/6 para igualar tamaño de tarjeta al vertical (~180-200dp); suite 408 verdes, lint limpio, capturas en tablet.
+L5: Columnas por orientación 3/4/6 en horizontal (vertical 2/4/5) + bump 3.0.7 para integrar.
 L2: Mapa listo: álbumes vienen de getArtist sin playCount (solo SongDto lo trae); default actual año asc con nulls a 0; patrón Settings/DataStore identificado. Usuario decide más-tocadas por historial local.
 L3: Worker implementó orden (año ↑↓, nombre, aleatorio con semilla, más tocadas por playCount local de Room) + filtro por año + preferencia persistida (clave artist_album_sort_order); 16+5+3 tests nuevos RED-GREEN; suite 355 verdes, lint limpio. Gap documentado en KDoc: sin log durable de scrobbles en device.
 L5: Usuario: segundo tap sobre el año seleccionado vuelve a Todos. Implementado como toggle en el chip (sin test JVM posible, verificado con suite + lint en verde). Capturas en tablet del sort + filtro.
