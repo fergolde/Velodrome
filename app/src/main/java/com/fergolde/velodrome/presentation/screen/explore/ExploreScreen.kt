@@ -1,6 +1,5 @@
 package com.fergolde.velodrome.presentation.screen.explore
 
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,9 +42,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -75,6 +72,8 @@ import com.fergolde.velodrome.presentation.components.VeloSheetShape
 import com.fergolde.velodrome.presentation.components.VeloSearchBar
 import com.fergolde.velodrome.presentation.components.VeloSectionHeader
 import com.fergolde.velodrome.presentation.components.VeloSnackbarHost
+import com.fergolde.velodrome.presentation.components.adaptiveGridColumns
+import com.fergolde.velodrome.presentation.components.currentWindowWidthSizeClass
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import com.fergolde.velodrome.presentation.screen.home.ArtistAvatar
 import com.fergolde.velodrome.presentation.screen.home.ArtworkPrefetcher
@@ -86,7 +85,7 @@ import com.fergolde.velodrome.util.formatDuration
 
 // ─── SCREEN ──────────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExploreScreen(
     viewModel: ExploreViewModel = hiltViewModel(),
@@ -96,11 +95,9 @@ fun ExploreScreen(
     onAlbumClick: (String) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    // S1: la cantidad de chips de género por fila sigue el ancho de ventana.
-    // Sin Activity (previews) se asume teléfono, el layout que no cambia.
-    val widthSizeClass = LocalActivity.current
-        ?.let { calculateWindowSizeClass(it).widthSizeClass }
-        ?: WindowWidthSizeClass.Compact
+    // S1: la cantidad de chips de género por fila sigue el ancho de ventana, ya
+    // resuelto por el helper compartido.
+    val widthSizeClass = currentWindowWidthSizeClass()
     // Host hoisteado: el snackbar se dibuja como capa sobre la lista, así no se
     // desplaza con el contenido ni queda debajo del mini-player.
     val snackbarHostState = remember { SnackbarHostState() }
@@ -394,16 +391,11 @@ fun VeloArtistCircle(
 /**
  * Chips de género por fila según el ancho de ventana (S1).
  *
- * Antes eran tres filas fijas de tres chips: en tablet los chips quedaban
- * angostos y el texto se recortaba. `Compact` conserva las tres columnas del
- * teléfono y las clases de tablet suman una o tres más.
+ * La cuenta por clase la resuelve [adaptiveGridColumns]: `Compact` conserva las
+ * tres columnas del teléfono y las clases de tablet suman una o tres más.
  */
 internal fun genreGridColumns(widthSizeClass: WindowWidthSizeClass): Int =
-    when (widthSizeClass) {
-        WindowWidthSizeClass.Medium -> 4
-        WindowWidthSizeClass.Expanded -> 6
-        else -> 3
-    }
+    adaptiveGridColumns(widthSizeClass, compact = 3, medium = 4, expanded = 6)
 
 /**
  * Grilla de chips de género.
