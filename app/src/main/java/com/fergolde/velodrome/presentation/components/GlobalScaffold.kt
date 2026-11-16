@@ -18,14 +18,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,10 +42,10 @@ import com.fergolde.velodrome.ui.theme.DmSansFontFamily
  * `"explore"` y `"settings"`, que son las cadenas con las que el `NavHost`
  * identifica esos destinos. No se guarda el destino tipado de `Routes` porque
  * el llamador (`VelodromeApp`) solo conoce la ruta actual como `String`;
- * [fromRoute] hace esa traducción, y las sobrecargas de
- * [SharedBottomNavigationBar] y [SharedNavigationRail] que reciben
- * `currentRoute: String` son el puente entre ambos mundos. `null` significa
- * "ninguna pestaña activa", el caso del reproductor a pantalla completa.
+ * [fromRoute] hace esa traducción, y la sobrecarga de
+ * [SharedBottomNavigationBar] que recibe `currentRoute: String` es el puente
+ * entre ambos mundos. `null` significa "ninguna pestaña activa", el caso del
+ * reproductor a pantalla completa.
  */
 enum class VeloTab(val route: String) {
     Home("home"),
@@ -63,37 +59,10 @@ enum class VeloTab(val route: String) {
 }
 
 /**
- * Layout de navegación principal que la app usa según el ancho de ventana.
- *
- * [BottomBar] es el teléfono de siempre (S1 pide conservarlo tal cual) y
- * [SideRail] es la tablet: mismos destinos, colocados en un rail lateral.
- */
-enum class VeloNavigationLayout {
-    BottomBar,
-    SideRail
-}
-
-/**
- * Traduce el ancho de ventana a layout de navegación.
- *
- * Es una función pura a propósito: la decisión se puede fijar en un test JVM
- * sin inflar Compose ni necesitar una Activity. Cualquier clase de ancho que
- * no sea `Compact` se considera tablet, y un valor desconocido (clase nueva en
- * una versión futura de Material) cae en el layout de teléfono, que es el que
- * menos superficie cambia.
- */
-internal fun navigationLayoutFor(widthSizeClass: WindowWidthSizeClass): VeloNavigationLayout =
-    when (widthSizeClass) {
-        WindowWidthSizeClass.Medium, WindowWidthSizeClass.Expanded -> VeloNavigationLayout.SideRail
-        else -> VeloNavigationLayout.BottomBar
-    }
-
-/**
  * Pestañas visibles, en el orden en el que se dibujan.
  *
- * `SharedBottomNavigationBar` y `SharedNavigationRail` comparten esta lista
- * para que el rail de tablet no pueda quedarse con menos destinos que la barra
- * de teléfono si mañana se agrega una pestaña a [VeloTab].
+ * Las pestañas se ocultan desde la propia barra, así que la lista filtrada
+ * tiene que preservar el orden declarado en [VeloTab].
  */
 internal fun visibleVeloTabs(
     showHome: Boolean = true,
@@ -107,7 +76,7 @@ internal fun visibleVeloTabs(
     }
 }
 
-/** Icono de cada pestaña; compartido por la barra inferior y el rail lateral. */
+/** Icono de cada pestaña de la barra inferior. */
 private val VeloTab.icon: ImageVector
     get() = when (this) {
         VeloTab.Home -> Icons.Default.Home
@@ -115,7 +84,7 @@ private val VeloTab.icon: ImageVector
         VeloTab.Settings -> Icons.Default.Settings
     }
 
-/** Etiqueta de cada pestaña; compartida por la barra inferior y el rail lateral. */
+/** Etiqueta de cada pestaña de la barra inferior. */
 private val VeloTab.labelRes: Int
     get() = when (this) {
         VeloTab.Home -> R.string.nav_home
@@ -242,76 +211,6 @@ fun SharedBottomNavigationBar(
             )
         }
     }
-}
-
-/**
- * Variante lateral de [SharedBottomNavigationBar] para tablet (S1).
- *
- * Mismos tres destinos y misma semántica de selección: `selectedTab = null`
- * deja el rail sin pestaña activa, que es el caso del reproductor.
- */
-@Composable
-fun SharedNavigationRail(
-    modifier: Modifier = Modifier,
-    selectedTab: VeloTab? = VeloTab.Home,
-    showHome: Boolean = true,
-    showExplore: Boolean = true,
-    showSettings: Boolean = true,
-    onHomeClick: () -> Unit = {},
-    onExploreClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {},
-) {
-    NavigationRail(
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-    ) {
-        visibleVeloTabs(showHome, showExplore, showSettings).forEach { tab ->
-            NavigationRailItem(
-                icon = { Icon(tab.icon, contentDescription = null) },
-                label = { Text(stringResource(tab.labelRes)) },
-                selected = selectedTab == tab,
-                onClick = {
-                    when (tab) {
-                        VeloTab.Home -> onHomeClick()
-                        VeloTab.Explore -> onExploreClick()
-                        VeloTab.Settings -> onSettingsClick()
-                    }
-                },
-                colors = NavigationRailItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
-        }
-    }
-}
-
-/**
- * Sobrecarga del rail para los llamadores que todavía derivan la ruta a mano
- * (`VelodromeApp`). Misma traducción que su gemela de la barra inferior.
- */
-@Composable
-fun SharedNavigationRail(
-    modifier: Modifier = Modifier,
-    currentRoute: String,
-    showHome: Boolean = true,
-    showExplore: Boolean = true,
-    showSettings: Boolean = true,
-    onHomeClick: () -> Unit = {},
-    onExploreClick: () -> Unit = {},
-    onSettingsClick: () -> Unit = {},
-) {
-    SharedNavigationRail(
-        modifier = modifier,
-        selectedTab = VeloTab.fromRoute(currentRoute),
-        showHome = showHome,
-        showExplore = showExplore,
-        showSettings = showSettings,
-        onHomeClick = onHomeClick,
-        onExploreClick = onExploreClick,
-        onSettingsClick = onSettingsClick
-    )
 }
 
 /**
