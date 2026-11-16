@@ -1,5 +1,6 @@
 package com.fergolde.velodrome.presentation.screen.artistdetail
 
+import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -34,9 +35,11 @@ import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -77,7 +80,9 @@ fun ArtistDetailScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(bottom = it.calculateBottomPadding()),
             // El detalle se centra horizontalmente cuando la tablet lo acota a
-            // ancho contenido; el spinner y el error fijan su propia alineación.
+            // ancho contenido; en horizontal la grilla ocupa todo el ancho y no
+            // queda margen que centrar. El spinner y el error fijan su propia
+            // alineación.
             contentAlignment = Alignment.TopCenter
         ) {
             when {
@@ -170,6 +175,19 @@ fun ArtistDetailScreen(
 internal fun artistAlbumGridColumns(widthSizeClass: WindowWidthSizeClass): Int =
     adaptiveGridColumns(widthSizeClass, compact = 2, medium = 4, expanded = 5)
 
+/**
+ * Ancho máximo de la grilla de álbumes del detalle de artista.
+ *
+ * En vertical se conserva el tope de [detailsContentMaxWidth], que centra el
+ * contenido en tablet para que el header no se desparrame. En horizontal ese
+ * tope se descarta (`Dp.Infinity`): en tablet apaisada la franja acotada dejaba
+ * bandas vacías a los lados y la grilla no aprovechaba el ancho disponible.
+ */
+internal fun artistAlbumsContentMaxWidth(
+    widthSizeClass: WindowWidthSizeClass,
+    isLandscape: Boolean,
+): Dp = if (isLandscape) Dp.Infinity else detailsContentMaxWidth(widthSizeClass)
+
 @Composable
 fun ArtistAlbumsList(
     artist: com.fergolde.velodrome.domain.model.Artist?,
@@ -186,15 +204,17 @@ fun ArtistAlbumsList(
     onRadioClick: () -> Unit = {},
     onAddToQueueClick: () -> Unit
 ) {
-    // S1: el detalle se centra a ancho contenido en tablet para que el header
-    // no se desparrame sobre toda la pantalla. La alineación la aporta el `Box`
-    // de [ArtistDetailScreen].
+    // El detalle se acota a ancho contenido en tablet para que el header no se
+    // desparrame sobre toda la pantalla, salvo en horizontal, donde la grilla
+    // ocupa el ancho completo (ver [artistAlbumsContentMaxWidth]). La alineación
+    // la aporta el `Box` de [ArtistDetailScreen].
     val widthSizeClass = currentWindowWidthSizeClass()
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     LazyVerticalGrid(
         columns = GridCells.Fixed(artistAlbumGridColumns(widthSizeClass)),
         modifier = Modifier
             .fillMaxHeight()
-            .widthIn(max = detailsContentMaxWidth(widthSizeClass)),
+            .widthIn(max = artistAlbumsContentMaxWidth(widthSizeClass, isLandscape)),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = VeloListBottomClearance),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
