@@ -1,6 +1,5 @@
 package com.fergolde.velodrome.presentation.screen.artists
 
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,9 +29,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.paging.LoadState
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,6 +54,8 @@ import com.fergolde.velodrome.R
 import com.fergolde.velodrome.domain.model.Artist
 import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
 import com.fergolde.velodrome.presentation.components.VeloSearchBar
+import com.fergolde.velodrome.presentation.components.adaptiveGridColumns
+import com.fergolde.velodrome.presentation.components.currentWindowWidthSizeClass
 import com.fergolde.velodrome.presentation.screen.home.ArtistAvatar
 import com.fergolde.velodrome.presentation.screen.home.ArtworkPrefetcher
 import com.fergolde.velodrome.ui.theme.DmSansFontFamily
@@ -64,18 +63,13 @@ import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 /**
  * Columnas de la grilla de artistas según el ancho de ventana (S1).
  *
- * Reemplaza `R.bool.allow_rotation`, que era un booleano de recursos y no
- * distinguía tablet vertical de tablet ancha. El avatar es chico (96dp), así que
- * la tablet ancha aguanta más columnas que la grilla de álbumes.
+ * La cuenta por clase la resuelve [adaptiveGridColumns]. El avatar es chico
+ * (96dp), así que la tablet ancha aguanta más columnas que la de álbumes.
  */
 internal fun artistGridColumns(widthSizeClass: WindowWidthSizeClass): Int =
-    when (widthSizeClass) {
-        WindowWidthSizeClass.Medium -> 4
-        WindowWidthSizeClass.Expanded -> 6
-        else -> 2
-    }
+    adaptiveGridColumns(widthSizeClass, compact = 2, medium = 4, expanded = 6)
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArtistsScreen(
     viewModel: ArtistsViewModel = hiltViewModel(),
@@ -88,11 +82,9 @@ fun ArtistsScreen(
     var showOptions by remember { mutableStateOf(false) }
     var selectedArtist by remember { mutableStateOf<Artist?>(null) }
     val sheetState = rememberModalBottomSheetState()
-    // S1: las columnas salen del ancho de ventana. Sin Activity (previews) se
-    // asume teléfono, el único layout que no cambia.
-    val widthSizeClass = LocalActivity.current
-        ?.let { calculateWindowSizeClass(it).widthSizeClass }
-        ?: WindowWidthSizeClass.Compact
+    // S1: las columnas salen del ancho de ventana, ya resuelto por el helper
+    // compartido.
+    val widthSizeClass = currentWindowWidthSizeClass()
     val gridState = rememberLazyGridState()
     val gridColumns = GridCells.Fixed(artistGridColumns(widthSizeClass))
     Box(

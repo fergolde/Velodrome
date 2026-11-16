@@ -1,6 +1,5 @@
 package com.fergolde.velodrome.presentation.screen.artistdetail
 
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,9 +16,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
@@ -33,7 +30,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -42,6 +38,9 @@ import com.fergolde.velodrome.domain.model.Album
 import com.fergolde.velodrome.presentation.components.VeloListBottomClearance
 import com.fergolde.velodrome.presentation.components.VeloErrorWithRetry
 import com.fergolde.velodrome.presentation.components.VeloSnackbarHost
+import com.fergolde.velodrome.presentation.components.adaptiveGridColumns
+import com.fergolde.velodrome.presentation.components.detailsContentMaxWidth
+import com.fergolde.velodrome.presentation.components.currentWindowWidthSizeClass
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import com.fergolde.velodrome.presentation.screen.home.ArtistAvatar
 
@@ -151,36 +150,14 @@ fun ArtistDetailScreen(
 }
 
 /**
- * Ancho máximo de la columna central de un detalle en tablet (S1).
- *
- * Es el mismo tope en los tres detalles para que álbum, artista y playlist se
- * lean igual; queda por encima de los 840dp de ancho de la clase `Medium`, así
- * que solo recorta de verdad en `Expanded`.
- */
-internal val ArtistDetailContentMaxWidth: Dp = 880.dp
-
-/**
  * Columnas de la grilla de álbumes del detalle de artista (S1).
  *
- * Reemplaza `R.bool.allow_rotation`, que no distinguía tablet vertical de
- * ancha, y deja el teléfono en las dos columnas de siempre.
+ * La cuenta por clase la resuelve [adaptiveGridColumns]: el teléfono queda en
+ * las dos columnas de siempre.
  */
 internal fun artistAlbumGridColumns(widthSizeClass: WindowWidthSizeClass): Int =
-    when (widthSizeClass) {
-        WindowWidthSizeClass.Medium -> 4
-        WindowWidthSizeClass.Expanded -> 5
-        else -> 2
-    }
+    adaptiveGridColumns(widthSizeClass, compact = 2, medium = 4, expanded = 5)
 
-/**
- * Ancho máximo del contenido del detalle de artista (S1).
- *
- * `Dp.Infinity` significa "sin tope": el teléfono conserva el ancho completo.
- */
-internal fun artistDetailContentMaxWidth(widthSizeClass: WindowWidthSizeClass): Dp =
-    if (widthSizeClass == WindowWidthSizeClass.Compact) Dp.Infinity else ArtistDetailContentMaxWidth
-
-@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 fun ArtistAlbumsList(
     artist: com.fergolde.velodrome.domain.model.Artist?,
@@ -195,14 +172,12 @@ fun ArtistAlbumsList(
     // S1: el detalle se centra a ancho contenido en tablet para que el header
     // no se desparrame sobre toda la pantalla. La alineación la aporta el `Box`
     // de [ArtistDetailScreen].
-    val widthSizeClass = LocalActivity.current
-        ?.let { calculateWindowSizeClass(it).widthSizeClass }
-        ?: WindowWidthSizeClass.Compact
+    val widthSizeClass = currentWindowWidthSizeClass()
     LazyVerticalGrid(
         columns = GridCells.Fixed(artistAlbumGridColumns(widthSizeClass)),
         modifier = Modifier
             .fillMaxHeight()
-            .widthIn(max = artistDetailContentMaxWidth(widthSizeClass)),
+            .widthIn(max = detailsContentMaxWidth(widthSizeClass)),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = VeloListBottomClearance),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)

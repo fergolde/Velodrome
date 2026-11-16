@@ -3,13 +3,12 @@ package com.fergolde.velodrome.presentation.screen
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.fergolde.velodrome.presentation.screen.albumdetail.albumDetailContentMaxWidth
+import com.fergolde.velodrome.presentation.components.DetailsContentMaxWidth
+import com.fergolde.velodrome.presentation.components.detailsContentMaxWidth
 import com.fergolde.velodrome.presentation.screen.albums.albumGridColumns
 import com.fergolde.velodrome.presentation.screen.artistdetail.artistAlbumGridColumns
-import com.fergolde.velodrome.presentation.screen.artistdetail.artistDetailContentMaxWidth
 import com.fergolde.velodrome.presentation.screen.artists.artistGridColumns
 import com.fergolde.velodrome.presentation.screen.explore.genreGridColumns
-import com.fergolde.velodrome.presentation.screen.playlistdetail.playlistDetailContentMaxWidth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -66,28 +65,21 @@ class AdaptiveGridLayoutTest {
 
     @Test
     fun `el detalle de telefono no acota el ancho`() {
-        assertEquals(Dp.Infinity, albumDetailContentMaxWidth(WindowWidthSizeClass.Compact))
-        assertEquals(Dp.Infinity, playlistDetailContentMaxWidth(WindowWidthSizeClass.Compact))
-        assertEquals(Dp.Infinity, artistDetailContentMaxWidth(WindowWidthSizeClass.Compact))
+        assertEquals(Dp.Infinity, detailsContentMaxWidth(WindowWidthSizeClass.Compact))
     }
 
     @Test
     fun `en tablet el detalle se centra a un ancho contenido`() {
-        val tablet: List<Pair<String, (WindowWidthSizeClass) -> Dp>> = listOf(
-            "album" to ::albumDetailContentMaxWidth,
-            "playlist" to ::playlistDetailContentMaxWidth,
-            "artista" to ::artistDetailContentMaxWidth,
-        )
-        tablet.forEach { (nombre, tope) ->
-            assertEquals("$nombre (medium)", 880.dp, tope(WindowWidthSizeClass.Medium))
-            assertEquals("$nombre (expanded)", 880.dp, tope(WindowWidthSizeClass.Expanded))
-        }
+        // Los tres detalles comparten un único tope: ya no hay una constante por
+        // pantalla que pueda desincronizarse.
+        assertEquals(DetailsContentMaxWidth, detailsContentMaxWidth(WindowWidthSizeClass.Medium))
+        assertEquals(DetailsContentMaxWidth, detailsContentMaxWidth(WindowWidthSizeClass.Expanded))
+        assertEquals(880.dp, DetailsContentMaxWidth)
         // 840dp es el ancho máximo de la clase Medium: un tope de 880dp todavía
         // no recorta nada ahí, así que el acotado real solo aparece en Expanded.
-        assertEquals(880.dp, albumDetailContentMaxWidth(WindowWidthSizeClass.Expanded))
         assertTrue(
             "el tope de tablet debe cubrir la clase Medium completa (hasta 839dp)",
-            albumDetailContentMaxWidth(WindowWidthSizeClass.Expanded) >= 840.dp,
+            detailsContentMaxWidth(WindowWidthSizeClass.Expanded) >= 840.dp,
         )
     }
 }

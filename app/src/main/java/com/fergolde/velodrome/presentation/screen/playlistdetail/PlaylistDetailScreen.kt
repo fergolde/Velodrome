@@ -1,7 +1,6 @@
 package com.fergolde.velodrome.presentation.screen.playlistdetail
 
 import android.content.res.Configuration
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -41,9 +40,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -63,7 +60,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -75,6 +71,8 @@ import com.fergolde.velodrome.presentation.components.VeloSheetShape
 import com.fergolde.velodrome.presentation.components.VeloListBottomClearance
 import com.fergolde.velodrome.presentation.components.VeloErrorWithRetry
 import com.fergolde.velodrome.presentation.components.VeloSnackbarHost
+import com.fergolde.velodrome.presentation.components.currentWindowWidthSizeClass
+import com.fergolde.velodrome.presentation.components.detailsContentMaxWidth
 import com.fergolde.velodrome.presentation.screen.home.AlbumCover
 import com.fergolde.velodrome.util.formatDuration
 import kotlinx.coroutines.launch
@@ -201,22 +199,12 @@ fun PlaylistDetailScreen(
 }
 
 /**
- * Ancho máximo de la columna central del detalle de playlist en tablet (S1).
+ * Contenido del detalle de playlist.
  *
- * Mismo tope que los otros detalles. Está por encima de los 840dp de la clase
- * `Medium`, así que solo recorta de verdad en `Expanded`.
+ * En tablet acota su columna central con [detailsContentMaxWidth] para que el
+ * header no se desparrame de borde a borde.
  */
-internal val PlaylistDetailContentMaxWidth: Dp = 880.dp
-
-/**
- * Ancho máximo del contenido del detalle de playlist (S1).
- *
- * `Dp.Infinity` significa "sin tope": el teléfono conserva el ancho completo.
- */
-internal fun playlistDetailContentMaxWidth(widthSizeClass: WindowWidthSizeClass): Dp =
-    if (widthSizeClass == WindowWidthSizeClass.Compact) Dp.Infinity else PlaylistDetailContentMaxWidth
-
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PlaylistDetailContent(
     playlist: Playlist?,
@@ -232,10 +220,8 @@ private fun PlaylistDetailContent(
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     // S1: en tablet la columna del detalle se acota y se centra; el header deja
     // de estirarse de borde a borde. En teléfono el tope es infinito.
-    val widthSizeClass = LocalActivity.current
-        ?.let { calculateWindowSizeClass(it).widthSizeClass }
-        ?: WindowWidthSizeClass.Compact
-    val contentMaxWidth = playlistDetailContentMaxWidth(widthSizeClass)
+    val widthSizeClass = currentWindowWidthSizeClass()
+    val contentMaxWidth = detailsContentMaxWidth(widthSizeClass)
 
     if (isLandscape) {
         // ── Landscape: izquierda (cover+info+btns), tracks derecha ────────
