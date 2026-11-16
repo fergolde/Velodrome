@@ -51,7 +51,6 @@
 # ---------- Hilt / Dagger ----------
 # hilt-android trae su propio proguard.txt: el paraguas sobra.
 -keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
--keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$ViewFragmentContextWrapper { *; }
 -keep class * extends dagger.hilt.android.internal.earlyentrypoint.** { *; }
 -keep class * extends dagger.hilt.android.lifecycle.** { *; }
 -keep @dagger.hilt.android.lifecycle.HiltViewModel class * { *; }
