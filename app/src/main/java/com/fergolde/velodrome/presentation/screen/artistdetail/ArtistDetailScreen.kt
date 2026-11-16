@@ -2,26 +2,33 @@ package com.fergolde.velodrome.presentation.screen.artistdetail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.*
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
@@ -91,8 +98,13 @@ fun ArtistDetailScreen(
                     ArtistAlbumsList(
                         artist = uiState.artist,
                         albums = uiState.albums,
+                        sortOrder = uiState.sortOrder,
+                        availableYears = uiState.availableYears,
+                        selectedYear = uiState.selectedYear,
                         isPreparingPlayback = uiState.isPreparingPlayback,
                         onAlbumClick = onAlbumClick,
+                        onSortOrderChange = viewModel::setSortOrder,
+                        onYearSelected = viewModel::setYearFilter,
                         onPlayAllClick = {
                             viewModel.playAll()
                             scope.launch {
@@ -162,8 +174,13 @@ internal fun artistAlbumGridColumns(widthSizeClass: WindowWidthSizeClass): Int =
 fun ArtistAlbumsList(
     artist: com.fergolde.velodrome.domain.model.Artist?,
     albums: List<Album>,
+    sortOrder: AlbumSortOrder,
+    availableYears: List<Int>,
+    selectedYear: Int?,
     isPreparingPlayback: Boolean,
     onAlbumClick: (String) -> Unit,
+    onSortOrderChange: (AlbumSortOrder) -> Unit,
+    onYearSelected: (Int?) -> Unit,
     onPlayAllClick: () -> Unit,
     onShuffleAllClick: () -> Unit,
     onRadioClick: () -> Unit = {},
@@ -287,13 +304,37 @@ fun ArtistAlbumsList(
         }
 
         item(span = { GridItemSpan(maxLineSpan) }) {
-            Text(
-                text = stringResource(R.string.artist_detail_albums),
-                color = MaterialTheme.colorScheme.onBackground,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.artist_detail_albums),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                    ArtistSortMenu(
+                        sortOrder = sortOrder,
+                        onSortOrderChange = onSortOrderChange
+                    )
+                }
+
+                // El filtro solo ofrece los años que el artista realmente
+                // tiene: un año sin álbumes dejaría la grilla vacía.
+                if (availableYears.isNotEmpty()) {
+                    ArtistYearFilterRow(
+                        availableYears = availableYears,
+                        selectedYear = selectedYear,
+                        onYearSelected = onYearSelected
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
         }
 
         items(albums, key = { it.id }) { album ->
@@ -301,6 +342,89 @@ fun ArtistAlbumsList(
                 album = album,
                 onClick = { onAlbumClick(album.id) },
                 modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+/**
+ * Menú de orden de los álbumes del detalle de artista (S1): año ascendente y
+ * descendente, nombre, más tocadas por historial local y aleatorio.
+ */
+@Composable
+private fun ArtistSortMenu(
+    sortOrder: AlbumSortOrder,
+    onSortOrderChange: (AlbumSortOrder) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        TextButton(onClick = { expanded = true }) {
+            Icon(
+                Icons.Default.Sort,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(text = albumSortOrderLabel(sortOrder), fontSize = 14.sp)
+            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            AlbumSortOrder.entries.forEach { order ->
+                DropdownMenuItem(
+                    text = { Text(albumSortOrderLabel(order)) },
+                    onClick = {
+                        expanded = false
+                        onSortOrderChange(order)
+                    },
+                    trailingIcon = {
+                        if (order == sortOrder) {
+                            Icon(Icons.Default.Check, contentDescription = null)
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+/** Texto visible de cada criterio de orden, resuelto en composición. */
+@Composable
+private fun albumSortOrderLabel(order: AlbumSortOrder): String = stringResource(
+    when (order) {
+        AlbumSortOrder.YEAR_ASC -> R.string.artist_sort_year_asc
+        AlbumSortOrder.YEAR_DESC -> R.string.artist_sort_year_desc
+        AlbumSortOrder.TITLE_ASC -> R.string.artist_sort_title
+        AlbumSortOrder.MOST_PLAYED -> R.string.artist_sort_most_played
+        AlbumSortOrder.RANDOM -> R.string.artist_sort_random
+    }
+)
+
+/** Chips de año: "Todos" más un chip por año presente en los álbumes. */
+@Composable
+private fun ArtistYearFilterRow(
+    availableYears: List<Int>,
+    selectedYear: Int?,
+    onYearSelected: (Int?) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        FilterChip(
+            selected = selectedYear == null,
+            onClick = { onYearSelected(null) },
+            label = { Text(stringResource(R.string.artist_filter_all_years)) }
+        )
+        availableYears.forEach { year ->
+            FilterChip(
+                selected = selectedYear == year,
+                onClick = { onYearSelected(year) },
+                label = { Text(year.toString()) }
             )
         }
     }

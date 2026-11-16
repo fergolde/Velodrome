@@ -6,6 +6,12 @@ import kotlinx.coroutines.flow.Flow
 const val DEFAULT_ACCENT_COLOR = "#B6A0FF"
 
 /**
+ * Clave del orden de álbumes del detalle de artista por defecto: año
+ * ascendente, que es el orden que el loader ya aplicaba antes de S1.
+ */
+const val DEFAULT_ARTIST_ALBUM_SORT_ORDER = "year_asc"
+
+/**
  * Repository interface for app settings.
  * Defines the contract for managing user preferences and cache configuration.
  */
@@ -32,6 +38,16 @@ interface SettingsRepository {
      * Default: "#B6A0FF" (AccentPurple)
      */
     val accentColor: Flow<String>
+
+    // --- Artist Detail Settings ---
+
+    /**
+     * Orden elegido para los álbumes del detalle de artista, guardado como
+     * clave estable (`year_asc`, `year_desc`, `title_asc`, `most_played`,
+     * `random`).
+     * Default: [DEFAULT_ARTIST_ALBUM_SORT_ORDER] (año ascendente)
+     */
+    val artistAlbumSortOrder: Flow<String>
 
     // --- Scrobble Settings ---
 
@@ -87,6 +103,9 @@ interface SettingsRepository {
     suspend fun setMusicCacheSizeGb(sizeGb: Int)
 
     suspend fun setAccentColor(hexColor: String)
+
+    /** Guarda el orden elegido para los álbumes del detalle de artista. */
+    suspend fun setArtistAlbumSortOrder(orderKey: String)
 
     suspend fun setScrobbleEnabled(enabled: Boolean)
 

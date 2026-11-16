@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import com.fergolde.velodrome.domain.repository.DEFAULT_ACCENT_COLOR
+import com.fergolde.velodrome.domain.repository.DEFAULT_ARTIST_ALBUM_SORT_ORDER
 import com.fergolde.velodrome.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -22,6 +23,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val IMAGE_CACHE_SIZE_MB = intPreferencesKey("image_cache_size_mb")
         val MUSIC_CACHE_SIZE_GB = intPreferencesKey("music_cache_size_gb")
         val ACCENT_COLOR = stringPreferencesKey("accent_color")
+        val ARTIST_ALBUM_SORT_ORDER = stringPreferencesKey("artist_album_sort_order")
         val SCROBBLE_ENABLED = booleanPreferencesKey("scrobble_enabled")
         val EQ_ENABLED = booleanPreferencesKey("eq_enabled")
         val BASS_BOOST_ENABLED = booleanPreferencesKey("bass_boost_enabled")
@@ -51,6 +53,11 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override val accentColor: Flow<String> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.ACCENT_COLOR] ?: DEFAULT_ACCENT_COLOR }
+
+    override val artistAlbumSortOrder: Flow<String> = dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.ARTIST_ALBUM_SORT_ORDER] ?: DEFAULT_ARTIST_ALBUM_SORT_ORDER
+        }
 
     override val scrobbleEnabled: Flow<Boolean> = dataStore.data
         .map { preferences -> preferences[PreferencesKeys.SCROBBLE_ENABLED] ?: DEFAULT_SCROBBLE_ENABLED }
@@ -94,6 +101,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setAccentColor(hexColor: String) {
         dataStore.edit { it[PreferencesKeys.ACCENT_COLOR] = hexColor }
+    }
+
+    override suspend fun setArtistAlbumSortOrder(orderKey: String) {
+        dataStore.edit { it[PreferencesKeys.ARTIST_ALBUM_SORT_ORDER] = orderKey }
     }
 
     override suspend fun setScrobbleEnabled(enabled: Boolean) {
