@@ -19,11 +19,18 @@
         android:theme="@style/Theme.Velodrome"
         android:usesCleartextTraffic="false">
 
+        <!-- Inicialización bajo demanda: VelodromeApp implementa Configuration.Provider
+             con HiltWorkerFactory, así que solo se quita el inicializador por defecto
+             de WorkManager y se conserva el resto de inicializadores de startup. -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
-            android:exported="false"
-            tools:node="remove" />
+            android:exported="false">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <activity
             android:name=".MainActivity"
