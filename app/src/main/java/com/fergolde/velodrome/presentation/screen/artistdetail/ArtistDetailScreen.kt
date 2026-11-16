@@ -198,7 +198,7 @@ internal fun artistAlbumsContentMaxWidth(
 internal val artistHeaderHorizontalGutter = 16.dp
 
 /** Radio del difuminado de la portada que hace de fondo del header. */
-private val ArtistBackdropBlurRadius = 40.dp
+private val ArtistBackdropBlurRadius = 10.dp
 
 /**
  * Tamaño que se le pide a Coil para la portada de fondo.
