@@ -20,6 +20,10 @@ data class ExploreUiState(
     val searchQuery: String = "",
     val isSearching: Boolean = false,
     val searchResults: SearchResults = SearchResults(),
+    /** Sugerencias por prefijo de la biblioteca local, sin red. */
+    val suggestions: SearchResults = SearchResults(),
+    /** Últimas queries de la cuenta activa, la más reciente primero. */
+    val searchHistory: List<String> = emptyList(),
     val minYear: Int = 0, // Will be loaded from DB
     val currentYear: Int = Calendar.getInstance().get(Calendar.YEAR),
     val selectedYearRange: IntRange? = null

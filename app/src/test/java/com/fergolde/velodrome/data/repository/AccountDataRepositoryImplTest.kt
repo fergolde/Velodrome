@@ -3,6 +3,7 @@ package com.fergolde.velodrome.data.repository
 import com.fergolde.velodrome.data.local.dao.AlbumDao
 import com.fergolde.velodrome.data.local.dao.ArtistDao
 import com.fergolde.velodrome.data.local.dao.ScrobbleDao
+import com.fergolde.velodrome.data.local.dao.SearchHistoryDao
 import com.fergolde.velodrome.data.local.dao.TrackDao
 import com.fergolde.velodrome.data.local.queue.QueueSnapshotStore
 import com.fergolde.velodrome.domain.repository.SettingsRepository
@@ -20,6 +21,7 @@ class AccountDataRepositoryImplTest {
     private val albumDao: AlbumDao = mockk(relaxed = true)
     private val trackDao: TrackDao = mockk(relaxed = true)
     private val scrobbleDao: ScrobbleDao = mockk(relaxed = true)
+    private val searchHistoryDao: SearchHistoryDao = mockk(relaxed = true)
     private val queueSnapshotStore: QueueSnapshotStore = mockk(relaxed = true)
     private val resetNotifier: ServerDataResetNotifier = mockk(relaxed = true)
 
@@ -29,6 +31,7 @@ class AccountDataRepositoryImplTest {
         albumDao = albumDao,
         trackDao = trackDao,
         scrobbleDao = scrobbleDao,
+        searchHistoryDao = searchHistoryDao,
         queueSnapshotStore = queueSnapshotStore,
         resetNotifier = resetNotifier
     )
@@ -52,6 +55,15 @@ class AccountDataRepositoryImplTest {
         repository.purgeAccountData()
 
         coVerify { scrobbleDao.deleteAll() }
+    }
+
+    @Test
+    fun `purge wipes the search history typed by the previous account`() = runTest {
+        // Son textos que escribió el usuario anterior; no deben sobrevivir al
+        // cierre de sesión aunque la tabla esté acotada por cuenta.
+        repository.purgeAccountData()
+
+        coVerify { searchHistoryDao.deleteAll() }
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.fergolde.velodrome.data.repository
 import com.fergolde.velodrome.data.local.dao.AlbumDao
 import com.fergolde.velodrome.data.local.dao.ArtistDao
 import com.fergolde.velodrome.data.local.dao.ScrobbleDao
+import com.fergolde.velodrome.data.local.dao.SearchHistoryDao
 import com.fergolde.velodrome.data.local.dao.TrackDao
 import com.fergolde.velodrome.data.local.queue.QueueSnapshotStore
 import com.fergolde.velodrome.domain.repository.AccountDataRepository
@@ -18,6 +19,9 @@ import javax.inject.Singleton
  * to one account: leaving them behind means the next login sees the previous
  * user's library, and worse, `ScrobbleWorker` would submit the previous user's
  * listening history under the NEW account's token.
+ *
+ * El historial de búsqueda entra en el mismo wipe: son textos que escribió el
+ * usuario anterior y no deben quedar en disco tras cerrar sesión.
  */
 @Singleton
 class AccountDataRepositoryImpl @Inject constructor(
@@ -26,6 +30,7 @@ class AccountDataRepositoryImpl @Inject constructor(
     private val albumDao: AlbumDao,
     private val trackDao: TrackDao,
     private val scrobbleDao: ScrobbleDao,
+    private val searchHistoryDao: SearchHistoryDao,
     private val queueSnapshotStore: QueueSnapshotStore,
     private val resetNotifier: ServerDataResetNotifier
 ) : AccountDataRepository {
@@ -35,6 +40,7 @@ class AccountDataRepositoryImpl @Inject constructor(
         albumDao.deleteAll()
         trackDao.deleteAll()
         scrobbleDao.deleteAll()
+        searchHistoryDao.deleteAll()
         queueSnapshotStore.clear()
 
         // Zeroed stamps force the full-sync path for the next account.

@@ -62,6 +62,10 @@
     <string name="explore_clear_year_filter">Quitar filtro</string>
     <string name="explore_search_empty">Sin resultados para &quot;%1$s&quot;</string>
     <string name="explore_search_tracks">Canciones</string>
+    <string name="explore_search_history_title">BÚSQUEDAS RECIENTES</string>
+    <string name="explore_search_history_clear_all">Borrar todo</string>
+    <string name="explore_search_history_remove">Quitar del historial</string>
+    <string name="explore_search_suggestions">SUGERENCIAS</string>
     <string name="explore_play_plain">Reproducir (aleatorio)</string>
     <string name="explore_play_genres" tools:ignore="PluralsCandidate">Reproducir · %1$d géneros</string>
     <string name="explore_play_year_range">Reproducir · %1$d–%2$d</string>

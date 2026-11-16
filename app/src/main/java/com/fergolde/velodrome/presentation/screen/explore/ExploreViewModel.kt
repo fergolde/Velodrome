@@ -3,6 +3,8 @@ package com.fergolde.velodrome.presentation.screen.explore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fergolde.velodrome.domain.model.Track
+import com.fergolde.velodrome.domain.repository.SearchHistoryRepository
+import com.fergolde.velodrome.domain.repository.SearchSuggestionRepository
 import com.fergolde.velodrome.domain.usecase.AlbumUseCases
 import com.fergolde.velodrome.domain.usecase.ArtistUseCases
 import com.fergolde.velodrome.domain.usecase.TrackUseCases
@@ -31,7 +33,9 @@ class ExploreViewModel @Inject constructor(
     private val artistUseCases: ArtistUseCases,
     private val trackUseCases: TrackUseCases,
     private val playerManager: PlayerManager,
-    private val smartRadioEngine: SmartRadioEngine
+    private val smartRadioEngine: SmartRadioEngine,
+    private val searchHistoryRepository: SearchHistoryRepository,
+    private val searchSuggestionRepository: SearchSuggestionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExploreUiState())
@@ -41,7 +45,50 @@ class ExploreViewModel @Inject constructor(
 
     init {
         loadContent()
+        observeSearchHistory()
+        observeSuggestions()
         observeSearchQuery()
+    }
+
+    /** Historial de la cuenta activa: local, sin red. */
+    private fun observeSearchHistory() {
+        viewModelScope.launch {
+            searchHistoryRepository.observeHistory().collect { history ->
+                _uiState.update { it.copy(searchHistory = history) }
+            }
+        }
+    }
+
+    /**
+     * Sugerencias por prefijo sobre la biblioteca local. Se piden antes que los
+     * resultados remotos (debounce más corto) para que aparezcan primero.
+     */
+    @OptIn(FlowPreview::class)
+    private fun observeSuggestions() {
+        viewModelScope.launch {
+            searchQueryFlow
+                .debounce(200L.milliseconds)
+                .distinctUntilChanged()
+                .collectLatest { query ->
+                    if (query.isBlank()) {
+                        _uiState.update { it.copy(suggestions = SearchResults()) }
+                        return@collectLatest
+                    }
+
+                    try {
+                        val suggestions = SearchResults(
+                            artists = searchSuggestionRepository.suggestArtists(query),
+                            albums = searchSuggestionRepository.suggestAlbums(query),
+                            tracks = searchSuggestionRepository.suggestTracks(query)
+                        )
+                        _uiState.update { it.copy(suggestions = suggestions) }
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        _uiState.update { it.copy(suggestions = SearchResults()) }
+                    }
+                }
+        }
     }
 
     @OptIn(FlowPreview::class)
@@ -72,13 +119,14 @@ class ExploreViewModel @Inject constructor(
                             val tracksDeferred = async {
                                 // Importante: usamos getOrDefault para que si falla la red,
                                 // los resultados locales (artistas/albums) sigan apareciendo.
-                                trackUseCases.searchRemoteTracks(query).getOrDefault(emptyList())
+                                trackUseCases.searchRemoteTracks(query)
                             }
 
                             // Esperamos a que todos terminen (el tiempo total será el de la petición más lenta)
                             val artists = artistsDeferred.await()
                             val albums = albumsDeferred.await()
-                            val tracks = tracksDeferred.await()
+                            val tracksResult = tracksDeferred.await()
+                            val tracks = tracksResult.getOrDefault(emptyList())
 
                             // 4. Actualizar estado final
                             _uiState.update { it.copy(
@@ -89,9 +137,20 @@ class ExploreViewModel @Inject constructor(
                                 ),
                                 isSearching = false
                             ) }
+
+                            // 5. Historial: solo se guarda la query cuya búsqueda
+                            // remota salió bien. La decisión (ver T2) es guardar en
+                            // cada búsqueda remota exitosa y no en cada submit,
+                            // porque el buscador no tiene acción de teclado y así
+                            // el historial también se llena buscando desde el teclado
+                            // sin confirmar. El repositorio descarta los prefijos
+                            // intermedios para no llenar la lista con "d", "da", "daf".
+                            if (tracksResult.isSuccess) {
+                                searchHistoryRepository.recordQuery(query)
+                            }
                         }
                     } catch (e: Exception) {
-                        // 5. Manejo de excepciones
+                        // 6. Manejo de excepciones
                         // Si el error es por cancelación (el usuario escribió otra letra), lo relanzamos.
                         if (e is kotlinx.coroutines.CancellationException) throw e
 
@@ -151,7 +210,30 @@ class ExploreViewModel @Inject constructor(
     }
 
     fun clearSearch() {
-        _uiState.update { it.copy(searchQuery = "", isSearching = false, searchResults = SearchResults()) }
+        _uiState.update {
+            it.copy(
+                searchQuery = "",
+                isSearching = false,
+                searchResults = SearchResults(),
+                suggestions = SearchResults()
+            )
+        }
+        // Sin esto la query vieja seguía viva en el debounce y podía registrarse
+        // en el historial después de limpiar el buscador.
+        searchQueryFlow.value = ""
+    }
+
+    /** Repite una búsqueda guardada: basta con devolverla al buscador. */
+    fun onHistoryEntryClick(query: String) {
+        onSearchQueryChange(query)
+    }
+
+    fun onRemoveHistoryEntry(query: String) {
+        viewModelScope.launch { searchHistoryRepository.removeQuery(query) }
+    }
+
+    fun onClearSearchHistory() {
+        viewModelScope.launch { searchHistoryRepository.clearHistory() }
     }
 
     fun onGenreToggle(genre: String) {

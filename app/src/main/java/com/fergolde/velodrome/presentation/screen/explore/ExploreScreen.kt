@@ -1,5 +1,6 @@
 package com.fergolde.velodrome.presentation.screen.explore
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,7 +27,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -41,6 +47,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
@@ -55,11 +62,19 @@ import androidx.compose.ui.Alignment
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -70,6 +85,7 @@ import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
 import com.fergolde.velodrome.presentation.components.VeloListBottomClearance
 import com.fergolde.velodrome.presentation.components.VeloSheetShape
 import com.fergolde.velodrome.presentation.components.VeloSearchBar
+import com.fergolde.velodrome.presentation.components.VeloSearchDropdown
 import com.fergolde.velodrome.presentation.components.VeloSectionHeader
 import com.fergolde.velodrome.presentation.components.VeloSnackbarHost
 import com.fergolde.velodrome.presentation.components.adaptiveGridColumns
@@ -82,6 +98,7 @@ import com.fergolde.velodrome.ui.theme.DmSansFontFamily
 import com.fergolde.velodrome.ui.theme.SyneFontFamily
 import com.fergolde.velodrome.ui.theme.VeloPalette
 import com.fergolde.velodrome.util.formatDuration
+import kotlin.math.roundToInt
 
 // ─── SCREEN ──────────────────────────────────────────────────────────────────
 
@@ -102,7 +119,24 @@ fun ExploreScreen(
     // desplaza con el contenido ni queda debajo del mini-player.
     val snackbarHostState = remember { SnackbarHostState() }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // ── Estado del desplegable de búsqueda ─────────────────────────────────
+    // El foco vive en el campo de texto, así que se observa desde aquí. La
+    // posición de la barra se mide para anclar el desplegable a su borde
+    // inferior, y sigue a la barra si el contenido se desplaza.
+    val focusManager = LocalFocusManager.current
+    var searchFieldFocused by remember { mutableStateOf(false) }
+    var searchBarBounds by remember { mutableStateOf<Rect?>(null) }
+    var rootOrigin by remember { mutableStateOf(Offset.Zero) }
+    val closeSearchOverlay: () -> Unit = {
+        searchFieldFocused = false
+        focusManager.clearFocus()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { rootOrigin = it.boundsInWindow().topLeft },
+    ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -117,12 +151,18 @@ fun ExploreScreen(
                         query = uiState.searchQuery,
                         onQueryChange = viewModel::onSearchQueryChange,
                         onClearClick = viewModel::clearSearch,
+                        onFocusChanged = { searchFieldFocused = it },
+                        modifier = Modifier.onGloballyPositioned {
+                            searchBarBounds = it.boundsInWindow()
+                        },
                     )
                     Spacer(Modifier.height(36.dp))
                 }
             }
 
             // ── Search results vs browse ───────────────────────────────────────
+            // El historial y las sugerencias ya no son bloques fijos de la lista:
+            // se pintan en el desplegable anclado a la barra (más abajo).
             if (uiState.searchQuery.isNotBlank()) {
                 item {
                     SearchResultsView(
@@ -293,12 +333,286 @@ fun ExploreScreen(
             }
         }
 
+        // ── Desplegable anclado a la barra de búsqueda ─────────────────────────
+        // Foco con query vacía -> búsquedas recientes; al escribir -> sugerencias
+        // locales; elegir, tocar fuera, atrás o perder el foco lo cierra. La
+        // query y el historial siguen en el ViewModel: aquí solo se decide qué
+        // panel se pinta.
+        val dropdownPanel = searchDropdownPanel(
+            isFocused   = searchFieldFocused,
+            query       = uiState.searchQuery,
+            history     = uiState.searchHistory,
+            suggestions = uiState.suggestions,
+        )
+        if (dropdownPanel != null) {
+            // La posición se lee solo con el desplegable abierto: cerrado,
+            // nadie observa la barra y desplazar la lista no recompone nada.
+            val anchorBounds = searchBarBounds
+            if (anchorBounds != null) {
+                BackHandler { closeSearchOverlay() }
+
+                VeloSearchDropdown(
+                    anchorOffset = IntOffset(
+                        x = (anchorBounds.left - rootOrigin.x).roundToInt(),
+                        y = (anchorBounds.bottom - rootOrigin.y).roundToInt(),
+                    ),
+                    width = with(LocalDensity.current) { anchorBounds.width.toDp() },
+                    onDismiss = closeSearchOverlay,
+                ) {
+                    when (dropdownPanel) {
+                        is SearchDropdownPanel.RecentSearches -> SearchHistoryDropdownContent(
+                            history      = dropdownPanel.queries,
+                            onQueryClick = { query ->
+                                closeSearchOverlay()
+                                viewModel.onHistoryEntryClick(query)
+                            },
+                            onRemove   = viewModel::onRemoveHistoryEntry,
+                            onClearAll = viewModel::onClearSearchHistory,
+                        )
+
+                        is SearchDropdownPanel.Suggestions -> SearchSuggestionsDropdownContent(
+                            suggestions   = dropdownPanel.results,
+                            onArtistClick = { artistId ->
+                                closeSearchOverlay()
+                                onArtistClick(artistId)
+                            },
+                            onAlbumClick = { albumId ->
+                                closeSearchOverlay()
+                                onAlbumClick(albumId)
+                            },
+                            onTrackClick = { track ->
+                                closeSearchOverlay()
+                                viewModel.playSearchedTrack(track)
+                            },
+                        )
+                    }
+                }
+            }
+        }
+
         VeloSnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
+// ─── DESPLEGABLE DE BÚSQUEDA ────────────────────────────────────────────────
+
+/**
+ * Qué pinta el desplegable anclado a la barra de búsqueda.
+ *
+ * Es un tipo plano a propósito: la decisión vive en [searchDropdownPanel], una
+ * función pura que los tests de JVM pueden ejercitar sin Compose.
+ */
+internal sealed interface SearchDropdownPanel {
+    /** Query en blanco y con foco: las últimas búsquedas de la cuenta. */
+    data class RecentSearches(val queries: List<String>) : SearchDropdownPanel
+
+    /** Query con texto: sugerencias por prefijo de la biblioteca local. */
+    data class Suggestions(val results: SearchResults) : SearchDropdownPanel
+}
+
+/**
+ * Decide el contenido del desplegable.
+ *
+ * Reglas: sin foco no se muestra nada (así se cierra al elegir una entrada o
+ * al salir del campo); con foco y query en blanco, las búsquedas recientes;
+ * con texto, las sugerencias locales. Devuelve `null` cuando no hay nada que
+ * ofrecer, para no abrir un desplegable vacío.
+ */
+internal fun searchDropdownPanel(
+    isFocused: Boolean,
+    query: String,
+    history: List<String>,
+    suggestions: SearchResults,
+): SearchDropdownPanel? = when {
+    !isFocused -> null
+    query.isBlank() -> history.takeIf { it.isNotEmpty() }?.let(SearchDropdownPanel::RecentSearches)
+    suggestions.isEmpty -> null
+    else -> SearchDropdownPanel.Suggestions(suggestions)
+}
+
+/**
+ * Contenido del desplegable con la query vacía: las últimas búsquedas de la
+ * cuenta activa. Tocar una la repite; se puede borrar una a una o vaciar la
+ * lista entera. Todo local: no hay ninguna llamada de red.
+ */
+@Composable
+private fun SearchHistoryDropdownContent(
+    history: List<String>,
+    onQueryClick: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onClearAll: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.explore_search_history_title),
+                fontFamily = DmSansFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                letterSpacing = 1.sp,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onClearAll) {
+                Text(
+                    text = stringResource(R.string.explore_search_history_clear_all),
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        history.forEach { entry ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onQueryClick(entry) }
+                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.History,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = entry,
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(
+                    onClick = { onRemove(entry) },
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.explore_search_history_remove),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ─── SUGERENCIAS LOCALES ──────────────────────────────────────────────────
+
+/**
+ * Contenido del desplegable mientras se escribe: sugerencias por prefijo de la
+ * biblioteca local. No dependen de la red, así que aparecen antes que los
+ * resultados remotos, que siguen pintándose en la lista de debajo.
+ */
+@Composable
+private fun SearchSuggestionsDropdownContent(
+    suggestions: SearchResults,
+    onArtistClick: (String) -> Unit,
+    onAlbumClick: (String) -> Unit,
+    onTrackClick: (Track) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+    ) {
+        SearchResultLabel(stringResource(R.string.explore_search_suggestions))
+        Spacer(Modifier.height(8.dp))
+
+        suggestions.artists.forEach { artist ->
+            SuggestionRow(
+                icon = Icons.Default.Person,
+                title = artist.name,
+                subtitle = null,
+                onClick = { onArtistClick(artist.id) },
+            )
+        }
+        suggestions.albums.forEach { album ->
+            SuggestionRow(
+                icon = Icons.Default.Album,
+                title = album.title,
+                subtitle = album.artistName.takeIf { it.isNotBlank() },
+                onClick = { onAlbumClick(album.id) },
+            )
+        }
+        suggestions.tracks.forEach { track ->
+            SuggestionRow(
+                icon = Icons.Default.MusicNote,
+                title = track.title,
+                subtitle = track.artistName.takeIf { it.isNotBlank() },
+                onClick = { onTrackClick(track) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SuggestionRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String?,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = DmSansFontFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    fontFamily = DmSansFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
 // ─── ARTISTS CAROUSEL ────────────────────────────────────────────────────────
 
 @Composable

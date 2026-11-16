@@ -6,6 +6,7 @@ import com.fergolde.velodrome.data.local.VelodromeDatabase
 import com.fergolde.velodrome.data.local.dao.AlbumDao
 import com.fergolde.velodrome.data.local.dao.ArtistDao
 import com.fergolde.velodrome.data.local.dao.ScrobbleDao
+import com.fergolde.velodrome.data.local.dao.SearchHistoryDao
 import com.fergolde.velodrome.data.local.dao.TrackDao
 import dagger.Module
 import dagger.Provides
@@ -27,7 +28,7 @@ object DatabaseModule {
             context,
             VelodromeDatabase::class.java,
             VelodromeDatabase.DATABASE_NAME
-        ).addMigrations(VelodromeDatabase.MIGRATION_1_2).build()
+        ).addMigrations(VelodromeDatabase.MIGRATION_1_2, VelodromeDatabase.MIGRATION_2_3).build()
     }
 
     @Provides
@@ -52,5 +53,11 @@ object DatabaseModule {
     @Singleton
     fun provideScrobbleDao(database: VelodromeDatabase): ScrobbleDao {
         return database.scrobbleDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSearchHistoryDao(database: VelodromeDatabase): SearchHistoryDao {
+        return database.searchHistoryDao()
     }
 }

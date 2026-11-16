@@ -5,6 +5,8 @@ import com.fergolde.velodrome.data.repository.AlbumRepositoryImpl
 import com.fergolde.velodrome.data.repository.ArtistRepositoryImpl
 import com.fergolde.velodrome.data.repository.AuthRepositoryImpl
 import com.fergolde.velodrome.data.repository.ScrobbleRepositoryImpl
+import com.fergolde.velodrome.data.repository.SearchHistoryRepositoryImpl
+import com.fergolde.velodrome.data.repository.SearchSuggestionRepositoryImpl
 import com.fergolde.velodrome.data.repository.ServerMigrationRepositoryImpl
 import com.fergolde.velodrome.data.repository.TrackRepositoryImpl
 import com.fergolde.velodrome.data.repository.PlaylistRepositoryImpl
@@ -14,6 +16,8 @@ import com.fergolde.velodrome.domain.repository.ArtistRepository
 import com.fergolde.velodrome.domain.repository.AuthRepository
 import com.fergolde.velodrome.domain.repository.PlaylistRepository
 import com.fergolde.velodrome.domain.repository.ScrobbleRepository
+import com.fergolde.velodrome.domain.repository.SearchHistoryRepository
+import com.fergolde.velodrome.domain.repository.SearchSuggestionRepository
 import com.fergolde.velodrome.domain.repository.ServerMigrationRepository
 import com.fergolde.velodrome.domain.repository.TrackRepository
 import dagger.Binds
@@ -61,4 +65,16 @@ abstract class RepositoryModule {
     abstract fun bindAccountDataRepository(
         impl: AccountDataRepositoryImpl
     ): AccountDataRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSearchHistoryRepository(
+        impl: SearchHistoryRepositoryImpl
+    ): SearchHistoryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSearchSuggestionRepository(
+        impl: SearchSuggestionRepositoryImpl
+    ): SearchSuggestionRepository
 }
