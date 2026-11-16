@@ -18,3 +18,4 @@ L4: Usuario reporta que en artist en horizontal los álbumes no ocupan todo el a
 L2: Mapa listo: álbumes vienen de getArtist sin playCount (solo SongDto lo trae); default actual año asc con nulls a 0; patrón Settings/DataStore identificado. Usuario decide más-tocadas por historial local.
 L3: Worker implementó orden (año ↑↓, nombre, aleatorio con semilla, más tocadas por playCount local de Room) + filtro por año + preferencia persistida (clave artist_album_sort_order); 16+5+3 tests nuevos RED-GREEN; suite 355 verdes, lint limpio. Gap documentado en KDoc: sin log durable de scrobbles en device.
 L5: Usuario: segundo tap sobre el año seleccionado vuelve a Todos. Implementado como toggle en el chip (sin test JVM posible, verificado con suite + lint en verde). Capturas en tablet del sort + filtro.
+L6: Usuario: el chip seleccionado debe llevar el color de acento, no gris. Aplicado selectedContainerColor=primary + selectedLabelColor=onPrimary en los chips de año.

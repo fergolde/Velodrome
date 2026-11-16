@@ -438,7 +438,13 @@ private fun ArtistYearFilterRow(
         FilterChip(
             selected = selectedYear == null,
             onClick = { onYearSelected(null) },
-            label = { Text(stringResource(R.string.artist_filter_all_years)) }
+            label = { Text(stringResource(R.string.artist_filter_all_years)) },
+            // El chip seleccionado usa el color de acento de la app,
+            // no el gris por defecto del sistema.
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+            )
         )
         availableYears.forEach { year ->
             FilterChip(
@@ -446,7 +452,11 @@ private fun ArtistYearFilterRow(
                 // Segundo tap sobre el año ya seleccionado deselecciona
                 // y vuelve a mostrar todos, igual que pulsar Todos.
                 onClick = { onYearSelected(if (selectedYear == year) null else year) },
-                label = { Text(year.toString()) }
+                label = { Text(year.toString()) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         }
     }
