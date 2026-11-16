@@ -1,3 +1,8 @@
+// repositoriesMode / FAIL_ON_PROJECT_REPOS siguen @Incubating: es el patrón documentado
+// para centralizar repositorios y prohibir repos por proyecto, así que se suprime
+// el aviso en todo el archivo en vez de perder el guardarraíl.
+@file:Suppress("UnstableApiUsage")
+
 pluginManagement {
     repositories {
         google {
