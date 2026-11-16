@@ -1,3 +1,4 @@
+import com.android.build.api.variant.VariantOutput
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -27,8 +28,8 @@ android {
         applicationId = "com.fergolde.velodrome"
         minSdk = 34
         targetSdk = 37
-        versionCode = 42
-        versionName = "3.0.5"
+        versionCode = 43
+        versionName = "3.0.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -89,12 +90,17 @@ android {
 
 androidComponents {
     onVariants { variant ->
-        variant.outputs.forEach { output ->
-            output.outputFileName.set(
-                output.versionName.map { versionName -> "Velodrome $versionName.apk" }
-            )
-        }
+        variant.outputs.forEach(::renameApkWithVersion)
     }
+}
+
+// outputFileName y versionName de VariantOutput siguen @Incubating en AGP 9.5.1;
+// es la vía documentada para el nombre versionado del APK ("Velodrome X.Y.Z.apk").
+@Suppress("UnstableApiUsage")
+fun renameApkWithVersion(output: VariantOutput) {
+    output.outputFileName.set(
+        output.versionName.map { versionName -> "Velodrome $versionName.apk" }
+    )
 }
 
 dependencies {
