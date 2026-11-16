@@ -56,9 +56,12 @@ object AppModule {
         return CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 
+    // Binding intencional: expone BuildConfig como dependencia inyectable para que los
+    // tests puedan pasar una versión falsa (ver SettingsViewModelTest). No simplificar.
     @Provides
     @Singleton
     @Named("appVersion")
+    @Suppress("FunctionOnlyReturningConstant")
     fun provideAppVersion(): String = BuildConfig.VERSION_NAME
 
     @Provides
