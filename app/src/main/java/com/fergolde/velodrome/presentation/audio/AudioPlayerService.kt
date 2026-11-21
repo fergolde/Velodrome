@@ -44,6 +44,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Servicio en primer plano para la reproducción de audio.
@@ -155,7 +156,7 @@ class AudioPlayerService : MediaSessionService() {
      * boost) to ExoPlayer's audio session and keeps them in sync with settings.
      * Best-effort: devices without effect support just stay silent.
      *
-     * Called from [onAudioSessionIdChanged] so the effects are recreated
+     * Called from [AnalyticsListener.onAudioSessionIdChanged] so the effects are recreated
      * whenever ExoPlayer acquires a new audio session (including after release).
      * A session id of 0 means the track has no audio output yet.
      */
@@ -455,7 +456,7 @@ class AudioPlayerService : MediaSessionService() {
                         if (attempt == PRECACHE_ATTEMPTS - 1) {
                             throw error
                         }
-                        delay(PRECACHE_RETRY_DELAY_MS * (attempt + 1))
+                        delay((PRECACHE_RETRY_DELAY_MS * (attempt + 1)).milliseconds)
                     }
                 }
             } catch (error: CancellationException) {
