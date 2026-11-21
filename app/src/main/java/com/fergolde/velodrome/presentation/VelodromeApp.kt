@@ -14,7 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -162,9 +162,11 @@ fun MainScaffold(
     // must be one of the enabled values". Se declara Hidden explícito para que
     // el valor inicial y el restaurado siempre estén permitidos.
     val sheetState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            skipHiddenState = false
+        // enabledValues por defecto = los tres (equivale al viejo
+        // skipHiddenState = false): Hidden siempre permitido, como exige el
+        // comentario de arriba.
+        bottomSheetState = rememberBottomSheetState(
+            initialValue = SheetValue.Hidden
         )
     )
 

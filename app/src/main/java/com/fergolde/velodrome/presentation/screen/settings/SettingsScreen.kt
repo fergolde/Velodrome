@@ -743,7 +743,10 @@ fun ColorPickerPanel(
     onColorSelected: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
     var customHex by remember { mutableStateOf(selectedColor) }
 
     ModalBottomSheet(
