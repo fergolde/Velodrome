@@ -18,7 +18,6 @@ class ArtistUseCasesTest {
     private val repository: ArtistRepository = mockk()
     private val getArtist = GetArtistUseCase(repository)
     private val searchLocal = SearchLocalArtistsUseCase(repository)
-    private val syncArtists = SyncArtistsUseCase(repository)
     private val observeArtists = ObserveArtistsUseCase(repository)
 
     private val sampleArtist = Artist(id = "1", name = "Artist Name", albumCount = 3, coverUrl = "art-1")
@@ -51,20 +50,6 @@ class ArtistUseCasesTest {
     fun searchLocal_empty() = runTest {
         coEvery { repository.searchLocal("") } returns emptyList()
         assertTrue(searchLocal("").isEmpty())
-    }
-
-    @Test
-    fun syncArtists_success() = runTest {
-        coEvery { repository.syncArtistsFromServer() } returns Result.success(10)
-        val result = syncArtists()
-        assertTrue(result.isSuccess)
-        assertEquals(10, result.getOrNull())
-    }
-
-    @Test
-    fun syncArtists_failure() = runTest {
-        coEvery { repository.syncArtistsFromServer() } returns Result.failure(Exception("fail"))
-        assertTrue(syncArtists().isFailure)
     }
 
     @Test
