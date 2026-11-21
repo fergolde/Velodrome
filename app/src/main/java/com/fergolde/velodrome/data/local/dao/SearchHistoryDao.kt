@@ -15,14 +15,14 @@ import kotlinx.coroutines.flow.Flow
 interface SearchHistoryDao {
     /** Todas las queries guardadas de la cuenta, la más reciente primero. */
     @Query(
-        "SELECT query FROM search_history WHERE accountScope = :accountScope " +
+        "SELECT `query` FROM search_history WHERE accountScope = :accountScope " +
             "ORDER BY timestamp DESC, id DESC"
     )
     suspend fun getQueries(accountScope: String): List<String>
 
     /** Últimas [limit] queries de la cuenta, la más reciente primero. */
     @Query(
-        "SELECT query FROM search_history WHERE accountScope = :accountScope " +
+        "SELECT `query` FROM search_history WHERE accountScope = :accountScope " +
             "ORDER BY timestamp DESC, id DESC LIMIT :limit"
     )
     fun observeQueries(accountScope: String, limit: Int): Flow<List<String>>
@@ -34,10 +34,10 @@ interface SearchHistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entry: SearchHistoryEntity)
 
-    @Query("DELETE FROM search_history WHERE accountScope = :accountScope AND query = :query")
+    @Query("DELETE FROM search_history WHERE accountScope = :accountScope AND `query` = :query")
     suspend fun deleteQuery(accountScope: String, query: String)
 
-    @Query("DELETE FROM search_history WHERE accountScope = :accountScope AND query IN (:queries)")
+    @Query("DELETE FROM search_history WHERE accountScope = :accountScope AND `query` IN (:queries)")
     suspend fun deleteQueries(accountScope: String, queries: List<String>)
 
     @Query("DELETE FROM search_history WHERE accountScope = :accountScope")
