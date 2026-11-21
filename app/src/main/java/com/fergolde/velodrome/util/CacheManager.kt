@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.media3.common.util.UnstableApi
 import coil3.ImageLoader
-import coil3.annotation.ExperimentalCoilApi
 import coil3.imageLoader
 import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
 import com.fergolde.velodrome.domain.repository.SettingsRepository
@@ -101,7 +100,6 @@ class CacheManager @Inject constructor(
      * Clear all image cache using official Coil API.
      * Uses ImageLoader.diskCache?.clear() and memoryCache?.clear().
      */
-    @OptIn(ExperimentalCoilApi::class)
     suspend fun clearImageCache() = withContext(Dispatchers.IO) {
         imageLoader.diskCache?.clear()
         imageLoader.memoryCache?.clear()
@@ -143,15 +141,6 @@ class CacheManager @Inject constructor(
         return getMusicCacheSizeBytes() >= limit * fraction
     }
 
-    /**
-     * Validates if a track is fully cached by comparing downloaded bytes vs expected size.
-     * SimpleCache.keys returns anything that touched the disk, even partial downloads.
-     * This method ensures only fully (90%+) downloaded tracks are marked as offline.
-     *
-     * @param trackId The track ID to check
-     * @param expectedSizeBytes The expected file size from the API (track.sizeBytes)
-     * @return true if track is at least 90% cached
-     */
     /**
      * Valida si un track está completamente cacheado.
      */

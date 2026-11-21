@@ -6,17 +6,15 @@ import com.fergolde.velodrome.data.local.dao.TrackDao
 import com.fergolde.velodrome.data.local.mapper.toDomain
 import com.fergolde.velodrome.data.local.mapper.toEntity
 import com.fergolde.velodrome.data.remote.NavidromeApi
+import com.fergolde.velodrome.data.remote.dto.SongDto
 import com.fergolde.velodrome.data.remote.requireOk
 import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
-import com.fergolde.velodrome.data.remote.dto.SongDto
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.domain.repository.TrackRepository
 import com.fergolde.velodrome.util.CacheManager
-import com.fergolde.velodrome.util.CredentialsManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.supervisorScope
@@ -31,7 +29,6 @@ class TrackRepositoryImpl @OptIn(UnstableApi::class)
 @Inject constructor(
     private val api: NavidromeApi,
     private val trackDao: TrackDao,
-    private val credentialsManager: CredentialsManager,
     private val cacheManager: CacheManager
 ) : TrackRepository {
 

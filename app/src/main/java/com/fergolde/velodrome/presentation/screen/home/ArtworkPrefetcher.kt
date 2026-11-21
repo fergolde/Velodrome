@@ -81,7 +81,7 @@ private fun ArtworkPrefetchEffect(
                         id to artworkImageRequest(context, id, size, density)
                     }
                 }
-                val requestedKeys = requests.mapTo(hashSetOf()) { (id, request) ->
+                val requestedKeys = requests.mapTo(hashSetOf()) { (id) ->
                     "$id:${canonicalSize.name}"
                 }
 
@@ -92,7 +92,7 @@ private fun ArtworkPrefetchEffect(
                 requests.forEach { (id, request) ->
                     val key = "$id:${canonicalSize.name}"
                     if (key !in jobs) {
-                        jobs[key] = launch {
+                        jobs[key] = this@LaunchedEffect.launch {
                             try {
                                 imageLoader.execute(request)
                             } catch (error: CancellationException) {

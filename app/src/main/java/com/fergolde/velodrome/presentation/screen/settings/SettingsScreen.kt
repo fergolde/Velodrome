@@ -45,7 +45,6 @@ import com.fergolde.velodrome.ui.theme.VeloPalette
 // ─── SCREEN ──────────────────────────────────────────────────────────────────
 
 @androidx.annotation.OptIn(UnstableApi::class)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
@@ -743,7 +742,10 @@ fun ColorPickerPanel(
     onColorSelected: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
     var customHex by remember { mutableStateOf(selectedColor) }
 
     ModalBottomSheet(

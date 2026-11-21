@@ -12,6 +12,7 @@ import kotlinx.coroutines.*
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 sealed class RadioContext {
     object Random : RadioContext()
@@ -488,7 +489,7 @@ class SmartRadioEngine @Inject constructor(
             if (attempt == MAX_FETCH_ATTEMPTS - 1) {
                 Log.w(TAG, "Track fetch failed after retries", result.exceptionOrNull())
             } else {
-                delay(RETRY_DELAY_MS * (attempt + 1))
+                delay((RETRY_DELAY_MS * (attempt + 1)).milliseconds)
             }
         }
         return emptyList()

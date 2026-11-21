@@ -4,12 +4,13 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.util.Log
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
@@ -30,11 +31,9 @@ import com.fergolde.velodrome.util.CacheManager
 import com.fergolde.velodrome.util.CredentialsManager
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
-import kotlinx.coroutines.flow.first
-import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -44,6 +43,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Servicio en primer plano para la reproducción de audio.
@@ -155,7 +155,7 @@ class AudioPlayerService : MediaSessionService() {
      * boost) to ExoPlayer's audio session and keeps them in sync with settings.
      * Best-effort: devices without effect support just stay silent.
      *
-     * Called from [onAudioSessionIdChanged] so the effects are recreated
+     * Called from [AnalyticsListener.onAudioSessionIdChanged] so the effects are recreated
      * whenever ExoPlayer acquires a new audio session (including after release).
      * A session id of 0 means the track has no audio output yet.
      */
@@ -455,7 +455,7 @@ class AudioPlayerService : MediaSessionService() {
                         if (attempt == PRECACHE_ATTEMPTS - 1) {
                             throw error
                         }
-                        delay(PRECACHE_RETRY_DELAY_MS * (attempt + 1))
+                        delay((PRECACHE_RETRY_DELAY_MS * (attempt + 1)).milliseconds)
                     }
                 }
             } catch (error: CancellationException) {

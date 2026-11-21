@@ -22,12 +22,6 @@ class SearchLocalArtistsUseCase @Inject constructor(
     }
 }
 
-class SyncArtistsUseCase @Inject constructor(
-    private val repository: ArtistRepository
-) {
-    suspend operator fun invoke(): Result<Int> = repository.syncArtistsFromServer()
-}
-
 class ObserveArtistsUseCase @Inject constructor(
     private val repository: ArtistRepository
 ) {
@@ -38,6 +32,5 @@ class ObserveArtistsUseCase @Inject constructor(
 class ArtistUseCases @Inject constructor(
     val getArtist: GetArtistUseCase,
     val searchLocal: SearchLocalArtistsUseCase,
-    val syncArtists: SyncArtistsUseCase,
     val observeArtists: ObserveArtistsUseCase
 )

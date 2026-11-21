@@ -11,7 +11,7 @@ import java.util.TreeSet
 @UnstableApi
 class ConfigurableLruCacheEvictor(initialMaxBytes: Long) : CacheEvictor {
 
-    private val leastRecentlyUsed = TreeSet<CacheSpan>(::compare)
+    private val leastRecentlyUsed = TreeSet(::compare)
     private var currentSize = 0L
     private var maxBytes = initialMaxBytes.coerceAtLeast(0L)
 

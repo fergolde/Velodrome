@@ -7,7 +7,6 @@ import com.fergolde.velodrome.data.remote.NavidromeApi
 import com.fergolde.velodrome.data.remote.dto.*
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.util.CacheManager
-import com.fergolde.velodrome.util.CredentialsManager
 import io.mockk.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -19,9 +18,8 @@ class TrackRepositoryImplTest {
 
     private val api: NavidromeApi = mockk()
     private val trackDao: TrackDao = mockk()
-    private val credentialsManager: CredentialsManager = mockk()
     private val cacheManager: CacheManager = mockk()
-    private val repository = TrackRepositoryImpl(api, trackDao, credentialsManager, cacheManager)
+    private val repository = TrackRepositoryImpl(api, trackDao, cacheManager)
 
     private val sampleSongDto = SongDto(
         id = "t1", title = "Song 1", album = "Album", albumId = "a1",
