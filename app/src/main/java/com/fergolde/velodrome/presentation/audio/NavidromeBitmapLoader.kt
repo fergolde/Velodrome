@@ -22,7 +22,7 @@ import javax.inject.Inject
  *
  * [AudioPlayerService] stores an auth-less cover-art URI in [MediaMetadata.artworkUri]
  * (no rotating token/salt). This loader delegates to the app's singleton Coil
- * [ImageLoader], whose [com.fergolde.velodrome.util.NavidromeImageInterceptor]
+ * [coil3.ImageLoader], whose [com.fergolde.velodrome.util.NavidromeImageInterceptor]
  * injects authentication on the fly. That keeps credentials out of the metadata
  * while still allowing the system notification to fetch the image.
  */
