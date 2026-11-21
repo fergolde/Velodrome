@@ -144,15 +144,6 @@ class CacheManager @Inject constructor(
     }
 
     /**
-     * Validates if a track is fully cached by comparing downloaded bytes vs expected size.
-     * SimpleCache.keys returns anything that touched the disk, even partial downloads.
-     * This method ensures only fully (90%+) downloaded tracks are marked as offline.
-     *
-     * @param trackId The track ID to check
-     * @param expectedSizeBytes The expected file size from the API (track.sizeBytes)
-     * @return true if track is at least 90% cached
-     */
-    /**
      * Valida si un track está completamente cacheado.
      */
     fun isTrackFullyCached(trackId: String, expectedSizeBytes: Long): Boolean {
