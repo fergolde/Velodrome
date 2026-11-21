@@ -55,11 +55,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -121,7 +123,10 @@ fun PlayerScreen(
     onSettingsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
     var showQueue by remember { mutableStateOf(false) }
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -477,10 +482,17 @@ fun SeekBar(
         formatTime(duration)
     )
 
+    // El overload con `value` está deprecado en Material3 1.5.0: el ancla la
+    // define el estado (SliderState). La semántica de arrastre no cambia: el
+    // estado se sincroniza desde el progreso local en cada recomposición y el
+    // seek se confirma una sola vez al soltar.
+    val sliderState = rememberSliderState()
+    sliderState.value = if (isDragging) dragProgress else progress
+
     Column(modifier = Modifier.fillMaxWidth()) {
         // Slider interactivo
         Slider(
-            value = if (isDragging) dragProgress else progress,
+            state = sliderState,
             onValueChange = { newProgress ->
                 isDragging = true
                 dragProgress = newProgress
