@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.media3.common.util.UnstableApi
 import coil3.ImageLoader
-import coil3.annotation.ExperimentalCoilApi
 import coil3.imageLoader
 import com.fergolde.velodrome.data.remote.runCatchingWithCancellation
 import com.fergolde.velodrome.domain.repository.SettingsRepository
@@ -101,7 +100,6 @@ class CacheManager @Inject constructor(
      * Clear all image cache using official Coil API.
      * Uses ImageLoader.diskCache?.clear() and memoryCache?.clear().
      */
-    @OptIn(ExperimentalCoilApi::class)
     suspend fun clearImageCache() = withContext(Dispatchers.IO) {
         imageLoader.diskCache?.clear()
         imageLoader.memoryCache?.clear()

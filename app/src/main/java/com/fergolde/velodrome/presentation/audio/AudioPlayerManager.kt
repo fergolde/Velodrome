@@ -225,7 +225,7 @@ class AudioPlayerManager @OptIn(UnstableApi::class)
                             mediaController?.let { controller ->
                                 _currentPosition.value = controller.currentPosition
                             }
-                            kotlinx.coroutines.delay(1000L.milliseconds)
+                            delay(1000L.milliseconds)
                         }
                     }
                 }

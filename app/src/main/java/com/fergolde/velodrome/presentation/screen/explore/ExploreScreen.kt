@@ -105,7 +105,6 @@ import kotlin.math.roundToInt
 
 // ─── SCREEN ──────────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExploreScreen(
     viewModel: ExploreViewModel = hiltViewModel(),
@@ -818,7 +817,6 @@ fun VeloGenreChip(
 
 // ─── YEAR FILTER ─────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VeloYearFilter(
     minYear: Int,

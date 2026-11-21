@@ -3,7 +3,6 @@ package com.fergolde.velodrome.presentation.screen.playlistdetail
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,13 +40,11 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,13 +61,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.fergolde.velodrome.domain.model.Playlist
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fergolde.velodrome.R
+import com.fergolde.velodrome.domain.model.Playlist
 import com.fergolde.velodrome.domain.model.Track
 import com.fergolde.velodrome.presentation.components.UniversalOptionsSheet
-import com.fergolde.velodrome.presentation.components.VeloSheetShape
-import com.fergolde.velodrome.presentation.components.VeloListBottomClearance
 import com.fergolde.velodrome.presentation.components.VeloErrorWithRetry
+import com.fergolde.velodrome.presentation.components.VeloListBottomClearance
+import com.fergolde.velodrome.presentation.components.VeloSheetShape
 import com.fergolde.velodrome.presentation.components.VeloSnackbarHost
 import com.fergolde.velodrome.presentation.components.currentWindowWidthSizeClass
 import com.fergolde.velodrome.presentation.components.detailsContentMaxWidth
@@ -205,7 +203,6 @@ fun PlaylistDetailScreen(
  * En tablet acota su columna central con [detailsContentMaxWidth] para que el
  * header no se desparrame de borde a borde.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PlaylistDetailContent(
     playlist: Playlist?,
@@ -372,7 +369,7 @@ private fun PlaylistDetailContent(
 
 /** Playlists have no trackNumber: the row shows its 1-based position.
  *  Keys are occurrence-suffixed because playlists may contain the same song twice. */
-private inline fun androidx.compose.foundation.lazy.LazyListScope.playlistTracksItems(
+private inline fun LazyListScope.playlistTracksItems(
     tracks: List<Track>,
     crossinline itemContent: @Composable (Int, Track) -> Unit
 ) {
@@ -493,7 +490,6 @@ private fun PlaylistHeader(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PlaylistTrackItem(
     position: Int,

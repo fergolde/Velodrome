@@ -45,7 +45,6 @@ import com.fergolde.velodrome.ui.theme.VeloPalette
 // ─── SCREEN ──────────────────────────────────────────────────────────────────
 
 @androidx.annotation.OptIn(UnstableApi::class)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),

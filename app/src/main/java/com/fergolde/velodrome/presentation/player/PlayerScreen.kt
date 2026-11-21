@@ -862,7 +862,6 @@ fun QueueContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QueueTrackItem(
     track: Track,
