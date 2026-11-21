@@ -9,6 +9,7 @@
 
     <application
         android:name=".VelodromeApp"
+        android:appCategory="audio"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:enableOnBackInvokedCallback="false"
         android:icon="@mipmap/ic_launcher"
