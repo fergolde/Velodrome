@@ -155,20 +155,26 @@ fun MainScaffold(
         }
     }
 
+    // Con Material3 1.5.0 (BOM 2026.11.01) el valor por defecto de skipHiddenState
+    // pasó a true y sheetPeekHeight = 0.dp deshabilita el ancla PartiallyExpanded:
+    // el sheet se asienta en Hidden y el Saver restaura Hidden. Si Hidden no está
+    // en enabledValues, el siguiente arranque revienta con "The initial value
+    // must be one of the enabled values". Se declara Hidden explícito para que
+    // el valor inicial y el restaurado siempre estén permitidos.
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(
-            initialValue = SheetValue.PartiallyExpanded
+            initialValue = SheetValue.Hidden,
+            skipHiddenState = false
         )
     )
 
-    // The player screen is heavy and runs an infinite equalizer animation while
-    // music plays. BottomSheetScaffold composes sheetContent eagerly even fully
-    // collapsed (peekHeight = 0), so render it only while expanded or heading
-    // there. With skipHiddenState the settled-collapsed state is exactly
-    // (current == PartiallyExpanded && target == PartiallyExpanded); any expand
-    // flips targetValue first, and during collapse currentValue stays Expanded
-    // until it settles — so content remains visible through the whole drag and
-    // uncomposes once already invisible.
+    // La pantalla del reproductor es pesada y ejecuta una animación infinita del
+    // ecualizador mientras suena música. BottomSheetScaffold compone sheetContent
+    // aunque esté colapsado del todo (peekHeight = 0), así que solo se renderiza
+    // mientras está expandido o en camino a estarlo. El estado colapsado asentado
+    // es Hidden; cualquier expansión cambia antes targetValue, y durante el
+    // colapso currentValue sigue en Expanded hasta asentarse, así el contenido
+    // permanece visible durante todo el arrastre y se desmonta al quedar oculto.
     val isPlayerSheetActive =
         sheetState.bottomSheetState.currentValue == SheetValue.Expanded ||
             sheetState.bottomSheetState.targetValue == SheetValue.Expanded
@@ -201,19 +207,19 @@ fun MainScaffold(
             if (isPlayerSheetActive) {
                 PlayerScreen(
                     onMinimizeClick = {
-                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                        scope.launch { sheetState.bottomSheetState.hide() }
                     },
                     onHomeClick = {
                         navController.navigate(Routes.Home) { launchSingleTop = true }
-                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                        scope.launch { sheetState.bottomSheetState.hide() }
                     },
                     onExploreClick = {
                         navController.navigate(Routes.Explore) { launchSingleTop = true }
-                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                        scope.launch { sheetState.bottomSheetState.hide() }
                     },
                     onSettingsClick = {
                         navController.navigate(Routes.Settings) { launchSingleTop = true }
-                        scope.launch { sheetState.bottomSheetState.partialExpand() }
+                        scope.launch { sheetState.bottomSheetState.hide() }
                     }
                 )
             }
