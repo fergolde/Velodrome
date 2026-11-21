@@ -19,6 +19,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldDecorator
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -30,7 +34,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -62,6 +68,20 @@ fun VeloSearchBar(
     hint: String = stringResource(R.string.explore_search_hint),
     onFocusChanged: (Boolean) -> Unit = {},
 ) {
+    // El overload con `value` está deprecado: el estado vive en TextFieldState.
+    // La firma hacia el padre no cambia (String + callback): este puente
+    // vuelca las ediciones con snapshotFlow y refleja limpiezas externas
+    // (botón X, sugerencias) solo cuando difieren, para no mover el cursor
+    // mientras se escribe.
+    val textState = rememberTextFieldState(query)
+    LaunchedEffect(textState) {
+        snapshotFlow { textState.text.toString() }.collect(onQueryChange)
+    }
+    LaunchedEffect(query) {
+        if (query != textState.text.toString()) {
+            textState.setTextAndPlaceCursorAtEnd(query)
+        }
+    }
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -86,20 +106,19 @@ fun VeloSearchBar(
                 modifier = Modifier.size(18.dp),
             )
             BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
+                state = textState,
                 modifier = Modifier
                     .weight(1f)
                     .onFocusChanged { onFocusChanged(it.isFocused) },
-                singleLine = true,
                 textStyle = androidx.compose.ui.text.TextStyle(
                     fontFamily = DmSansFontFamily,
                     fontWeight = FontWeight.Normal,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onBackground,
                 ),
-                decorationBox = { inner ->
-                    if (query.isEmpty()) {
+                lineLimits = TextFieldLineLimits.SingleLine,
+                decorator = TextFieldDecorator { innerTextField ->
+                    if (textState.text.isEmpty()) {
                         Text(
                             text = hint,
                             fontFamily = DmSansFontFamily,
@@ -107,7 +126,7 @@ fun VeloSearchBar(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    inner()
+                    innerTextField()
                 },
             )
             if (query.isNotEmpty()) {
