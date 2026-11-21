@@ -43,17 +43,20 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberRangeSliderState
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -901,22 +904,33 @@ fun VeloYearFilter(
 
         Spacer(Modifier.height(14.dp))
 
-        RangeSlider(
-            value = sliderPosition,
-            onValueChange = { sliderPosition = it },
-            onValueChangeFinished = {
-                val from = sliderPosition.start.toInt()
-                val to   = sliderPosition.endInclusive.toInt()
-                onRangeChange(if (from == minYear && to == currentYear) null else from..to)
-            },
-            valueRange = minYear.toFloat()..currentYear.toFloat(),
-            steps = (currentYear - minYear - 1).coerceAtLeast(0),
-            colors = SliderDefaults.colors(
-                thumbColor          = MaterialTheme.colorScheme.primary,
-                activeTrackColor    = MaterialTheme.colorScheme.primary,
-                inactiveTrackColor  = VeloPalette.Bg4,
-            ),
-        )
+        // El overload con `value` está deprecado en Material3 1.5.0: el ancla la
+        // define el estado (RangeSliderState). sliderPosition sigue siendo la
+        // fuente de verdad de la UI y se sincroniza al estado en cada
+        // recomposición. La key recrea el estado al llegar los límites reales
+        // (cargan asíncronos), porque trackRange es inmutable.
+        key(minYear, currentYear) {
+            val sliderState = rememberRangeSliderState(
+                steps = (currentYear - minYear - 1).coerceAtLeast(0),
+                trackRange = minYear.toFloat()..currentYear.toFloat(),
+            )
+            sliderState.startValue = sliderPosition.start
+            sliderState.endValue = sliderPosition.endInclusive
+            RangeSlider(
+                state = sliderState,
+                onValueChange = { sliderPosition = it },
+                onValueChangeFinished = {
+                    val from = sliderPosition.start.toInt()
+                    val to = sliderPosition.endInclusive.toInt()
+                    onRangeChange(if (from == minYear && to == currentYear) null else from..to)
+                },
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = VeloPalette.Bg4,
+                ),
+            )
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -955,7 +969,7 @@ fun SearchResultsView(
 ) {
     var showOptions by remember { mutableStateOf(false) }
     var selectedTrack by remember { mutableStateOf<Track?>(null) }
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val scope = rememberCoroutineScope()
     val msg_play_next = stringResource(R.string.snackbar_play_next)
     val msg_added_to_queue = stringResource(R.string.snackbar_added_to_queue)
